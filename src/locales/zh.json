@@ -1,0 +1,111 @@
+{
+  "common": {
+    "back": "返回",
+    "clear": "清除",
+    "save": "保存",
+    "cancel": "取消",
+    "confirm": "确认",
+    "delete": "删除",
+    "create": "创建",
+    "rename": "重命名",
+    "duplicate": "复制",
+    "run": "运行",
+    "stop": "停止",
+    "loading": "加载中...",
+    "settings": "设置",
+    "reset": "重置"
+  },
+  "header": {
+    "appName": "JS/TS Playground",
+    "appNameShort": "Playground",
+    "backToPlayground": "返回 Playground",
+    "clearAll": "清除所有",
+    "clearAllTooltip": "长按3秒清除所有状态 (包括代码、设置和文件)",
+    "reset": "重置"
+  },
+  "language": {
+    "javascript": "JavaScript",
+    "typescript": "TypeScript",
+    "js": "JS",
+    "ts": "TS"
+  },
+  "fileExplorer": {
+    "title": "文件浏览器",
+    "searchPlaceholder": "搜索文件...",
+    "expand": "展开文件浏览器",
+    "collapse": "折叠文件浏览器",
+    "noFiles": "没有找到文件",
+    "createFile": "新建文件",
+    "createFolder": "新建文件夹",
+    "delete": "删除",
+    "rename": "重命名",
+    "duplicate": "复制"
+  },
+  "codeEditor": {
+    "title": "代码编辑器",
+    "noOpenFiles": "没有打开的文件",
+    "noOpenFilesDesc": "请从左侧文件浏览器中选择一个文件开始编辑",
+    "loadingEditor": "编辑器加载中..."
+  },
+  "output": {
+    "title": "输出",
+    "executing": "执行中...",
+    "noOutput": "没有输出",
+    "executionTime": "执行时间",
+    "error": "错误",
+    "log": "日志"
+  },
+  "settings": {
+    "title": "设置",
+    "editorTheme": {
+      "title": "编辑器主题",
+      "description": "选择您喜欢的编辑器主题以获得更好的编码体验",
+      "light": "浅色主题",
+      "lightDesc": "明亮清洁",
+      "dark": "深色主题",
+      "darkDesc": "护眼模式"
+    },
+    "fontSettings": {
+      "title": "字体设置",
+      "fontSize": "字体大小"
+    },
+    "codeFormatting": {
+      "title": "代码格式化",
+      "indentSize": "缩进大小",
+      "spaces2": "2 个空格",
+      "spaces4": "4 个空格"
+    },
+    "autoSave": {
+      "title": "自动保存",
+      "description": "在您输入时自动保存您的工作",
+      "enable": "启用自动保存",
+      "enableDesc": "更改将自动保存"
+    }
+  },
+  "dialogs": {
+    "confirm": {
+      "title": "确认操作",
+      "deleteFile": "确定要删除文件 \"{{name}}\" 吗？此操作无法撤销。",
+      "deleteFolder": "确定要删除文件夹 \"{{name}}\" 吗？这将删除文件夹及其所有内容。此操作无法撤销。"
+    },
+    "input": {
+      "fileName": "文件名",
+      "folderName": "文件夹名",
+      "newName": "新名称",
+      "createFile": "创建文件",
+      "createFolder": "创建文件夹",
+      "renameFile": "重命名文件",
+      "renameFolder": "重命名文件夹"
+    }
+  },
+  "contextMenu": {
+    "newFile": "新建文件",
+    "newFolder": "新建文件夹",
+    "rename": "重命名",
+    "duplicate": "复制",
+    "delete": "删除",
+    "closeTab": "关闭标签页",
+    "closeOtherTabs": "关闭其他标签页",
+    "closeAllTabs": "关闭所有标签页"
+  }
+}

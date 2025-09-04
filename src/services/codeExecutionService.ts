@@ -1,0 +1,779 @@
+export interface ExecutionResult {
+	success: boolean;
+	logs: string[];
+	errors: string[];
+	executionTime: number;
+}
+
+export class CodeExecutionService {
+	private worker: Worker | null = null;
+	private isExecuting = false;
+	private swcInitialized = false;
+	private swcInitializing = false;
+	private swcInitTime: number | null = null;
+	private currentExecutionId: string | null = null;
+
+	constructor() {
+		this.initWorker();
+	}
+
+	private initWorker() {
+		try {
+			// 创建Web Worker
+			const workerBlob = new Blob(
+				[
+					`
+        let swcInitialized = false;
+        let swcInitializing = false;
+        let swcModule = null;
+        let swcInitStartTime = null;
+        
+        // Initialize SWC WebAssembly module from CDN
+        async function initSWC() {
+          if (swcInitialized) {
+            console.log('SWC已初始化，跳过重复初始化');
+            return;
+          }
+          
+          if (swcInitializing) {
+            console.log('SWC正在初始化中，等待完成...');
+            // 等待当前初始化完成
+            while (swcInitializing && !swcInitialized) {
+              await new Promise(resolve => setTimeout(resolve, 50));
+            }
+            return;
+          }
+          
+          swcInitializing = true;
+          swcInitStartTime = performance.now();
+          
+          try {
+            console.log('🚀 开始从CDN初始化SWC WebAssembly模块...');
+            
+            // Load SWC from CDN (works reliably in Web Workers)
+            const swcUrl = 'https://unpkg.com/@swc/wasm-web@1.3.95/wasm-web.js';
+            console.log('📦 正在加载SWC模块:', swcUrl);
+            
+            // Import SWC module from CDN
+            const { default: init, transformSync } = await import(swcUrl);
+            console.log('✅ SWC模块加载成功，开始初始化WebAssembly...');
+            
+            // Initialize SWC WebAssembly
+            await init();
+            self.swcTransform = transformSync;
+            swcInitialized = true;
+            swcInitializing = false;
+            
+            const initTime = performance.now() - swcInitStartTime;
+            console.log('🎉 SWC初始化完成！耗时:', initTime.toFixed(2), 'ms');
+            
+            // 发送初始化完成事件到主线程
+            self.postMessage({
+              type: 'swc_init_complete',
+              success: true,
+              initTime: Math.round(initTime * 100) / 100
+            });
+            
+          } catch (error) {
+            swcInitializing = false;
+            const initTime = swcInitStartTime ? performance.now() - swcInitStartTime : 0;
+            console.error('❌ SWC初始化失败，回退到简单转译. 耗时:', initTime.toFixed(2), 'ms', error);
+            swcInitialized = false;
+            self.swcTransform = null;
+            
+            // 发送初始化失败事件到主线程
+            self.postMessage({
+              type: 'swc_init_complete',
+              success: false,
+              error: error.message,
+              initTime: Math.round(initTime * 100) / 100
+            });
+          }
+        }
+        
+        // Fast TypeScript transpilation using SWC
+        async function transpileTypeScript(tsCode) {
+          console.log('开始TypeScript转译，代码长度:', tsCode.length);
+          const startTime = performance.now();
+          
+          try {
+            // Ensure SWC is initialized
+            if (!swcInitialized) {
+              await initSWC();
+            }
+            
+            if (!swcInitialized || !self.swcTransform) {
+              console.warn('SWC未初始化，回退到简单转译');
+              return fallbackTranspile(tsCode);
+            }
+            
+            // Use SWC to transpile TypeScript
+            const result = self.swcTransform(tsCode, {
+              jsc: {
+                parser: {
+                  syntax: 'typescript',
+                  tsx: false,
+                  decorators: false,
+                  dynamicImport: false
+                },
+                target: 'es2020',
+                loose: false,
+                externalHelpers: false,
+                keepClassNames: false,
+                preserveAllComments: false
+              },
+              module: {
+                type: 'es6'
+              },
+              minify: false,
+              isModule: false
+            });
+            
+            const transpileTime = performance.now() - startTime;
+            console.log('SWC转译完成，耗时:', transpileTime.toFixed(2), 'ms');
+            
+            return result.code;
+          } catch (error) {
+            const errorTime = performance.now() - startTime;
+            console.warn('SWC转译失败，回退到简单转译，耗时:', errorTime.toFixed(2), 'ms', error.message);
+            return fallbackTranspile(tsCode);
+          }
+        }
+        
+        // Fallback simple transpilation
+        function fallbackTranspile(tsCode) {
+          console.log('使用回退转译方案');
+          const startTime = performance.now();
+          
+          try {
+            // 简单的类型移除，只处理最常见的情况
+            // 简单的类型移除，只处理最常见的情况
+            let jsCode = tsCode
+              // 移除变量类型注解: let x: number = 1 -> let x = 1
+              .replace(/:\\s*(string|number|boolean|any)(?=\\s*[=;,)])/g, '')
+              // 移除函数参数类型: (x: number) -> (x)
+              .replace(/(\\w+):\\s*(string|number|boolean|any)(?=\\s*[,)])/g, '$1')
+              // 移除as断言: x as number -> x
+              .replace(/\\s+as\\s+(string|number|boolean|any)/g, '')
+              // 移除接口定义（简单版本）
+              .replace(/interface\\s+\\w+\\s*\\{[^}]*\\}/g, '')
+              // 清理空行
+              .replace(/\\n\\s*\\n/g, '\\n')
+              .trim();
+            const transpileTime = performance.now() - startTime;
+            console.log('回退转译完成，耗时:', transpileTime.toFixed(2), 'ms');
+            
+            return jsCode;
+          } catch (error) {
+            console.error('回退转译也失败:', error.message);
+            return tsCode; // 返回原始代码
+          }
+        }
+        
+        // Web Worker for safe code execution
+        self.onmessage = async function(e) {
+          const { code, language, executionId } = e.data;
+          
+          try {
+            console.log('Worker接收到代码:', {
+              language: language,
+              codeLength: code?.length,
+              codeStart: code?.substring(0, 100),
+              hasInvalidChars: /[^\x00-\x7F]/.test(code || '')
+            });
+            
+            // 根据语言类型处理代码
+            let executableCode = code;
+            const codeProcessStart = performance.now();
+            
+            if (language === 'typescript') {
+              console.log('检测到TypeScript代码，开始处理...');
+              executableCode = await transpileTypeScript(code);
+              console.log('TypeScript处理完成，总耗时:', (performance.now() - codeProcessStart).toFixed(2), 'ms');
+              console.log('转译后代码前100字符:', executableCode?.substring(0, 100));
+            } else {
+              console.log('JavaScript代码，无需转译');
+            }
+            // 创建一个安全的执行环境
+            const logs = [];
+            const errors = [];
+            
+            // 增强的对象序列化函数，支持环形链表
+            function safeStringify(obj, maxDepth = 10, visited = new WeakSet()) {
+              if (obj === null || obj === undefined) {
+                return String(obj);
+              }
+              
+              if (typeof obj !== 'object') {
+                return String(obj);
+              }
+              
+              // 检测循环引用
+              if (visited.has(obj)) {
+                return '[Circular Reference]';
+              }
+              
+              // 特殊处理链表节点
+              if (obj.constructor && obj.constructor.name === 'ListNode') {
+                return formatLinkedList(obj);
+              }
+              
+              // 处理数组
+              if (Array.isArray(obj)) {
+                if (maxDepth <= 0) return '[Array]';
+                visited.add(obj);
+                const result = '[' + obj.map(item => safeStringify(item, maxDepth - 1, visited)).join(', ') + ']';
+                visited.delete(obj);
+                return result;
+              }
+              
+              // 处理普通对象
+              if (maxDepth <= 0) return '[Object]';
+              visited.add(obj);
+              
+              try {
+          const entries = Object.entries(obj).map(([key, value]) => {
+            return '"' + key + '": ' + safeStringify(value, maxDepth - 1, visited);
+          });
+          const result = '{' + entries.join(', ') + '}';
+          visited.delete(obj);
+          return result;
+        } catch (error) {
+          visited.delete(obj);
+          return '[Object]';
+        }
+            }
+            
+            // 格式化链表的函数
+            function formatLinkedList(head, maxNodes = 20) {
+              if (!head) return 'null';
+              
+              const visited = new Set();
+              const nodes = [];
+              let current = head;
+              let cycleStart = -1;
+              
+              // 遍历链表，检测环
+              while (current && nodes.length < maxNodes) {
+                if (visited.has(current)) {
+                  // 找到环的起始位置
+                  for (let i = 0; i < nodes.length; i++) {
+                    if (nodes[i].node === current) {
+                      cycleStart = i;
+                      break;
+                    }
+                  }
+                  break;
+                }
+                
+                visited.add(current);
+                nodes.push({ node: current, val: current.val });
+                current = current.next;
+              }
+              
+              // 构建显示字符串
+        let result = 'ListNode: ';
+        const values = nodes.map((item, index) => {
+          let nodeStr = String(item.val);
+          if (index === cycleStart && cycleStart !== -1) {
+            nodeStr += ' ←[cycle start]';
+          }
+          return nodeStr;
+        });
+        
+        result += values.join(' -> ');
+        
+        if (cycleStart !== -1) {
+          result += ' -> [cycles back to index ' + cycleStart + ']';
+        } else if (current !== null) {
+          result += ' -> ...';
+        } else {
+          result += ' -> null';
+        }
+              
+              return result;
+            }
+            
+            // 重写console方法来捕获输出，限制输出数量防止阻塞
+            const mockConsole = {
+              log: (...args) => {
+                // 限制日志数量，防止死循环中过多输出导致卡顿
+                if (logs.length < 1000) {
+                  const message = args.map(arg => 
+                    typeof arg === 'object' ? safeStringify(arg) : String(arg)
+                  ).join(' ');
+                  logs.push(message);
+                  
+                  // 每100条输出打印一次调试信息，并发送进度到主线程
+                  if (logs.length % 100 === 0) {
+                    console.log('Worker: 已收集', logs.length, '条日志, 最新:', message);
+                    // 发送进度消息到主线程
+                    self.postMessage({
+                      type: 'progress',
+                      logsCount: logs.length,
+                      errorsCount: errors.length,
+                      executionId
+                    });
+                  }
+                } else if (logs.length === 1000) {
+                  logs.push('... (输出过多，已截断剩余日志以防止卡顿)');
+                  console.log('Worker: 日志已达到1000条上限，主动发送结果');
+                  // 达到1000条时主动发送结果，中断执行
+                  self.postMessage({
+                    success: false,
+                    logs: [...logs],
+                    errors: [...errors, '⏱️ 输出过多，已自动终止执行'],
+                    executionTime: performance.now() - startTime,
+                    executionId
+                  });
+                  // 标记执行已完成，防止超时处理器重复发送
+                  executionCompleted = true;
+                  clearTimeout(executionTimeout);
+                  // 抛出异常强制停止死循环执行
+                  throw new Error('输出过多，已自动终止执行');
+                }
+              },
+              error: (...args) => {
+                if (errors.length < 100) {
+                  const message = args.map(arg => 
+                    typeof arg === 'object' ? safeStringify(arg) : String(arg)
+                  ).join(' ');
+                  errors.push(message);
+                } else if (errors.length === 100) {
+                  errors.push('... (错误过多，已截断剩余错误信息)');
+                }
+              },
+              warn: (...args) => {
+                if (logs.length < 1000) {
+                  const message = '⚠️ ' + args.map(arg => 
+                    typeof arg === 'object' ? safeStringify(arg) : String(arg)
+                  ).join(' ');
+                  logs.push(message);
+                }
+              },
+              info: (...args) => {
+                if (logs.length < 1000) {
+                  const message = 'ℹ️ ' + args.map(arg => 
+                    typeof arg === 'object' ? safeStringify(arg) : String(arg)
+                  ).join(' ');
+                  logs.push(message);
+                }
+              }
+            };
+
+            // ListNode 定义和工具函数
+            class ListNode {
+              constructor(val, next) {
+                this.val = (val === undefined ? 0 : val);
+                this.next = (next === undefined ? null : next);
+              }
+            }
+            
+            function arrayToListNode(arr) {
+              if (arr.length === 0) return null;
+              
+              const head = new ListNode(arr[0]);
+              let current = head;
+              
+              for (let i = 1; i < arr.length; i++) {
+                current.next = new ListNode(arr[i]);
+                current = current.next;
+              }
+              
+              return head;
+            }
+            
+            function listNodeToArray(head) {
+              const result = [];
+              let current = head;
+              
+              while (current !== null) {
+                result.push(current.val);
+                current = current.next;
+              }
+              
+              return result;
+            }
+
+            // 创建受限的全局环境
+            const safeGlobals = {
+              console: mockConsole,
+              Math,
+              Date,
+              JSON,
+              Array,
+              Object,
+              String,
+              Number,
+              Boolean,
+              RegExp,
+              Error,
+              TypeError,
+              ReferenceError,
+              SyntaxError,
+              ListNode,
+              arrayToListNode,
+              listNodeToArray,
+              setTimeout: (fn, delay) => {
+                if (delay > 5000) {
+                  throw new Error('Timeout cannot exceed 5 seconds');
+                }
+                return setTimeout(fn, delay);
+              },
+              setInterval: (fn, delay) => {
+                if (delay < 100) {
+                  throw new Error('Interval cannot be less than 100ms');
+                }
+                return setInterval(fn, delay);
+              },
+              clearTimeout,
+              clearInterval
+            };
+
+            // 禁用危险的全局对象
+            const restrictedGlobals = {
+              fetch: undefined,
+              XMLHttpRequest: undefined,
+              WebSocket: undefined,
+              Worker: undefined,
+              SharedWorker: undefined,
+              ServiceWorker: undefined,
+              localStorage: undefined,
+              sessionStorage: undefined,
+              indexedDB: undefined,
+              location: undefined,
+              history: undefined,
+              navigator: undefined,
+              document: undefined,
+              window: undefined,
+              global: undefined,
+              globalThis: undefined,
+              self: undefined,
+              importScripts: undefined,
+              eval: undefined,
+              Function: undefined
+            };
+
+            // 合并安全的全局对象
+            const executionContext = { ...safeGlobals, ...restrictedGlobals };
+
+            // 死循环检测机制
+            let lastCheckTime = performance.now();
+            let iterationCount = 0;
+            const maxIterationsPerSecond = 1000000; // 每秒最大迭代次数
+            
+            // 重写循环相关的全局函数来检测死循环
+            const instrumentedGlobals = {
+              ...executionContext,
+              // 重写console以在每次调用时更新检测时间
+              console: {
+                ...mockConsole,
+                log: (...args) => {
+                  lastCheckTime = performance.now();
+                  mockConsole.log(...args);
+                },
+                error: (...args) => {
+                  lastCheckTime = performance.now();
+                  mockConsole.error(...args);
+                },
+                warn: (...args) => {
+                  lastCheckTime = performance.now();
+                  mockConsole.warn(...args);
+                },
+                info: (...args) => {
+                  lastCheckTime = performance.now();
+                  mockConsole.info(...args);
+                }
+              }
+            };
+
+            // 简化执行代码，依赖超时机制来处理死循环
+            const instrumentedCode = \`try { \${executableCode} } catch (error) { console.error(error.message); throw error; }\`;
+
+            // 创建函数来执行代码
+            const executeCode = new Function(
+              ...Object.keys(instrumentedGlobals),
+              instrumentedCode
+            );
+
+            const startTime = performance.now();
+            console.log('开始执行代码，代码长度:', executableCode.length);
+            
+            // 添加执行超时保护，但保留已收集的输出
+            let executionCompleted = false;
+            const executionTimeout = setTimeout(() => {
+              if (!executionCompleted) {
+                console.error('Worker: 代码执行超时，强制终止');
+                console.error('Worker: 已收集日志数量:', logs.length);
+                console.error('Worker: 已收集错误数量:', errors.length);
+                console.error('Worker: 前5条日志:', logs.slice(0, 5));
+                
+                const timeoutResult = {
+                  success: false,
+                  logs: [...logs], // 保留超时前收集到的所有console输出
+                  errors: [...errors, '⏱️ 代码执行超时 (3秒限制) - 已显示超时前的输出'],
+                  executionTime: 3000,
+                  executionId
+                };
+                
+                console.error('Worker: 发送超时结果:', {
+                  logsCount: timeoutResult.logs.length,
+                  errorsCount: timeoutResult.errors.length,
+                  executionId: timeoutResult.executionId
+                });
+                
+                self.postMessage(timeoutResult);
+                executionCompleted = true; // 防止重复发送
+              }
+            }, 3000); // 3秒超时，比主线程的4秒更短
+            
+            try {
+              // 执行代码
+              executeCode(...Object.values(instrumentedGlobals));
+              executionCompleted = true;
+              clearTimeout(executionTimeout);
+              
+              const endTime = performance.now();
+              const executionTime = endTime - startTime;
+              console.log('代码执行完成，耗时:', executionTime.toFixed(2), 'ms');
+
+              // 发送结果回主线程
+              self.postMessage({
+                success: true,
+                logs,
+                errors,
+                executionTime: Math.round(executionTime * 100) / 100,
+                executionId
+              });
+            } catch (execError) {
+              executionCompleted = true;
+              clearTimeout(executionTimeout);
+              
+              const endTime = performance.now();
+              const executionTime = endTime - startTime;
+              console.error('代码执行出错:', execError.message, '耗时:', executionTime.toFixed(2), 'ms');
+              
+              self.postMessage({
+                success: false,
+                logs,
+                errors: [...errors, execError.message],
+                executionTime: Math.round(executionTime * 100) / 100,
+                executionId
+              });
+            }
+            
+          } catch (error) {
+            // 发送错误信息回主线程
+            self.postMessage({
+              success: false,
+              logs: [],
+              errors: [error instanceof Error ? error.message : String(error)],
+              executionTime: 0,
+              executionId
+            });
+          }
+        };
+
+        // 处理未捕获的错误
+        self.onerror = function(message, source, lineno, colno, error) {
+          self.postMessage({
+            success: false,
+            logs: [],
+            errors: ['Runtime Error: ' + message + ' at line ' + lineno],
+            executionTime: 0
+          });
+        };
+        
+        // 立即开始SWC初始化（预加载）
+        console.log('Web Worker已创建，开始预加载SWC模块...');
+        initSWC().then(() => {
+          console.log('SWC预加载完成，准备就绪');
+        }).catch((error) => {
+          console.warn('SWC预加载失败，将在需要时重试:', error.message);
+        });
+        `,
+				],
+				{ type: "application/javascript" },
+			);
+
+			this.worker = new Worker(URL.createObjectURL(workerBlob));
+
+			// 监听SWC初始化状态事件
+			this.worker.addEventListener("message", (event) => {
+				const { type, success, initTime, error } = event.data;
+
+				if (type === "swc_init_complete") {
+					this.swcInitializing = false;
+					this.swcInitialized = success;
+					this.swcInitTime = initTime;
+
+					if (success) {
+						console.log(
+							"🎉 主线程收到SWC初始化完成通知，耗时:",
+							initTime,
+							"ms",
+						);
+					} else {
+						console.warn(
+							"⚠️ 主线程收到SWC初始化失败通知，耗时:",
+							initTime,
+							"ms，错误:",
+							error,
+						);
+					}
+				}
+			});
+
+			// 标记SWC开始初始化
+			this.swcInitializing = true;
+			console.log("🚀 Web Worker已创建，SWC预加载已开始...");
+		} catch (error) {
+			console.error("Failed to create worker:", error);
+		}
+	}
+
+	async executeCode(
+		code: string,
+		language: "javascript" | "typescript",
+	): Promise<ExecutionResult> {
+		if (!this.worker) {
+			return {
+				success: false,
+				logs: [],
+				errors: ["Worker not available"],
+				executionTime: 0,
+			};
+		}
+
+		if (this.isExecuting) {
+			return {
+				success: false,
+				logs: [],
+				errors: ["Another execution is in progress"],
+				executionTime: 0,
+			};
+		}
+
+		this.isExecuting = true;
+		// 生成唯一的执行ID
+		this.currentExecutionId = `exec_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+		return new Promise((resolve) => {
+			let workerTimeoutReceived = false;
+			
+			const timeout = setTimeout(() => {
+				if (this.isExecuting && !workerTimeoutReceived) {
+					console.warn('主线程超时，Worker可能已无响应，强制重启');
+					this.forceStopExecution();
+					resolve({
+						success: false,
+						logs: [],
+						errors: ["⏱️ Worker无响应，已强制重启"],
+						executionTime: 4000,
+					});
+				}
+			}, 4000); // 4秒超时
+
+			const handleMessage = (event: MessageEvent) => {
+				// 检查执行ID是否匹配，防止旧执行结果干扰
+				if (event.data.executionId !== this.currentExecutionId) {
+					console.warn('收到过期的执行结果，已忽略');
+					return;
+				}
+
+				// 处理SWC初始化消息
+				if (event.data.type === 'swc_init_complete') {
+					// 这些消息由initWorker处理，这里忽略
+					return;
+				}
+
+				// 处理进度消息（仅用于调试）
+				if (event.data.type === 'progress') {
+					console.log('主线程: 收到Worker进度，日志:', event.data.logsCount, '错误:', event.data.errorsCount);
+					return;
+				}
+
+				// 标记收到了Worker的响应（包括超时响应）
+				workerTimeoutReceived = true;
+				
+				console.log('主线程: 收到Worker消息');
+				console.log('主线程: 消息类型:', event.data.success ? '成功' : '失败');
+				console.log('主线程: 日志数量:', event.data.logs?.length || 0);
+				console.log('主线程: 错误数量:', event.data.errors?.length || 0);
+				console.log('主线程: 前3条日志:', event.data.logs?.slice(0, 3));
+				console.log('主线程: 执行ID:', event.data.executionId);
+				
+				// 处理最终执行结果
+				clearTimeout(timeout);
+				this.worker?.removeEventListener("message", handleMessage);
+				this.isExecuting = false;
+				this.currentExecutionId = null;
+				
+				resolve(event.data);
+			};
+
+			this.worker.addEventListener("message", handleMessage);
+			this.worker.postMessage({ 
+				code, 
+				language,
+				executionId: this.currentExecutionId 
+			});
+		});
+	}
+
+	forceStopExecution() {
+		console.log('强制停止代码执行');
+		this.isExecuting = false;
+		this.currentExecutionId = null;
+		
+		// 终止当前Worker
+		if (this.worker) {
+			this.worker.terminate();
+			this.worker = null;
+		}
+		
+		// 立即重新创建Worker，确保下次执行可用
+		this.initWorker();
+	}
+
+	terminate() {
+		if (this.worker) {
+			this.worker.terminate();
+			this.worker = null;
+		}
+		this.isExecuting = false;
+		this.currentExecutionId = null;
+	}
+
+	isRunning(): boolean {
+		return this.isExecuting;
+	}
+
+	// 获取SWC初始化状态
+	getSWCStatus(): {
+		initialized: boolean;
+		initializing: boolean;
+		initTime: number | null;
+	} {
+		return {
+			initialized: this.swcInitialized,
+			initializing: this.swcInitializing,
+			initTime: this.swcInitTime,
+		};
+	}
+}
+
+// 单例实例
+export const codeExecutionService = new CodeExecutionService();
+
+// 导出便捷函数
+export const executeCode = (
+	code: string,
+	language: "javascript" | "typescript",
+): Promise<ExecutionResult> => {
+	return codeExecutionService.executeCode(code, language);
+};
+
+export const stopExecution = (): void => {
+	codeExecutionService.forceStopExecution();
+};
