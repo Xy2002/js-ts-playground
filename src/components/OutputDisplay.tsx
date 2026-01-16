@@ -26,7 +26,9 @@ export default function OutputDisplay({
 	// 自动滚动到底部（当有新输出时）
 	useEffect(() => {
 		if (outputRef.current) {
-			const scrollElement = outputRef.current.querySelector('[data-radix-scroll-area-viewport]');
+			const scrollElement = outputRef.current.querySelector(
+				"[data-radix-scroll-area-viewport]",
+			);
 			if (scrollElement) {
 				scrollElement.scrollTop = scrollElement.scrollHeight;
 			}
@@ -81,7 +83,7 @@ export default function OutputDisplay({
 					>
 						{isError ? "❌" : "📝"}
 					</span>
-					<pre className="font-mono text-xs sm:text-sm whitespace-pre-wrap break-words flex-1">
+					<pre className="font-mono text-xs sm:text-sm whitespace-pre-wrap break-all flex-1 min-w-0">
 						{item.content}
 					</pre>
 				</div>
@@ -139,50 +141,50 @@ export default function OutputDisplay({
 			<CardContent className="flex-1 p-0 min-h-0">
 				<ScrollArea className="h-full" ref={outputRef}>
 					<div className="p-2 space-y-1">
-					{!result && !isExecuting && (
-						<div className="flex items-center justify-center h-full text-muted-foreground">
-							<div className="text-center px-4">
-								<Play className="w-6 h-6 sm:w-8 sm:h-8 mx-auto mb-2 opacity-50" />
-								<p className="text-xs sm:text-sm">
-									Click "Run" to execute your code
-								</p>
-								<p className="text-xs mt-1 hidden sm:block">
-									Console output will appear here
-								</p>
+						{!result && !isExecuting && (
+							<div className="flex items-center justify-center h-full text-muted-foreground">
+								<div className="text-center px-4">
+									<Play className="w-6 h-6 sm:w-8 sm:h-8 mx-auto mb-2 opacity-50" />
+									<p className="text-xs sm:text-sm">
+										Click "Run" to execute your code
+									</p>
+									<p className="text-xs mt-1 hidden sm:block">
+										Console output will appear here
+									</p>
+								</div>
 							</div>
-						</div>
-					)}
+						)}
 
-					{isExecuting && (
-						<div className="flex items-center gap-2 p-2 sm:p-3 text-warning">
-							<div className="animate-spin w-3 h-3 sm:w-4 sm:h-4 border-2 border-current border-t-transparent rounded-full"></div>
-							<span className="text-xs sm:text-sm">Executing code...</span>
-						</div>
-					)}
+						{isExecuting && (
+							<div className="flex items-center gap-2 p-2 sm:p-3 text-warning">
+								<div className="animate-spin w-3 h-3 sm:w-4 sm:h-4 border-2 border-current border-t-transparent rounded-full"></div>
+								<span className="text-xs sm:text-sm">Executing code...</span>
+							</div>
+						)}
 
-					{result && (
-						<div className="space-y-1">
-							{result.logs.length === 0 && result.errors.length === 0 && (
-								<div className="p-2 sm:p-3 text-muted-foreground text-xs sm:text-sm text-center">
-									No output produced
-								</div>
-							)}
+						{result && (
+							<div className="space-y-1">
+								{result.logs.length === 0 && result.errors.length === 0 && (
+									<div className="p-2 sm:p-3 text-muted-foreground text-xs sm:text-sm text-center">
+										No output produced
+									</div>
+								)}
 
-							{formatOutput(result.logs, result.errors).map(renderOutputLine)}
+								{formatOutput(result.logs, result.errors).map(renderOutputLine)}
 
-							{result.success && result.logs.length > 0 && (
-								<div className="mt-2 p-2 bg-green-500/10 border border-green-500/20 text-green-700 dark:text-green-400 text-xs">
-									✅ Execution completed successfully
-								</div>
-							)}
+								{result.success && result.logs.length > 0 && (
+									<div className="mt-2 p-2 bg-green-500/10 border border-green-500/20 text-green-700 dark:text-green-400 text-xs">
+										✅ Execution completed successfully
+									</div>
+								)}
 
-							{!result.success && (
-								<div className="mt-2 p-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 text-xs">
-									❌ Execution failed
-								</div>
-							)}
-						</div>
-					)}
+								{!result.success && (
+									<div className="mt-2 p-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 text-xs">
+										❌ Execution failed
+									</div>
+								)}
+							</div>
+						)}
 					</div>
 				</ScrollArea>
 			</CardContent>
