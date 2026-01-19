@@ -408,7 +408,44 @@ export class CodeExecutionService {
             let expectImplementation;
 
             if (chai) {
-              expectImplementation = chai.expect;
+              // Wrap Chai with Jest/Vitest compatible API
+              expectImplementation = (received) => {
+                const chaiAssertion = chai.expect(received);
+                
+                const matchers = (isNot = false) => {
+                  const assertion = isNot ? chaiAssertion.not : chaiAssertion;
+                  
+                  return {
+                    toBe: (expected) => assertion.equal(expected),
+                    toEqual: (expected) => assertion.deep.equal(expected),
+                    toBeTruthy: () => assertion.to.be.ok,
+                    toBeFalsy: () => assertion.to.not.be.ok,
+                    toBeNull: () => assertion.to.be.null,
+                    toBeUndefined: () => assertion.to.be.undefined,
+                    toBeDefined: () => assertion.to.not.be.undefined,
+                    toBeNaN: () => assertion.to.be.NaN,
+                    toContain: (item) => assertion.include(item),
+                    toBeGreaterThan: (number) => assertion.gt(number),
+                    toBeGreaterThanOrEqual: (number) => assertion.gte(number),
+                    toBeLessThan: (number) => assertion.lt(number),
+                    toBeLessThanOrEqual: (number) => assertion.lte(number), // Corrected to lte
+                    toBeInstanceOf: (constructor) => assertion.instanceOf(constructor),
+                    toThrow: (message) => {
+                        if (message) {
+                            assertion.to.throw(message);
+                        } else {
+                            assertion.to.throw();
+                        }
+                    }
+                  };
+                };
+                
+                const baseMatchers = matchers(false);
+                return {
+                  ...baseMatchers,
+                  not: matchers(true)
+                };
+              };
             } else {
               // Fallback manual implementation if Chai fails to load
               expectImplementation = (received) => {
