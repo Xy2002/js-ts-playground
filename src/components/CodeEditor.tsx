@@ -55,17 +55,15 @@ export default function CodeEditor({
 	useEffect(() => {
 		console.log(
 			"Auto Completion Active Status:" + !!editorRef.current &&
-				!!monacoRef.current &&
-				!!llmSettings.apiKey &&
-				!!llmSettings.apiUrl &&
-				!!llmSettings.model,
+			!!monacoRef.current &&
+			!!llmSettings.apiKey &&
+			!!llmSettings.model,
 		);
 		if (
 			!isEditorReady ||
 			!editorRef.current ||
 			!monacoRef.current ||
 			!llmSettings.apiKey ||
-			!llmSettings.apiUrl ||
 			!llmSettings.model
 		) {
 			return;
@@ -308,7 +306,7 @@ export default function CodeEditor({
 			// Ctrl/Cmd + A: 全选
 			editor.setSelection(
 				editor.getModel()?.getFullModelRange() ||
-					new monaco.Selection(1, 1, 1, 1),
+				new monaco.Selection(1, 1, 1, 1),
 			);
 		});
 
@@ -400,10 +398,9 @@ export default function CodeEditor({
 				<Badge className="text-sm font-medium absolute right-2 bottom-2">
 					LLM AutoCompletion Active Status:
 					{!!editorRef.current &&
-					!!monacoRef.current &&
-					!!llmSettings.apiKey &&
-					!!llmSettings.apiUrl &&
-					!!llmSettings.model ? (
+						!!monacoRef.current &&
+						!!llmSettings.apiKey &&
+						!!llmSettings.model ? (
 						<span className="text-green-500 ml-1">Active</span>
 					) : (
 						<span className="text-red-500 ml-1">Inactive</span>
