@@ -5,7 +5,7 @@ import {
 	type CompletionRegistration,
 	registerCompletion,
 } from "monacopilot";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { usePlaygroundStore } from "@/store/usePlaygroundStore";
 
@@ -33,6 +33,7 @@ export default function CodeEditor({
 	const editorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
 	const monacoRef = useRef<typeof monaco | null>(null);
 	const completionRegistrationRef = useRef<CompletionRegistration | null>(null);
+	const [isEditorReady, setIsEditorReady] = useState(false);
 
 	// Cleaning up the completion provider when component unmounts
 	useEffect(() => {
@@ -54,6 +55,7 @@ export default function CodeEditor({
 				!!llmSettings.model,
 		);
 		if (
+			!isEditorReady ||
 			!editorRef.current ||
 			!monacoRef.current ||
 			!llmSettings.apiKey ||
@@ -114,10 +116,11 @@ export default function CodeEditor({
 				trigger: "onTyping",
 				technologies: ["nodejs", "typescript", "javascript", "algorithm"],
 				requestHandler: async ({ body }) => {
-					console.log("Monacopilot Request Triggered");
 					const completion = await copilot.complete({
 						body,
 					});
+
+					console.log("completion", completion.completion);
 					return {
 						completion: completion.completion,
 					};
@@ -131,7 +134,7 @@ export default function CodeEditor({
 			registration.deregister();
 			completionRegistrationRef.current = null;
 		};
-	}, [llmSettings, language]);
+	}, [llmSettings, language, isEditorReady]);
 
 	const handleEditorDidMount: EditorProps["onMount"] = (
 		editor: monaco.editor.IStandaloneCodeEditor,
@@ -139,6 +142,7 @@ export default function CodeEditor({
 	) => {
 		editorRef.current = editor;
 		monacoRef.current = monaco;
+		setIsEditorReady(true);
 		// 检测是否为移动设备
 		const isMobile = window.innerWidth < 768;
 
