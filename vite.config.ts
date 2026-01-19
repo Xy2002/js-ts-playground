@@ -13,6 +13,9 @@ export default defineConfig({
 		__COMMIT_MESSAGE__: JSON.stringify(
 			process.env.VERCEL_GIT_COMMIT_MESSAGE || "",
 		),
+		__API_URL__: JSON.stringify(process.env.API_URL || ""),
+		__API_KEY__: JSON.stringify(process.env.API_KEY || ""),
+		__MODEL__: JSON.stringify(process.env.MODEL || ""),
 	},
 	plugins: [
 		react({

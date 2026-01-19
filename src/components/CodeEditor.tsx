@@ -1,5 +1,10 @@
 import { Editor, type EditorProps } from "@monaco-editor/react";
 import type * as monaco from "monaco-editor";
+import {
+	CompletionCopilot,
+	type CompletionRegistration,
+	registerCompletion,
+} from "monacopilot";
 import { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -13,6 +18,39 @@ interface CodeEditorProps {
 	filePath: string;
 }
 
+if (__API_URL__ && __API_KEY__ && __MODEL__) {
+	const copilot = new CompletionCopilot(undefined, {
+		// You don't need to set the provider if you are using a custom model.
+		// provider: "openai",
+		model: async (prompt) => {
+			const response = await fetch(__API_URL__, {
+				method: "POST",
+				headers: {
+					Authorization: `Bearer ${__API_KEY__}`,
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify({
+					model: __MODEL__,
+					messages: [
+						{ role: "system", content: prompt.context },
+						{
+							role: "user",
+							content: `${prompt.instruction}\n\n${prompt.fileContent}`,
+						},
+					],
+					temperature: 0.2,
+					max_tokens: 256,
+				}),
+			});
+
+			const data = await response.json();
+
+			return {
+				text: data.choices[0].message.content,
+			};
+		},
+	});
+}
 export default function CodeEditor({
 	value,
 	onChange,
@@ -24,13 +62,44 @@ export default function CodeEditor({
 }: CodeEditorProps) {
 	const { t } = useTranslation();
 	const editorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
+	const completionRegistrationRef = useRef<CompletionRegistration | null>(null);
+
+	// Cleaning up the completion provider when component unmounts
+	useEffect(() => {
+		return () => {
+			if (completionRegistrationRef.current) {
+				completionRegistrationRef.current.deregister();
+				completionRegistrationRef.current = null;
+			}
+		};
+	}, []);
 
 	const handleEditorDidMount: EditorProps["onMount"] = (
 		editor: monaco.editor.IStandaloneCodeEditor,
 		monaco,
 	) => {
 		editorRef.current = editor;
+		if (__API_URL__ && __API_KEY__ && __MODEL__) {
+			// 注册 Monacopilot
+			const registration = registerCompletion(monaco, editor, {
+				language: language,
+				trigger: "onTyping", // 或 "onTyping",
+				technologies: ["nodejs", "typescript", "javascript", "algorithm"],
+				requestHandler: async ({ body }) => {
+					console.log("req");
 
+					const completion = await copilot.complete({
+						body,
+					});
+
+					return await {
+						completion: completion.completion,
+					};
+				},
+			});
+
+			completionRegistrationRef.current = registration;
+		}
 		// 检测是否为移动设备
 		const isMobile = window.innerWidth < 768;
 
