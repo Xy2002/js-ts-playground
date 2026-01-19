@@ -1,5 +1,5 @@
 import { Editor, type EditorProps } from "@monaco-editor/react";
-import * as monaco from "monaco-editor";
+import type * as monaco from "monaco-editor";
 import { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -113,7 +113,7 @@ export default function CodeEditor({
 				diagnosticCodesToIgnore: [
 					2451, // Cannot redeclare block-scoped variable
 					2300, // Duplicate identifier
-				]
+				],
 			});
 		}
 
@@ -135,10 +135,45 @@ export default function CodeEditor({
           this.val = (val===undefined ? 0 : val)
           this.next = (next===undefined ? null : next)
       }
-  }
+    }
   
-  declare function arrayToListNode(arr: number[]): ListNode | null;
-  declare function listNodeToArray(head: ListNode | null): number[];`;
+    declare function arrayToListNode(arr: number[]): ListNode | null;
+    declare function listNodeToArray(head: ListNode | null): number[];
+
+    // Minimal Vitest / Chai types for IntelliSense
+    interface Assertion<T = any> {
+      not: Assertion<T>;
+      toBe(expected: any): void;
+      toEqual(expected: any): void;
+      toBeTruthy(): void;
+      toBeFalsy(): void;
+      toBeNull(): void;
+      toBeUndefined(): void;
+      toBeDefined(): void;
+      toBeNaN(): void;
+      toContain(item: any): void;
+      toBeGreaterThan(number: number): void;
+      toBeGreaterThanOrEqual(number: number): void;
+      toBeLessThan(number: number): void;
+      toBeLessThanOrEqual(number: number): void;
+      toBeInstanceOf(constructor: any): void;
+      toThrow(message?: string | RegExp): void;
+      // Add more matchers as needed
+    }
+
+    interface ExpectStatic {
+      <T = any>(actual: T): Assertion<T>;
+      extend(matchers: Record<string, any>): void;
+      soft<T = any>(actual: T): Assertion<T>;
+      poll<T = any>(actual: T): Assertion<T>;
+    }
+
+    declare const expect: ExpectStatic;
+    declare const vi: any; // Basic mock support placeholder
+    declare function describe(name: string, fn: () => void): void;
+    declare function test(name: string, fn: () => void): void;
+    declare function it(name: string, fn: () => void): void;
+    `;
 		monaco.languages.typescript.typescriptDefaults.addExtraLib(
 			sourceCode,
 			`interface.d.ts`,
@@ -157,18 +192,24 @@ export default function CodeEditor({
 
 		editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyA, () => {
 			// Ctrl/Cmd + A: 全选
-			editor.setSelection(editor.getModel()?.getFullModelRange() || new monaco.Selection(1, 1, 1, 1));
+			editor.setSelection(
+				editor.getModel()?.getFullModelRange() ||
+					new monaco.Selection(1, 1, 1, 1),
+			);
 		});
 
 		// 运行代码快捷键 (Ctrl/Cmd + Enter)
 		editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, () => {
 			// 触发运行代码的事件，让Home组件处理语言检测
-			const runEvent = new CustomEvent('monaco-run-code', {
+			const runEvent = new CustomEvent("monaco-run-code", {
 				detail: {
 					code: editor.getValue(),
 					// 从文件路径推断语言类型，更可靠
-					language: filePath.endsWith('.ts') || filePath.endsWith('.tsx') ? 'typescript' : 'javascript'
-				}
+					language:
+						filePath.endsWith(".ts") || filePath.endsWith(".tsx")
+							? "typescript"
+							: "javascript",
+				},
 			});
 			window.dispatchEvent(runEvent);
 		});
@@ -234,7 +275,9 @@ export default function CodeEditor({
 				}}
 				loading={
 					<div className="flex items-center justify-center h-full">
-						<div className="text-muted-foreground">{t('codeEditor.loadingEditor')}</div>
+						<div className="text-muted-foreground">
+							{t("codeEditor.loadingEditor")}
+						</div>
 					</div>
 				}
 			/>

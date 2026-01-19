@@ -57,6 +57,14 @@ export class CodeExecutionService {
             // Import SWC module from CDN
             const { default: init, transformSync } = await import(swcUrl);
             console.log('✅ SWC模块加载成功，开始初始化WebAssembly...');
+
+            // Load Chai for assertions
+            try {
+              importScripts('https://cdnjs.cloudflare.com/ajax/libs/chai/4.3.7/chai.min.js');
+              console.log('✅ Chai断言库加载成功');
+            } catch (e) {
+              console.error('❌ Chai加载失败，将使用内置回退实现:', e);
+            }
             
             // Initialize SWC WebAssembly
             await init();
@@ -395,9 +403,16 @@ export class CodeExecutionService {
               return result;
             }
 
-            // Expect / Assertion Implementation
-            function expect(received) {
-              const matchers = (isNot = false) => ({
+            // Chai Integration and Vitest Runtime Mocks
+            const chai = self.chai;
+            let expectImplementation;
+
+            if (chai) {
+              expectImplementation = chai.expect;
+            } else {
+              // Fallback manual implementation if Chai fails to load
+              expectImplementation = (received) => {
+                 const matchers = (isNot = false) => ({
                 toBe: (expected) => {
                   const pass = Object.is(received, expected);
                   const result = isNot ? !pass : pass;
@@ -541,6 +556,18 @@ export class CodeExecutionService {
                      );
                    }
                    return true;
+                },
+                toBeInstanceOf: (constructor) => {
+                   const pass = received instanceof constructor;
+                   const result = isNot ? !pass : pass;
+                   if (!result) {
+                     throw new Error(
+                       isNot
+                         ? \`Expected value to NOT be instance of \${safeStringify(constructor)}\`
+                         : \`Expected value to be instance of \${safeStringify(constructor)}\`
+                     );
+                   }
+                   return true;
                 }
               });
               
@@ -549,7 +576,59 @@ export class CodeExecutionService {
                 ...baseMatchers,
                 not: matchers(true)
               };
+              };
             }
+            
+            const expect = expectImplementation;
+
+            // Basic mock implementation for vi (Vitest utils)
+            const vi = {
+              fn: (impl) => {
+                const mock = (...args) => {
+                  mock.calls.push(args);
+                  return impl ? impl(...args) : undefined;
+                };
+                mock.calls = [];
+                mock.mockReturnValue = (val) => {
+                   impl = () => val;
+                   return mock;
+                };
+                return mock;
+              },
+              spyOn: (obj, method) => {
+                const original = obj[method];
+                const mock = vi.fn(original);
+                obj[method] = mock;
+                return mock;
+              },
+              // Add more vi utils as needed
+            };
+
+
+            // Test block mocks (just execute directly for now in playground)
+            const describe = (name, fn) => {
+              console.log(\`\n📝 Suite: \${name}\`);
+              try {
+                fn();
+              } catch (e) {
+                console.error(\`❌ Suite failed: \${e.message}\`);
+              }
+            };
+            
+            const test = (name, fn) => {
+              // console.log(\`  🔹 Test: \${name}\`);
+              try {
+                fn();
+                // If we get here, no assertions failed
+                console.log(\`  ✅ \${name}\`);
+              } catch (e) {
+                console.error(\`  ❌ \${name}: \${e.message}\`);
+                // Re-throw to ensure the error shows up in the main error list too if needed
+                throw e; 
+              }
+            };
+            
+            const it = test; // Alias
 
             // 创建受限的全局环境
             const safeGlobals = {
@@ -584,7 +663,11 @@ export class CodeExecutionService {
               },
               clearTimeout,
               clearInterval,
-              expect
+              expect,
+              vi,
+              describe,
+              test,
+              it
             };
 
             // 禁用危险的全局对象
@@ -608,7 +691,8 @@ export class CodeExecutionService {
               self: undefined,
               importScripts: undefined,
               eval: undefined,
-              Function: undefined
+              Function: undefined,
+              chai: undefined // Hide chai global
             };
 
             // 合并安全的全局对象
