@@ -429,6 +429,22 @@ export const usePlaygroundStore = create<PlaygroundState>((set, get) => ({
 			let jsCode = defaultCode.javascript;
 			let tsCode = defaultCode.typescript;
 
+			const savedLLMSetting = localStorage.getItem(STORAGE_KEYS.LLM_SETTINGS);
+			if (savedLLMSetting) {
+				try {
+					const llmSettings = JSON.parse(savedLLMSetting);
+					set((state) => ({
+						llmSettings: { ...state.llmSettings, ...llmSettings },
+					}));
+				} catch (error) {
+					// 如果解析失败，使用默认设置
+					console.warn(
+						"Failed to parse saved LLM settings, using default:",
+						error,
+					);
+				}
+			}
+
 			if (savedJSCode) {
 				try {
 					const jsCodeData = JSON.parse(savedJSCode);
