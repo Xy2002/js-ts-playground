@@ -19,6 +19,12 @@ export interface UserSettings {
 	indentSize: 2 | 4;
 }
 
+export interface LlmSettings {
+	apiUrl: string;
+	apiKey: string;
+	model: string;
+}
+
 export interface CodeContent {
 	id: string;
 	content: string;
@@ -37,6 +43,7 @@ interface PlaygroundState extends MultiFileState {
 
 	// 用户设置
 	settings: UserSettings;
+	llmSettings: LlmSettings;
 
 	// 执行状态
 	isExecuting: boolean;
@@ -46,6 +53,7 @@ interface PlaygroundState extends MultiFileState {
 	setCode: (code: string) => void;
 	setLanguage: (language: "javascript" | "typescript") => void;
 	updateSettings: (settings: Partial<UserSettings>) => void;
+	updateLlmSettings: (settings: Partial<LlmSettings>) => void;
 	setExecuting: (isExecuting: boolean) => void;
 	setExecutionResult: (result: ExecutionResult | null) => void;
 	clearOutput: () => void;
@@ -85,6 +93,7 @@ interface PlaygroundState extends MultiFileState {
 
 const STORAGE_KEYS = {
 	SETTINGS: "playground_settings",
+	LLM_SETTINGS: "playground_llm_settings",
 	CODE_CONTENT_JS: "playground_code_javascript",
 	CODE_CONTENT_TS: "playground_code_typescript",
 	LANGUAGE: "playground_language",
@@ -98,6 +107,12 @@ const defaultSettings: UserSettings = {
 	language: "javascript",
 	autoSave: true,
 	indentSize: 2,
+};
+
+const defaultLlmSettings: LlmSettings = {
+	apiUrl: "https://api.anthropic.com/v1/messages",
+	apiKey: "",
+	model: "claude-3-5-sonnet-20240620",
 };
 
 const defaultCode = {
@@ -249,6 +264,7 @@ export const usePlaygroundStore = create<PlaygroundState>((set, get) => ({
 	},
 	language: "javascript",
 	settings: defaultSettings,
+	llmSettings: defaultLlmSettings,
 	isExecuting: false,
 	executionResult: null,
 
@@ -306,6 +322,13 @@ export const usePlaygroundStore = create<PlaygroundState>((set, get) => ({
 		get().saveToStorage();
 	},
 
+	updateLlmSettings: (newLlmSettings: Partial<LlmSettings>) => {
+		set((state) => ({
+			llmSettings: { ...state.llmSettings, ...newLlmSettings },
+		}));
+		get().saveToStorage();
+	},
+
 	setExecuting: (isExecuting: boolean) => {
 		set({ isExecuting });
 	},
@@ -354,6 +377,7 @@ export const usePlaygroundStore = create<PlaygroundState>((set, get) => ({
 
 			// 用户设置
 			settings: defaultSettings,
+			llmSettings: defaultLlmSettings,
 
 			// 执行状态
 			isExecuting: false,
@@ -445,6 +469,7 @@ export const usePlaygroundStore = create<PlaygroundState>((set, get) => ({
 			// 如果加载失败，使用默认值
 			set({
 				settings: defaultSettings,
+				llmSettings: defaultLlmSettings,
 				language: "javascript",
 				code: defaultCode.javascript,
 				codeHistory: {

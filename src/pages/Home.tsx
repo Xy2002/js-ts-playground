@@ -7,13 +7,13 @@ import {
 	Square,
 	Trash2,
 } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import CodeEditor from "@/components/CodeEditor";
 import FileExplorer from "@/components/FileExplorer";
 import LanguageSwitch from "@/components/LanguageSwitch";
 import OutputDisplay from "@/components/OutputDisplay";
+import { SettingsDialog } from "@/components/SettingsDialog";
 import TabManager from "@/components/TabManager";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -58,6 +58,7 @@ export default function Home() {
 	// 文件浏览器状态
 	const [isFileExplorerOpen, setIsFileExplorerOpen] = useState(true);
 	const [fileExplorerWidth, setFileExplorerWidth] = useState(280);
+	const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
 	// 组件挂载时初始化多文件系统和加载存储的数据
 	useEffect(() => {
@@ -72,25 +73,31 @@ export default function Home() {
 			if (!isExecuting) {
 				// 使用从Monaco编辑器传递的代码和语言信息
 				const { code, language } = event.detail || {};
-				console.log('Monaco事件接收:', {
+				console.log("Monaco事件接收:", {
 					hasCode: !!code,
 					codeLength: code?.length,
 					language: language,
-					eventDetail: event.detail
+					eventDetail: event.detail,
 				});
 				if (code && language) {
 					handleRunCodeWithParams(code, language);
 				} else {
-					console.log('使用默认处理器');
+					console.log("使用默认处理器");
 					handleRunCode();
 				}
 			}
 		};
 
-		window.addEventListener('monaco-run-code', handleRunCodeEvent as EventListener);
-		
+		window.addEventListener(
+			"monaco-run-code",
+			handleRunCodeEvent as EventListener,
+		);
+
 		return () => {
-			window.removeEventListener('monaco-run-code', handleRunCodeEvent as EventListener);
+			window.removeEventListener(
+				"monaco-run-code",
+				handleRunCodeEvent as EventListener,
+			);
 		};
 	}, []); // 空依赖数组，只在挂载时设置一次
 
@@ -102,11 +109,11 @@ export default function Home() {
 			const codeToRun = getCurrentCode();
 			const languageToUse = getCurrentLanguage();
 			const result = await executeCode(codeToRun, languageToUse);
-			console.log('Home组件: 收到执行结果');
-			console.log('Home组件: 成功状态:', result.success);
-			console.log('Home组件: 日志数量:', result.logs.length);
-			console.log('Home组件: 错误数量:', result.errors.length);
-			console.log('Home组件: 前3条日志:', result.logs.slice(0, 3));
+			console.log("Home组件: 收到执行结果");
+			console.log("Home组件: 成功状态:", result.success);
+			console.log("Home组件: 日志数量:", result.logs.length);
+			console.log("Home组件: 错误数量:", result.errors.length);
+			console.log("Home组件: 前3条日志:", result.logs.slice(0, 3));
 			setExecutionResult(result);
 		} catch (error) {
 			setExecutionResult({
@@ -123,22 +130,32 @@ export default function Home() {
 	};
 
 	// 使用指定的代码和语言运行代码
-	const handleRunCodeWithParams = async (code: string, language: "javascript" | "typescript") => {
+	const handleRunCodeWithParams = async (
+		code: string,
+		language: "javascript" | "typescript",
+	) => {
 		if (isExecuting) return;
 		setExecuting(true);
 		clearOutput();
 		try {
 			// Debug logging to understand what's being executed
-			console.log('执行代码 - 长度:', code.length, '语言:', language, '前100字符:', code.substring(0, 100));
+			console.log(
+				"执行代码 - 长度:",
+				code.length,
+				"语言:",
+				language,
+				"前100字符:",
+				code.substring(0, 100),
+			);
 			const result = await executeCode(code, language);
-			console.log('Home组件(Params): 收到执行结果');
-			console.log('Home组件(Params): 成功状态:', result.success);
-			console.log('Home组件(Params): 日志数量:', result.logs.length);
-			console.log('Home组件(Params): 错误数量:', result.errors.length);
-			console.log('Home组件(Params): 前3条日志:', result.logs.slice(0, 3));
+			console.log("Home组件(Params): 收到执行结果");
+			console.log("Home组件(Params): 成功状态:", result.success);
+			console.log("Home组件(Params): 日志数量:", result.logs.length);
+			console.log("Home组件(Params): 错误数量:", result.errors.length);
+			console.log("Home组件(Params): 前3条日志:", result.logs.slice(0, 3));
 			setExecutionResult(result);
 		} catch (error) {
-			console.error('代码执行出错:', error);
+			console.error("代码执行出错:", error);
 			setExecutionResult({
 				success: false,
 				logs: [],
@@ -153,7 +170,7 @@ export default function Home() {
 	};
 
 	const handleStopExecution = () => {
-		console.log('用户点击停止按钮');
+		console.log("用户点击停止按钮");
 		stopExecution();
 		setExecuting(false);
 	};
@@ -307,10 +324,10 @@ export default function Home() {
 					<div className="flex items-center space-x-2">
 						<Code2 className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
 						<h1 className="text-lg sm:text-xl font-semibold text-foreground hidden sm:block">
-							{t('header.appName')}
+							{t("header.appName")}
 						</h1>
 						<h1 className="text-lg font-semibold text-foreground sm:hidden">
-							{t('header.appNameShort')}
+							{t("header.appNameShort")}
 						</h1>
 					</div>
 					{/* Language Indicator */}
@@ -318,11 +335,13 @@ export default function Home() {
 						<Badge variant="secondary" className="text-xs sm:text-sm">
 							<span className="hidden sm:inline">
 								{getCurrentLanguage() === "typescript"
-									? t('language.typescript')
-									: t('language.javascript')}
+									? t("language.typescript")
+									: t("language.javascript")}
 							</span>
 							<span className="sm:hidden">
-								{getCurrentLanguage() === "typescript" ? t('language.ts') : t('language.js')}
+								{getCurrentLanguage() === "typescript"
+									? t("language.ts")
+									: t("language.js")}
 							</span>
 						</Badge>
 					</div>
@@ -337,7 +356,7 @@ export default function Home() {
 						className="flex items-center space-x-1"
 					>
 						<RotateCcw className="w-4 h-4" />
-						<span className="hidden sm:inline">{t('common.clear')}</span>
+						<span className="hidden sm:inline">{t("common.clear")}</span>
 					</Button>
 
 					{/* Clear All State Button with Long Press */}
@@ -351,7 +370,7 @@ export default function Home() {
 							onTouchStart={handleLongPressClearStart}
 							onTouchEnd={handleLongPressClearEnd}
 							className="flex items-center space-x-1 relative overflow-hidden"
-							title={t('header.clearAllTooltip')}
+							title={t("header.clearAllTooltip")}
 						>
 							{/* Progress Bar Background */}
 							{isLongPressingClear && (
@@ -365,7 +384,7 @@ export default function Home() {
 								<Trash2
 									className={`w-4 h-4 ${isLongPressingClear ? "animate-pulse" : ""}`}
 								/>
-								<span className="hidden sm:inline">{t('header.clearAll')}</span>
+								<span className="hidden sm:inline">{t("header.clearAll")}</span>
 							</div>
 						</Button>
 					</div>
@@ -394,7 +413,7 @@ export default function Home() {
 								<RefreshCw
 									className={`w-4 h-4 ${isLongPressing ? "animate-spin" : ""}`}
 								/>
-								<span className="hidden sm:inline">{t('common.reset')}</span>
+								<span className="hidden sm:inline">{t("common.reset")}</span>
 							</div>
 						</Button>
 					</div>
@@ -406,7 +425,7 @@ export default function Home() {
 							className="flex items-center space-x-1"
 						>
 							<Square className="w-4 h-4" />
-							<span className="hidden sm:inline">{t('common.stop')}</span>
+							<span className="hidden sm:inline">{t("common.stop")}</span>
 						</Button>
 					) : (
 						<Button
@@ -415,14 +434,17 @@ export default function Home() {
 							className="flex items-center space-x-1"
 						>
 							<Play className="w-4 h-4" />
-							<span className="hidden sm:inline">{t('common.run')}</span>
+							<span className="hidden sm:inline">{t("common.run")}</span>
 						</Button>
 					)}
-					<Button variant="ghost" size="sm" asChild>
-						<Link to="/settings" className="flex items-center space-x-1">
-							<Settings className="w-4 h-4" />
-							<span className="hidden sm:inline">{t("common.settings")}</span>
-						</Link>
+					<Button
+						variant="ghost"
+						size="sm"
+						onClick={() => setIsSettingsOpen(true)}
+						className="flex items-center space-x-1"
+					>
+						<Settings className="w-4 h-4" />
+						<span className="hidden sm:inline">{t("common.settings")}</span>
 					</Button>
 					<LanguageSwitch />
 				</div>
@@ -449,7 +471,7 @@ export default function Home() {
 						<div className="flex-1 flex flex-col border-b lg:border-b-0 lg:border-r border-border">
 							<div className="bg-muted px-4 py-2 border-b border-border">
 								<h2 className="text-sm font-medium text-foreground">
-									{t('codeEditor.title')}
+									{t("codeEditor.title")}
 								</h2>
 							</div>
 							<div className="flex-1 min-h-0">
@@ -470,9 +492,11 @@ export default function Home() {
 									<div className="h-full flex items-center justify-center bg-muted/50">
 										<div className="text-center text-muted-foreground">
 											<Code2 className="w-12 h-12 mx-auto mb-4 opacity-50" />
-											<p className="text-lg font-medium mb-2">{t('codeEditor.noOpenFiles')}</p>
+											<p className="text-lg font-medium mb-2">
+												{t("codeEditor.noOpenFiles")}
+											</p>
 											<p className="text-sm">
-												{t('codeEditor.noOpenFilesDesc')}
+												{t("codeEditor.noOpenFilesDesc")}
 											</p>
 										</div>
 									</div>
@@ -483,7 +507,9 @@ export default function Home() {
 						{/* Output Panel */}
 						<div className="w-full lg:w-96 flex flex-col bg-muted min-h-0">
 							<div className="bg-muted px-4 py-2 border-b border-border">
-								<h2 className="text-sm font-medium text-foreground">{t('output.title')}</h2>
+								<h2 className="text-sm font-medium text-foreground">
+									{t("output.title")}
+								</h2>
 							</div>
 							<div className="flex-1 min-h-0">
 								<OutputDisplay
@@ -497,6 +523,11 @@ export default function Home() {
 					</div>
 				</div>
 			</div>
+
+			<SettingsDialog
+				isOpen={isSettingsOpen}
+				onClose={() => setIsSettingsOpen(false)}
+			/>
 		</div>
 	);
 }

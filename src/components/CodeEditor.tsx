@@ -7,6 +7,7 @@ import {
 } from "monacopilot";
 import { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
+import { usePlaygroundStore } from "@/store/usePlaygroundStore";
 
 interface CodeEditorProps {
 	value: string;
@@ -18,39 +19,6 @@ interface CodeEditorProps {
 	filePath: string;
 }
 
-if (__API_URL__ && __API_KEY__ && __MODEL__) {
-	const copilot = new CompletionCopilot(undefined, {
-		// You don't need to set the provider if you are using a custom model.
-		// provider: "openai",
-		model: async (prompt) => {
-			const response = await fetch(__API_URL__, {
-				method: "POST",
-				headers: {
-					Authorization: `Bearer ${__API_KEY__}`,
-					"Content-Type": "application/json",
-				},
-				body: JSON.stringify({
-					model: __MODEL__,
-					messages: [
-						{ role: "system", content: prompt.context },
-						{
-							role: "user",
-							content: `${prompt.instruction}\n\n${prompt.fileContent}`,
-						},
-					],
-					temperature: 0.2,
-					max_tokens: 256,
-				}),
-			});
-
-			const data = await response.json();
-
-			return {
-				text: data.choices[0].message.content,
-			};
-		},
-	});
-}
 export default function CodeEditor({
 	value,
 	onChange,
@@ -61,7 +29,9 @@ export default function CodeEditor({
 	filePath,
 }: CodeEditorProps) {
 	const { t } = useTranslation();
+	const { llmSettings } = usePlaygroundStore();
 	const editorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
+	const monacoRef = useRef<typeof monaco | null>(null);
 	const completionRegistrationRef = useRef<CompletionRegistration | null>(null);
 
 	// Cleaning up the completion provider when component unmounts
@@ -74,32 +44,90 @@ export default function CodeEditor({
 		};
 	}, []);
 
+	// Dynamic registration logic based on settings
+	useEffect(() => {
+		if (
+			!editorRef.current ||
+			!monacoRef.current ||
+			!llmSettings.apiKey ||
+			!llmSettings.apiUrl ||
+			!llmSettings.model
+		) {
+			return;
+		}
+
+		// Create a copilot instance with current settings
+		const copilot = new CompletionCopilot(undefined, {
+			model: async (prompt) => {
+				try {
+					const response = await fetch(llmSettings.apiUrl, {
+						method: "POST",
+						headers: {
+							"x-api-key": llmSettings.apiKey,
+							"content-type": "application/json",
+						},
+						body: JSON.stringify({
+							model: llmSettings.model,
+							max_tokens: 256,
+							messages: [
+								{
+									role: "user",
+									content: `${prompt.instruction}\n\n${prompt.fileContent}`,
+								},
+							],
+						}),
+					});
+
+					if (!response.ok) {
+						console.error("LLM API Error:", await response.text());
+						return { text: "" };
+					}
+
+					const data = await response.json();
+					return {
+						text: data.content?.[0]?.text || "",
+					};
+				} catch (error) {
+					console.error("LLM Request Failed:", error);
+					return { text: "" };
+				}
+			},
+		});
+
+		// Register with editor
+		const registration = registerCompletion(
+			monacoRef.current,
+			editorRef.current,
+			{
+				language: language,
+				trigger: "onTyping",
+				technologies: ["nodejs", "typescript", "javascript", "algorithm"],
+				requestHandler: async ({ body }) => {
+					console.log("Monacopilot Request Triggered");
+					const completion = await copilot.complete({
+						body,
+					});
+					return {
+						completion: completion.completion,
+					};
+				},
+			},
+		);
+
+		completionRegistrationRef.current = registration;
+
+		return () => {
+			registration.deregister();
+			completionRegistrationRef.current = null;
+		};
+	}, [llmSettings, language]);
+
 	const handleEditorDidMount: EditorProps["onMount"] = (
 		editor: monaco.editor.IStandaloneCodeEditor,
 		monaco,
 	) => {
 		editorRef.current = editor;
-		if (__API_URL__ && __API_KEY__ && __MODEL__) {
-			// 注册 Monacopilot
-			const registration = registerCompletion(monaco, editor, {
-				language: language,
-				trigger: "onTyping", // 或 "onTyping",
-				technologies: ["nodejs", "typescript", "javascript", "algorithm"],
-				requestHandler: async ({ body }) => {
-					console.log("req");
-
-					const completion = await copilot.complete({
-						body,
-					});
-
-					return await {
-						completion: completion.completion,
-					};
-				},
-			});
-
-			completionRegistrationRef.current = registration;
-		}
+		monacoRef.current = monaco;
 		// 检测是否为移动设备
 		const isMobile = window.innerWidth < 768;
 
