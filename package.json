@@ -11,6 +11,9 @@
 		"check": "tsc -b --noEmit"
 	},
 	"dependencies": {
+		"@ai-sdk/anthropic": "^3.0.15",
+		"@ai-sdk/mistral": "^3.0.9",
+		"@ai-sdk/openai": "^3.0.12",
 		"@monaco-editor/react": "^4.7.0",
 		"@radix-ui/react-context-menu": "^2.2.16",
 		"@radix-ui/react-dialog": "^1.1.15",
@@ -26,6 +29,7 @@
 		"@radix-ui/react-tooltip": "^1.2.8",
 		"@swc/wasm-web": "^1.13.3",
 		"@typescript/ata": "^0.9.8",
+		"ai": "^6.0.39",
 		"class-variance-authority": "^0.7.1",
 		"clsx": "^2.1.1",
 		"fuse.js": "^7.1.0",
@@ -40,6 +44,7 @@
 		"react-router-dom": "^7.3.0",
 		"tailwind-merge": "^3.3.1",
 		"tailwindcss-animate": "^1.0.7",
+		"zod": "^4.3.5",
 		"zustand": "^5.0.3"
 	},
 	"devDependencies": {

@@ -19,7 +19,10 @@ export interface UserSettings {
 	indentSize: 2 | 4;
 }
 
+export type LlmProvider = "openai" | "anthropic" | "mistral";
+
 export interface LlmSettings {
+	provider: LlmProvider;
 	apiUrl: string;
 	apiKey: string;
 	model: string;
@@ -110,6 +113,7 @@ const defaultSettings: UserSettings = {
 };
 
 const defaultLlmSettings: LlmSettings = {
+	provider: "anthropic",
 	apiUrl: "https://api.anthropic.com/v1/messages",
 	apiKey: "",
 	model: "claude-3-5-sonnet-20240620",

@@ -1,7 +1,10 @@
 import type React from "react";
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { usePlaygroundStore } from "@/store/usePlaygroundStore";
+import {
+	type LlmProvider,
+	usePlaygroundStore,
+} from "@/store/usePlaygroundStore";
 import { Button } from "./ui/button";
 import {
 	Dialog,
@@ -12,6 +15,13 @@ import {
 	DialogTitle,
 } from "./ui/dialog";
 import { Input } from "./ui/input";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "./ui/select";
 
 export interface SettingsDialogProps {
 	isOpen: boolean;
@@ -24,7 +34,9 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
 }) => {
 	const { t } = useTranslation();
 	const { llmSettings, updateLlmSettings } = usePlaygroundStore();
+	const id = useId();
 
+	const [provider, setProvider] = useState<LlmProvider>(llmSettings.provider);
 	const [apiUrl, setApiUrl] = useState(llmSettings.apiUrl);
 	const [apiKey, setApiKey] = useState(llmSettings.apiKey);
 	const [model, setModel] = useState(llmSettings.model);
@@ -32,6 +44,7 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
 	// Reset local state when dialog opens or store changes
 	useEffect(() => {
 		if (isOpen) {
+			setProvider(llmSettings.provider);
 			setApiUrl(llmSettings.apiUrl);
 			setApiKey(llmSettings.apiKey);
 			setModel(llmSettings.model);
@@ -40,6 +53,7 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
 
 	const handleSave = () => {
 		updateLlmSettings({
+			provider,
 			apiUrl,
 			apiKey,
 			model,
@@ -58,11 +72,37 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
 				</DialogHeader>
 				<div className="grid gap-4 py-4">
 					<div className="grid grid-cols-4 items-center gap-4">
-						<label htmlFor="apiUrl" className="text-right text-sm font-medium">
+						<label
+							htmlFor={`${id}-provider`}
+							className="text-right text-sm font-medium"
+						>
+							Provider
+						</label>
+						<div className="col-span-3">
+							<Select
+								value={provider}
+								onValueChange={(value) => setProvider(value as LlmProvider)}
+							>
+								<SelectTrigger id={`${id}-provider`}>
+									<SelectValue placeholder="Select a provider" />
+								</SelectTrigger>
+								<SelectContent>
+									<SelectItem value="openai">OpenAI</SelectItem>
+									<SelectItem value="anthropic">Anthropic</SelectItem>
+									<SelectItem value="mistral">Mistral</SelectItem>
+								</SelectContent>
+							</Select>
+						</div>
+					</div>
+					<div className="grid grid-cols-4 items-center gap-4">
+						<label
+							htmlFor={`${id}-apiUrl`}
+							className="text-right text-sm font-medium"
+						>
 							API URL
 						</label>
 						<Input
-							id="apiUrl"
+							id={`${id}-apiUrl`}
 							value={apiUrl}
 							onChange={(e) => setApiUrl(e.target.value)}
 							className="col-span-3"
@@ -70,11 +110,14 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
 						/>
 					</div>
 					<div className="grid grid-cols-4 items-center gap-4">
-						<label htmlFor="apiKey" className="text-right text-sm font-medium">
+						<label
+							htmlFor={`${id}-apiKey`}
+							className="text-right text-sm font-medium"
+						>
 							API Key
 						</label>
 						<Input
-							id="apiKey"
+							id={`${id}-apiKey`}
 							value={apiKey}
 							onChange={(e) => setApiKey(e.target.value)}
 							className="col-span-3"
@@ -83,11 +126,14 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
 						/>
 					</div>
 					<div className="grid grid-cols-4 items-center gap-4">
-						<label htmlFor="model" className="text-right text-sm font-medium">
+						<label
+							htmlFor={`${id}-model`}
+							className="text-right text-sm font-medium"
+						>
 							Model
 						</label>
 						<Input
-							id="model"
+							id={`${id}-model`}
 							value={model}
 							onChange={(e) => setModel(e.target.value)}
 							className="col-span-3"

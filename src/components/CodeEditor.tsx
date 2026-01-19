@@ -1,4 +1,8 @@
+import { createAnthropic } from "@ai-sdk/anthropic";
+import { createMistral } from "@ai-sdk/mistral";
+import { createOpenAI } from "@ai-sdk/openai";
 import { Editor, type EditorProps } from "@monaco-editor/react";
+import { generateText, type LanguageModel } from "ai";
 import type * as monaco from "monaco-editor";
 import {
 	CompletionCopilot,
@@ -71,37 +75,33 @@ export default function CodeEditor({
 		const copilot = new CompletionCopilot(undefined, {
 			model: async (prompt) => {
 				try {
-					const response = await fetch(llmSettings.apiUrl, {
-						method: "POST",
-						headers: {
-							"x-api-key": llmSettings.apiKey,
-							"content-type": "application/json",
-						},
-						body: JSON.stringify({
-							model: llmSettings.model,
-							max_tokens: 256,
-							messages: [
-								{
-									role: "user",
-									content: `${prompt.instruction}\n\n${prompt.fileContent}`,
-								},
-							],
-							thinking: {
-								type: "disabled",
-							},
-						}),
-					});
-
-					if (!response.ok) {
-						console.error("LLM API Error:", await response.text());
-						return { text: "" };
+					let model: LanguageModel;
+					const commonOptions = {
+						apiKey: llmSettings.apiKey,
+						// Only use custom API URL if it's provided and not empty
+						baseURL: llmSettings.apiUrl || undefined,
+					};
+					console.log(llmSettings.provider);
+					switch (llmSettings.provider) {
+						case "openai":
+							model = createOpenAI(commonOptions)(llmSettings.model);
+							break;
+						case "mistral":
+							model = createMistral(commonOptions)(llmSettings.model);
+							break;
+						case "anthropic":
+						default:
+							model = createAnthropic(commonOptions)(llmSettings.model);
+							break;
 					}
 
-					const data = await response.json();
+					const { text } = await generateText({
+						model,
+						prompt: `${prompt.instruction}\n\n${prompt.fileContent}`,
+						maxOutputTokens: 256,
+					});
 
-					return {
-						text: data.choices?.[0]?.message.content || "",
-					};
+					return { text };
 				} catch (error) {
 					console.error("LLM Request Failed:", error);
 					return { text: "" };
