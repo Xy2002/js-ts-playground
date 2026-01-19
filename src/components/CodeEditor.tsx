@@ -46,6 +46,13 @@ export default function CodeEditor({
 
 	// Dynamic registration logic based on settings
 	useEffect(() => {
+		console.log(
+			"Auto Completion Active Status:" + !!editorRef.current &&
+				!!monacoRef.current &&
+				!!llmSettings.apiKey &&
+				!!llmSettings.apiUrl &&
+				!!llmSettings.model,
+		);
 		if (
 			!editorRef.current ||
 			!monacoRef.current ||
