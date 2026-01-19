@@ -408,33 +408,77 @@ export class CodeExecutionService {
             let expectImplementation;
 
             if (chai) {
-              // Wrap Chai with Jest/Vitest compatible API
+              // Wrap Chai with Jest/Vitest compatible API using assert interface for reliability
               expectImplementation = (received) => {
-                const chaiAssertion = chai.expect(received);
+                const assert = chai.assert;
                 
                 const matchers = (isNot = false) => {
-                  const assertion = isNot ? chaiAssertion.not : chaiAssertion;
-                  
                   return {
-                    toBe: (expected) => assertion.equal(expected),
-                    toEqual: (expected) => assertion.deep.equal(expected),
-                    toBeTruthy: () => assertion.to.be.ok,
-                    toBeFalsy: () => assertion.to.not.be.ok,
-                    toBeNull: () => assertion.to.be.null,
-                    toBeUndefined: () => assertion.to.be.undefined,
-                    toBeDefined: () => assertion.to.not.be.undefined,
-                    toBeNaN: () => assertion.to.be.NaN,
-                    toContain: (item) => assertion.include(item),
-                    toBeGreaterThan: (number) => assertion.gt(number),
-                    toBeGreaterThanOrEqual: (number) => assertion.gte(number),
-                    toBeLessThan: (number) => assertion.lt(number),
-                    toBeLessThanOrEqual: (number) => assertion.lte(number), // Corrected to lte
-                    toBeInstanceOf: (constructor) => assertion.instanceOf(constructor),
+                    toBe: (expected) => { 
+                      if (isNot) {
+                          assert.notStrictEqual(received, expected);
+                      } else {
+                          assert.strictEqual(received, expected);
+                      }
+                    },
+                    toEqual: (expected) => { 
+                        if (isNot) assert.notDeepEqual(received, expected);
+                        else assert.deepEqual(received, expected);
+                    },
+                    toBeTruthy: () => { 
+                        // isNotOk checks for falsy, isOk checks for truthy
+                        if (isNot) assert.isNotOk(received);
+                        else assert.isOk(received);
+                    },
+                    toBeFalsy: () => { 
+                        if (isNot) assert.isOk(received);
+                        else assert.isNotOk(received);
+                    },
+                    toBeNull: () => { 
+                        if (isNot) assert.isNotNull(received);
+                        else assert.isNull(received);
+                    },
+                    toBeUndefined: () => { 
+                        if (isNot) assert.isDefined(received);
+                        else assert.isUndefined(received);
+                    },
+                    toBeDefined: () => { 
+                        if (isNot) assert.isUndefined(received);
+                        else assert.isDefined(received);
+                    },
+                    toBeNaN: () => { 
+                        if (isNot) assert.notIsNaN(received);
+                        else assert.isNaN(received);
+                    },
+                    toContain: (item) => { 
+                        if (isNot) assert.notInclude(received, item);
+                        else assert.include(received, item);
+                    },
+                    toBeGreaterThan: (number) => { 
+                        if (isNot) assert.isAtMost(received, number);
+                        else assert.isAbove(received, number);
+                    },
+                    toBeGreaterThanOrEqual: (number) => { 
+                        if (isNot) assert.isBelow(received, number);
+                        else assert.isAtLeast(received, number);
+                    },
+                    toBeLessThan: (number) => { 
+                        if (isNot) assert.isAtLeast(received, number);
+                        else assert.isBelow(received, number);
+                    },
+                    toBeLessThanOrEqual: (number) => { 
+                        if (isNot) assert.isAbove(received, number);
+                        else assert.isAtMost(received, number);
+                    },
+                    toBeInstanceOf: (constructor) => { 
+                        if (isNot) assert.notInstanceOf(received, constructor);
+                        else assert.instanceOf(received, constructor);
+                    },
                     toThrow: (message) => {
-                        if (message) {
-                            assertion.to.throw(message);
+                        if (isNot) {
+                            assert.doesNotThrow(received, message);
                         } else {
-                            assertion.to.throw();
+                             assert.throws(received, message);
                         }
                     }
                   };
@@ -660,8 +704,7 @@ export class CodeExecutionService {
                 console.log(\`  ✅ \${name}\`);
               } catch (e) {
                 console.error(\`  ❌ \${name}: \${e.message}\`);
-                // Re-throw to ensure the error shows up in the main error list too if needed
-                throw e; 
+                // Don't re-throw, so other tests can continue and we don't get double error logs
               }
             };
             
@@ -766,7 +809,7 @@ export class CodeExecutionService {
             };
 
             // 简化执行代码，依赖超时机制来处理死循环
-            const instrumentedCode = \`try { \${executableCode} } catch (error) { console.error(error.message); throw error; }\`;
+            const instrumentedCode = "try { " + executableCode + " } catch (error) { throw error; }";
 
             // 创建函数来执行代码
             const executeCode = new Function(
@@ -774,102 +817,110 @@ export class CodeExecutionService {
               instrumentedCode
             );
 
-            const startTime = performance.now();
-            console.log('开始执行代码，代码长度:', executableCode.length);
-            
-            // 添加执行超时保护，但保留已收集的输出
-            let executionCompleted = false;
-            const executionTimeout = setTimeout(() => {
-              if (!executionCompleted) {
-                console.error('Worker: 代码执行超时，强制终止');
-                console.error('Worker: 已收集日志数量:', logs.length);
-                console.error('Worker: 已收集错误数量:', errors.length);
-                console.error('Worker: 前5条日志:', logs.slice(0, 5));
-                
-                const timeoutResult = {
-                  success: false,
-                  logs: [...logs], // 保留超时前收集到的所有console输出
-                  errors: [...errors, '⏱️ 代码执行超时 (3秒限制) - 已显示超时前的输出'],
-                  executionTime: 3000,
-                  executionId
-                };
-                
-                console.error('Worker: 发送超时结果:', {
-                  logsCount: timeoutResult.logs.length,
-                  errorsCount: timeoutResult.errors.length,
-                  executionId: timeoutResult.executionId
-                });
-                
-                self.postMessage(timeoutResult);
-                executionCompleted = true; // 防止重复发送
-              }
-            }, 3000); // 3秒超时，比主线程的4秒更短
-            
-            try {
-              // 执行代码
-              executeCode(...Object.values(instrumentedGlobals));
-              executionCompleted = true;
-              clearTimeout(executionTimeout);
-              
-              const endTime = performance.now();
-              const executionTime = endTime - startTime;
-              console.log('代码执行完成，耗时:', executionTime.toFixed(2), 'ms');
+			const startTime = performance.now();
+			console.log("开始执行代码，代码长度:", executableCode.length);
 
-              // 发送结果回主线程
-              self.postMessage({
-                success: true,
-                logs,
-                errors,
-                executionTime: Math.round(executionTime * 100) / 100,
-                executionId
-              });
-            } catch (execError) {
-              executionCompleted = true;
-              clearTimeout(executionTimeout);
-              
-              const endTime = performance.now();
-              const executionTime = endTime - startTime;
-              console.error('代码执行出错:', execError.message, '耗时:', executionTime.toFixed(2), 'ms');
-              
-              self.postMessage({
-                success: false,
-                logs,
-                errors: [...errors, execError.message],
-                executionTime: Math.round(executionTime * 100) / 100,
-                executionId
-              });
-            }
-            
-          } catch (error) {
-            // 发送错误信息回主线程
-            self.postMessage({
-              success: false,
-              logs: [],
-              errors: [error instanceof Error ? error.message : String(error)],
-              executionTime: 0,
-              executionId
-            });
-          }
-        };
+			// 添加执行超时保护，但保留已收集的输出
+			let executionCompleted = false;
+			const executionTimeout = setTimeout(() => {
+				if (!executionCompleted) {
+					console.error("Worker: 代码执行超时，强制终止");
+					console.error("Worker: 已收集日志数量:", logs.length);
+					console.error("Worker: 已收集错误数量:", errors.length);
+					console.error("Worker: 前5条日志:", logs.slice(0, 5));
 
-        // 处理未捕获的错误
-        self.onerror = function(message, source, lineno, colno, error) {
-          self.postMessage({
-            success: false,
-            logs: [],
-            errors: ['Runtime Error: ' + message + ' at line ' + lineno],
-            executionTime: 0
-          });
-        };
-        
-        // 立即开始SWC初始化（预加载）
-        console.log('Web Worker已创建，开始预加载SWC模块...');
-        initSWC().then(() => {
-          console.log('SWC预加载完成，准备就绪');
-        }).catch((error) => {
-          console.warn('SWC预加载失败，将在需要时重试:', error.message);
-        });
-        `,
+					const timeoutResult = {
+						success: false,
+						logs: [...logs], // 保留超时前收集到的所有console输出
+						errors: [
+							...errors,
+							"⏱️ 代码执行超时 (3秒限制) - 已显示超时前的输出",
+						],
+						executionTime: 3000,
+						executionId,
+					};
+
+					console.error("Worker: 发送超时结果:", {
+						logsCount: timeoutResult.logs.length,
+						errorsCount: timeoutResult.errors.length,
+						executionId: timeoutResult.executionId,
+					});
+
+					self.postMessage(timeoutResult);
+					executionCompleted = true; // 防止重复发送
+				}
+			}, 3000); // 3秒超时，比主线程的4秒更短
+
+			try {
+				// 执行代码
+				executeCode(...Object.values(instrumentedGlobals));
+				executionCompleted = true;
+				clearTimeout(executionTimeout);
+
+				const endTime = performance.now();
+				const executionTime = endTime - startTime;
+				console.log("代码执行完成，耗时:", executionTime.toFixed(2), "ms");
+
+				// 发送结果回主线程
+				self.postMessage({
+					success: true,
+					logs,
+					errors,
+					executionTime: Math.round(executionTime * 100) / 100,
+					executionId,
+				});
+			} catch (execError) {
+				executionCompleted = true;
+				clearTimeout(executionTimeout);
+
+				const endTime = performance.now();
+				const executionTime = endTime - startTime;
+				console.error(
+					"代码执行出错:",
+					execError.message,
+					"耗时:",
+					executionTime.toFixed(2),
+					"ms",
+				);
+
+				self.postMessage({
+					success: false,
+					logs,
+					errors: [...errors, execError.message],
+					executionTime: Math.round(executionTime * 100) / 100,
+					executionId,
+				});
+			}
+		} catch (error) {
+			// 发送错误信息回主线程
+			self.postMessage({
+				success: false,
+				logs: [],
+				errors: [error instanceof Error ? error.message : String(error)],
+				executionTime: 0,
+				executionId,
+			});
+		}
+	}
+
+	// 处理未捕获的错误
+	self.onerror = (message, source, lineno, colno, error) => {
+		self.postMessage({
+			success: false,
+			logs: [],
+			errors: ["Runtime Error: " + message + " at line " + lineno],
+			executionTime: 0,
+		});
+	};
+
+	// 立即开始SWC初始化（预加载）
+	console.log('Web Worker已创建，开始预加载SWC模块...');
+	initSWC().then(() => {
+		console.log('SWC预加载完成，准备就绪');
+	}).catch((error) => {
+		console.warn("SWC预加载失败，将在需要时重试:", error.message);
+	});
+    `,
 				],
 				{ type: "application/javascript" },
 			);
