@@ -395,6 +395,162 @@ export class CodeExecutionService {
               return result;
             }
 
+            // Expect / Assertion Implementation
+            function expect(received) {
+              const matchers = (isNot = false) => ({
+                toBe: (expected) => {
+                  const pass = Object.is(received, expected);
+                  const result = isNot ? !pass : pass;
+                  if (!result) {
+                    throw new Error(
+                      isNot
+                        ? \`Expected value to NOT be \${safeStringify(expected)}, but it was\`
+                        : \`Expected \${safeStringify(expected)}, but received \${safeStringify(received)}\`
+                    );
+                  }
+                  return true;
+                },
+                toEqual: (expected) => {
+                  const isDeepEqual = (a, b) => {
+                    if (a === b) return true;
+                    if (typeof a !== 'object' || a === null || typeof b !== 'object' || b === null) return false;
+                    
+                    const keysA = Object.keys(a);
+                    const keysB = Object.keys(b);
+                    
+                    if (keysA.length !== keysB.length) return false;
+                    
+                    for (const key of keysA) {
+                      if (!keysB.includes(key) || !isDeepEqual(a[key], b[key])) return false;
+                    }
+                    
+                    return true;
+                  };
+                  
+                  const pass = isDeepEqual(received, expected);
+                  const result = isNot ? !pass : pass;
+                  if (!result) {
+                    throw new Error(
+                      isNot
+                        ? \`Expected value to NOT equal \${safeStringify(expected)}\`
+                        : \`Expected deep equality to \${safeStringify(expected)}, but received \${safeStringify(received)}\`
+                    );
+                  }
+                  return true;
+                },
+                toBeTruthy: () => {
+                  const pass = !!received;
+                  const result = isNot ? !pass : pass;
+                  if (!result) {
+                    throw new Error(
+                      isNot
+                        ? \`Expected value to NOT be truthy, but it was \${safeStringify(received)}\`
+                        : \`Expected value to be truthy, but received \${safeStringify(received)}\`
+                    );
+                  }
+                  return true;
+                },
+                toBeFalsy: () => {
+                  const pass = !received;
+                  const result = isNot ? !pass : pass;
+                  if (!result) {
+                    throw new Error(
+                      isNot
+                        ? \`Expected value to NOT be falsy, but it was \${safeStringify(received)}\`
+                        : \`Expected value to be falsy, but received \${safeStringify(received)}\`
+                    );
+                  }
+                  return true;
+                },
+                toBeNull: () => {
+                  const pass = received === null;
+                  const result = isNot ? !pass : pass;
+                  if (!result) {
+                    throw new Error(
+                      isNot
+                        ? \`Expected value to NOT be null\`
+                        : \`Expected value to be null, but received \${safeStringify(received)}\`
+                    );
+                  }
+                  return true;
+                },
+                toBeUndefined: () => {
+                  const pass = received === undefined;
+                  const result = isNot ? !pass : pass;
+                  if (!result) {
+                    throw new Error(
+                      isNot
+                        ? \`Expected value to NOT be undefined\`
+                        : \`Expected value to be undefined, but received \${safeStringify(received)}\`
+                    );
+                  }
+                  return true;
+                },
+                toBeDefined: () => {
+                  const pass = received !== undefined;
+                  const result = isNot ? !pass : pass;
+                  if (!result) {
+                    throw new Error(
+                      isNot
+                        ? \`Expected value to NOT be defined\`
+                        : \`Expected value to be defined, but received undefined\`
+                    );
+                  }
+                  return true;
+                },
+                toContain: (item) => {
+                  let pass = false;
+                  if (Array.isArray(received)) {
+                    pass = received.includes(item);
+                  } else if (typeof received === 'string') {
+                    pass = received.includes(item);
+                  } else {
+                     throw new Error(\`Received value must be an array or string to use toContain()\`);
+                  }
+                  
+                  const result = isNot ? !pass : pass;
+                  if (!result) {
+                     throw new Error(
+                      isNot
+                        ? \`Expected collection to NOT contain \${safeStringify(item)}\`
+                        : \`Expected collection to contain \${safeStringify(item)}, but it was not found\`
+                    );
+                  }
+                  return true;
+                },
+                toBeGreaterThan: (expected) => {
+                   const pass = received > expected;
+                   const result = isNot ? !pass : pass;
+                   if (!result) {
+                     throw new Error(
+                       isNot
+                         ? \`Expected \${received} to NOT be greater than \${expected}\`
+                         : \`Expected \${received} to be greater than \${expected}\`
+                     );
+                   }
+                   return true;
+                },
+                toBeLessThan: (expected) => {
+                   const pass = received < expected;
+                   const result = isNot ? !pass : pass;
+                   if (!result) {
+                     throw new Error(
+                       isNot
+                         ? \`Expected \${received} to NOT be less than \${expected}\`
+                         : \`Expected \${received} to be less than \${expected}\`
+                     );
+                   }
+                   return true;
+                }
+              });
+              
+              const baseMatchers = matchers(false);
+              return {
+                ...baseMatchers,
+                not: matchers(true)
+              };
+            }
+
             // 创建受限的全局环境
             const safeGlobals = {
               console: mockConsole,
@@ -427,7 +583,8 @@ export class CodeExecutionService {
                 return setInterval(fn, delay);
               },
               clearTimeout,
-              clearInterval
+              clearInterval,
+              expect
             };
 
             // 禁用危险的全局对象
@@ -660,10 +817,10 @@ export class CodeExecutionService {
 
 		return new Promise((resolve) => {
 			let workerTimeoutReceived = false;
-			
+
 			const timeout = setTimeout(() => {
 				if (this.isExecuting && !workerTimeoutReceived) {
-					console.warn('主线程超时，Worker可能已无响应，强制重启');
+					console.warn("主线程超时，Worker可能已无响应，强制重启");
 					this.forceStopExecution();
 					resolve({
 						success: false,
@@ -677,61 +834,66 @@ export class CodeExecutionService {
 			const handleMessage = (event: MessageEvent) => {
 				// 检查执行ID是否匹配，防止旧执行结果干扰
 				if (event.data.executionId !== this.currentExecutionId) {
-					console.warn('收到过期的执行结果，已忽略');
+					console.warn("收到过期的执行结果，已忽略");
 					return;
 				}
 
 				// 处理SWC初始化消息
-				if (event.data.type === 'swc_init_complete') {
+				if (event.data.type === "swc_init_complete") {
 					// 这些消息由initWorker处理，这里忽略
 					return;
 				}
 
 				// 处理进度消息（仅用于调试）
-				if (event.data.type === 'progress') {
-					console.log('主线程: 收到Worker进度，日志:', event.data.logsCount, '错误:', event.data.errorsCount);
+				if (event.data.type === "progress") {
+					console.log(
+						"主线程: 收到Worker进度，日志:",
+						event.data.logsCount,
+						"错误:",
+						event.data.errorsCount,
+					);
 					return;
 				}
 
 				// 标记收到了Worker的响应（包括超时响应）
 				workerTimeoutReceived = true;
-				
-				console.log('主线程: 收到Worker消息');
-				console.log('主线程: 消息类型:', event.data.success ? '成功' : '失败');
-				console.log('主线程: 日志数量:', event.data.logs?.length || 0);
-				console.log('主线程: 错误数量:', event.data.errors?.length || 0);
-				console.log('主线程: 前3条日志:', event.data.logs?.slice(0, 3));
-				console.log('主线程: 执行ID:', event.data.executionId);
-				
+
+				console.log("主线程: 收到Worker消息");
+				console.log("主线程: 消息类型:", event.data.success ? "成功" : "失败");
+				console.log("主线程: 日志数量:", event.data.logs?.length || 0);
+				console.log("主线程: 错误数量:", event.data.errors?.length || 0);
+				console.log("主线程: 前3条日志:", event.data.logs?.slice(0, 3));
+				console.log("主线程: 执行ID:", event.data.executionId);
+
 				// 处理最终执行结果
 				clearTimeout(timeout);
 				this.worker?.removeEventListener("message", handleMessage);
 				this.isExecuting = false;
 				this.currentExecutionId = null;
-				
+
 				resolve(event.data);
 			};
 
 			this.worker.addEventListener("message", handleMessage);
-			this.worker.postMessage({ 
-				code, 
+			this.worker.postMessage({
+				code,
 				language,
-				executionId: this.currentExecutionId 
+				executionId: this.currentExecutionId,
 			});
 		});
 	}
 
 	forceStopExecution() {
-		console.log('强制停止代码执行');
+		console.log("强制停止代码执行");
 		this.isExecuting = false;
 		this.currentExecutionId = null;
-		
+
 		// 终止当前Worker
 		if (this.worker) {
 			this.worker.terminate();
 			this.worker = null;
 		}
-		
+
 		// 立即重新创建Worker，确保下次执行可用
 		this.initWorker();
 	}

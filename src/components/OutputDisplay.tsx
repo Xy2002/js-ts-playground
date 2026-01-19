@@ -1,6 +1,6 @@
 import { Play, Square, Trash2 } from "lucide-react";
 import { useEffect, useRef } from "react";
-import { useTranslation } from "react-i18next";
+
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -20,7 +20,6 @@ export default function OutputDisplay({
 	onClear,
 	onStop,
 }: OutputDisplayProps) {
-	const { t } = useTranslation();
 	const outputRef = useRef<HTMLDivElement>(null);
 
 	// 自动滚动到底部（当有新输出时）
