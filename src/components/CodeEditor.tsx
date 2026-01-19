@@ -6,7 +6,9 @@ import {
 	registerCompletion,
 } from "monacopilot";
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
+import { Badge } from "@/components/ui/badge";
 import { usePlaygroundStore } from "@/store/usePlaygroundStore";
 
 interface CodeEditorProps {
@@ -393,6 +395,22 @@ export default function CodeEditor({
 					</div>
 				}
 			/>
+
+			{createPortal(
+				<Badge className="text-sm font-medium absolute right-2 bottom-2">
+					LLM AutoCompletion Active Status:
+					{!!editorRef.current &&
+					!!monacoRef.current &&
+					!!llmSettings.apiKey &&
+					!!llmSettings.apiUrl &&
+					!!llmSettings.model ? (
+						<span className="text-green-500 ml-1">Active</span>
+					) : (
+						<span className="text-red-500 ml-1">Inactive</span>
+					)}
+				</Badge>,
+				document.body,
+			)}
 		</div>
 	);
 }
