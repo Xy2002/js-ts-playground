@@ -82,6 +82,9 @@ export default function CodeEditor({
 									content: `${prompt.instruction}\n\n${prompt.fileContent}`,
 								},
 							],
+							thinking: {
+								type: "disabled",
+							},
 						}),
 					});
 
@@ -91,8 +94,9 @@ export default function CodeEditor({
 					}
 
 					const data = await response.json();
+
 					return {
-						text: data.content?.[0]?.text || "",
+						text: data.choices?.[0]?.message.content || "",
 					};
 				} catch (error) {
 					console.error("LLM Request Failed:", error);

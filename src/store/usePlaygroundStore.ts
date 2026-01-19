@@ -486,14 +486,27 @@ export const usePlaygroundStore = create<PlaygroundState>((set, get) => ({
 	// 保存到localStorage
 	saveToStorage: () => {
 		try {
-			const { settings, codeHistory, language, files, folders, fileContents } =
-				get();
+			const {
+				settings,
+				codeHistory,
+				language,
+				files,
+				folders,
+				fileContents,
+				llmSettings,
+			} = get();
 
 			// 保存设置
 			localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(settings));
 
 			// 保存语言
 			localStorage.setItem(STORAGE_KEYS.LANGUAGE, language);
+
+			// 保存LLM设置
+			localStorage.setItem(
+				STORAGE_KEYS.LLM_SETTINGS,
+				JSON.stringify(llmSettings),
+			);
 
 			// 分别保存两种语言的代码内容 (向后兼容)
 			const jsCodeData = {
