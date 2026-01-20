@@ -1,188 +1,374 @@
-# JavaScript/TypeScript Playground
+# JavaScript/TypeScript Playground with AI Copilot
 
-一个功能丰富的在线代码执行环境，专为算法学习和代码实验设计，支持 JavaScript 和 TypeScript 的安全执行。
+A feature-rich online code execution environment designed for algorithm learning and code experimentation. Supports safe JavaScript and TypeScript execution with AI-powered code completion.
 
-## ✨ 功能特性
+[![License: MIT](https://img.shields.io/badge/license-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![React](https://img.shields.io/badge/react-18.3.1-blue.svg)](https://github.com/facebook/react)
+[![TypeScript](https://img.shields.io/badge/typescript-5.8.3-blue.svg)](https://www.typescriptlang.org/)
+[![Vite](https://img.shields.io/badge/vite-6.3.5-purple.svg)](https://vitejs.dev/)
 
-### 🚀 核心功能
-- **多文件编辑器** - 支持创建、切换和管理多个代码文件
-- **实时代码执行** - 基于 Web Worker 的安全代码执行环境
-- **TypeScript 支持** - 集成 SWC WebAssembly 实现快速 TypeScript 转译
-- **Monaco 编辑器** - 提供 VS Code 级别的编辑体验和智能提示
+## ✨ Features
 
-### 🛡️ 安全特性
-- **沙箱执行** - 代码在隔离的 Web Worker 中运行，无法访问主线程
-- **死循环防护** - 智能检测和终止死循环代码，防止页面卡死
-- **资源限制** - 限制执行时间和输出数量，确保系统稳定性
-- **API 限制** - 禁用危险的全局 API（fetch、localStorage 等）
+### 🚀 Core Capabilities
 
-### 💻 用户体验
-- **响应式设计** - 完美适配桌面和移动设备
-- **多语言支持** - 内置中英文国际化
-- **主题切换** - 支持亮色和暗色主题
-- **快捷键支持** - 丰富的键盘快捷键操作
-- **自动保存** - 代码内容自动保存到本地存储
+- **Multi-File Editor** - Create, switch, and manage multiple code files with an integrated file explorer
+- **Real-time Execution** - Safe code execution powered by Web Workers with complete isolation
+- **TypeScript Support** - Fast TypeScript transpilation via SWC WebAssembly
+- **Monaco Editor** - VS Code-level editing experience with IntelliSense and advanced features
 
-### 🔧 开发者友好
-- **详细输出** - 实时显示 console.log 输出和错误信息
-- **执行统计** - 显示代码执行时间和性能指标
-- **文件管理** - 支持文件重命名、删除和组织
-- **代码片段** - 内置常用算法数据结构（如 ListNode）
+### 🤖 AI-Powered Code Completion
 
-## 🛠️ 技术栈
+- **Multiple LLM Providers** - Support for OpenAI, Anthropic, and Mistral
+- **Dynamic Model Selection** - Fetch available models directly from APIs or choose custom models
+- **Smart Toggle Control** - Click status badge to enable/disable AI completion on demand
+- **Intelligent Feedback** - Clear status indicators with reasons when inactive
+- **Flexible Configuration** - Customize API URL, API key, and model selection
 
-### 前端框架
-- **React 18** - 使用最新的 React 特性和 Hooks
-- **TypeScript** - 完整的类型安全支持
-- **Vite** - 快速的开发构建工具
+### 📊 Data Structure Visualization
 
-### UI 组件
-- **Tailwind CSS** - 原子化 CSS 框架
-- **Radix UI** - 无障碍访问的组件库
-- **Lucide React** - 现代图标库
+- **Heap Visualization** - Render heap arrays as interactive binary trees
+- **Canvas Rendering** - High-performance graphics using HTML5 Canvas
+- **Tree Layout** - Automatic node positioning with breadth-first traversal
+- **History Navigation** - Browse through multiple visualization states with arrow buttons
+- **Index Display** - Shows array indices above each node for reference
+- **Connection Lines** - Visual parent-child relationships with smooth edges
 
-### 代码执行
-- **Monaco Editor** - VS Code 同款编辑器
-- **SWC WebAssembly** - 超快的 TypeScript 转译器
-- **Web Workers** - 安全的代码执行环境
+### 🛡️ Security Features
 
-### 状态管理
-- **Zustand** - 轻量级状态管理
-- **React Router** - 单页应用路由
-- **React i18next** - 国际化解决方案
+- **Sandboxed Execution** - Code runs in isolated Web Workers, cannot access main thread
+- **Dead Loop Protection** - Intelligent detection and termination of infinite loops
+- **Resource Limits** - Execution time limit (3 seconds) and output restrictions (1000 logs)
+- **API Restrictions** - Dangerous globals disabled (fetch, localStorage, etc.)
 
-## 🚀 快速开始
+### 💻 User Experience
 
-### 环境要求
-- Node.js 16+ 
+- **Responsive Design** - Optimized for both desktop and mobile devices
+- **i18n Support** - Built-in English and Chinese localization
+- **Theme Switching** - Light and dark theme support
+- **Keyboard Shortcuts** - Rich keyboard command support
+- **Auto Save** - Code automatically saved to localStorage
+
+## 🛠️ Tech Stack
+
+### Frontend Framework
+- **React 18** - Latest React features with Hooks
+- **TypeScript** - Full type safety
+- **Vite** - Lightning-fast build tool
+
+### UI Components
+- **Tailwind CSS** - Utility-first CSS framework
+- **Radix UI** - Accessible component library
+- **Lucide React** - Modern icon library
+
+### Code Execution
+- **Monaco Editor** - VS Code's editor
+- **SWC WebAssembly** - Ultra-fast TypeScript compiler
+- **Web Workers** - Safe execution environment
+
+### AI Integration
+- **Vercel AI SDK** - Unified LLM provider interface
+- **Anthropic AI SDK** - Claude model support
+- **OpenAI SDK** - GPT model support
+- **Mistral AI SDK** - Mistral model support
+
+### State Management
+- **Zustand** - Lightweight state management
+- **React Router** - SPA routing
+- **React i18next** - Internationalization
+
+## 🚀 Getting Started
+
+### Prerequisites
+- Node.js 16+
 - pnpm 8+
 
-### 安装依赖
-```bash
-pnpm install
-```
+### Installation
 
-### 开发服务器
 ```bash
+# Install dependencies
+pnpm install
+
+# Start development server
 pnpm dev
 ```
 
-访问 `http://localhost:5173` 开始使用
+Open [http://localhost:5173](http://localhost:5173) to start using the playground.
 
-### 构建生产版本
+### Build for Production
+
 ```bash
 pnpm build
+pnpm preview
 ```
 
-### 代码检查
+### Code Quality
+
 ```bash
-# TypeScript 类型检查
+# Type checking
 pnpm check
 
-# 代码格式化和 lint
+# Linting
 pnpm lint
 ```
 
-## 📱 使用指南
+## 📱 Usage Guide
 
-### 基本操作
-1. **创建文件** - 点击文件浏览器中的 "+" 按钮
-2. **切换文件** - 在标签栏中点击文件名
-3. **运行代码** - 点击运行按钮或按 `Ctrl/Cmd + Enter`
-4. **停止执行** - 点击停止按钮强制终止代码执行
+### Basic Operations
 
-### 快捷键
-- `Ctrl/Cmd + Enter` - 运行代码
-- `Ctrl/Cmd + S` - 保存代码
-- `Ctrl/Cmd + A` - 全选代码
-- `F1` - 打开命令面板
+1. **Create Files** - Click the "+" button in the file explorer
+2. **Switch Files** - Click on file names in the tab bar
+3. **Run Code** - Click the Run button or press `Ctrl/Cmd + Enter`
+4. **Stop Execution** - Click the Stop button to force terminate
 
-### 算法调试
+### Keyboard Shortcuts
+
+| Shortcut | Action |
+|----------|--------|
+| `Ctrl/Cmd + Enter` | Run code |
+| `Ctrl/Cmd + S` | Save code |
+| `Ctrl/Cmd + A` | Select all |
+| `F1` | Open command palette |
+
+### AI Code Completion
+
+1. Click the settings icon (gear) in the top-right corner
+2. Configure your LLM provider:
+   - Select a provider (OpenAI, Anthropic, or Mistral)
+   - Enter your API URL (or use default)
+   - Add your API key
+   - Choose or fetch available models
+3. Click "Save" to apply settings
+4. Start typing code and see AI suggestions appear automatically
+5. Click the LLM status badge to toggle completion on/off
+
+### Heap Visualization
+
 ```javascript
-// 支持链表数据结构
-let head = arrayToListNode([1, 2, 3, 4, 5]);
-console.log(listNodeToArray(head)); // [1, 2, 3, 4, 5]
+// Create a min-heap array
+const heap = [1, 3, 2, 6, 5, 4];
+renderHeap(heap, "Min-Heap Example");
 
-// 死循环安全执行（最多显示 1000 条日志）
-let i = 0;
-while (true) {
-    console.log('输出：', i++);
-    // 系统会自动在 3 秒后终止执行
-}
+// Modify the heap
+heap.push(7);
+renderHeap(heap, "After push 7");
+
+// Visualize complex heaps
+const complexHeap = {
+  heap: [10, 20, 15, 40, 50, 100, 25],
+  size: 7,
+  type: "max-heap"
+};
+renderHeap(complexHeap, "Max-Heap with metadata");
+
+// Navigate between visualizations using left/right arrows
 ```
 
-## 🏗️ 项目结构
+### Available Built-in Functions
+
+**Data Structures:**
+- `arrayToListNode(arr)` - Convert array to linked list
+- `listNodeToArray(head)` - Convert linked list to array
+- `ListNode` - Linked list node class
+
+**Testing:**
+- `expect(value)` - Assertion library (Jest/Vitest compatible)
+- `test(name, fn)` - Define test case
+- `describe(name, fn)` - Define test suite
+
+**Visualization:**
+- `renderHeap(data, label)` - Visualize heap as binary tree
+
+## 🏗️ Project Structure
 
 ```
 src/
-├── components/          # 可复用组件
-│   ├── CodeEditor.tsx   # Monaco 编辑器组件
-│   ├── OutputDisplay.tsx # 输出显示组件
-│   ├── FileExplorer.tsx # 文件浏览器
-│   └── ...
-├── services/           # 业务逻辑服务
-│   └── codeExecutionService.ts # 代码执行服务
-├── store/              # 状态管理
-│   └── usePlaygroundStore.ts # 主要状态管理
-├── pages/              # 页面组件
-│   ├── Home.tsx        # 主页面
-│   └── Settings.tsx    # 设置页面
-└── locales/           # 国际化文件
-    ├── en.json        # 英文
-    └── zh.json        # 中文
+├── components/          # Reusable UI components
+│   ├── CodeEditor.tsx   # Monaco editor with AI completion
+│   ├── OutputDisplay.tsx # Split view: logs + visualizations
+│   ├── HeapVisualization.tsx # Binary tree renderer
+│   ├── SettingsDialog.tsx  # LLM configuration UI
+│   ├── FileExplorer.tsx   # Multi-file management
+│   └── ui/               # Radix UI components
+├── services/           # Business logic
+│   ├── codeExecutionService.ts # Code execution orchestrator
+│   └── llmService.ts      # Model fetching utilities
+├── store/              # State management
+│   └── usePlaygroundStore.ts # Zustand store
+├── pages/              # Route pages
+│   ├── Home.tsx         # Main playground interface
+│   └── Settings.tsx     # Settings page
+└── hooks/              # Custom React hooks
+    └── use-toast.ts      # Toast notifications
+
+public/                 # Static assets
+├── execution.worker.js  # Web Worker code (sandbox)
+└── monaco-types.d.ts    # TypeScript definitions for editor
 ```
 
-## 🔒 安全机制
+## 🔒 Security Architecture
 
-### 代码执行安全
-- 所有用户代码在 Web Worker 中执行，完全隔离主线程
-- 禁用所有网络请求、文件系统访问和存储 API
-- 设置严格的执行时间限制（3-5秒）
+### Execution Safety
+- All user code executes in Web Workers with complete main thread isolation
+- Network requests, file system access, and storage APIs are disabled
+- Strict execution time limits (3 seconds)
 
-### 死循环防护
-- 智能检测潜在的无限循环
-- 自动收集和显示循环中的 console 输出
-- 强制终止机制确保页面响应性
+### Dead Loop Protection
+- Intelligent detection of potential infinite loops
+- Automatic collection and display of loop output
+- Force termination mechanisms ensure page responsiveness
 
-### 输出限制
-- console.log 输出限制为 1000 条
-- error 输出限制为 100 条
-- 自动截断过长的输出内容
+### Output Limitations
+- console.log limited to 1000 entries
+- Errors limited to 100 entries
+- Automatic truncation of excessive output
 
-## 📈 性能优化
+## 📊 Execution Model
 
-- **懒加载** - 组件和路由按需加载
-- **代码分割** - Vite 自动优化打包
-- **缓存策略** - SWC 模块缓存和localStorage 持久化
-- **Worker 复用** - 智能的 Worker 生命周期管理
+```
+┌─────────────┐
+│   Main       │
+│   Thread     │
+│             │
+└──────┬──────┘
+       │
+       │ spawn
+       ▼
+┌─────────────┐
+│   Web        │
+│   Worker     │
+│             │
+│  ┌────────┐ │
+│  │  Your   │ │
+│  │  Code  │ │
+│  └────────┘ │
+│             │
+│  ┌────────┐ │
+│  │  SWC   │ │ (TypeScript only)
+│  └────────┘ │
+└─────────────┘
+```
 
-## 🤝 贡献指南
+## 🔧 Configuration
 
-欢迎提交 Issue 和 Pull Request！
+### LLM Provider Settings
 
-### 开发流程
-1. Fork 本仓库
-2. 创建功能分支：`git checkout -b feature/your-feature`
-3. 提交更改：`git commit -m 'Add some feature'`
-4. 推送到分支：`git push origin feature/your-feature`
-5. 提交 Pull Request
+Each provider has different requirements:
 
-### 代码规范
-- 使用 Biome 进行代码格式化和 lint
-- 遵循 TypeScript 严格模式
-- 组件和函数需要适当的 JSDoc 注释
+**OpenAI:**
+- API URL: `https://api.openai.com/v1` (default)
+- Models: GPT-4o, GPT-4 Turbo, etc.
+- Requires API key
 
-## 📄 许可证
+**Anthropic:**
+- API URL: `https://api.anthropic.com/v1/messages` (default)
+- Models: Claude 3.5 Sonnet, Claude 3 Opus, etc.
+- Requires API key
 
-本项目采用 MIT 许可证 - 查看 [LICENSE](LICENSE) 文件了解详情。
+**Mistral:**
+- API URL: `https://api.mistral.ai/v1` (default)
+- Models: Mistral Large, Codestral, etc.
+- Requires API key
 
-## 🙏 致谢
+### Custom API Endpoints
 
-- [Monaco Editor](https://microsoft.github.io/monaco-editor/) - 强大的代码编辑器
-- [SWC](https://swc.rs/) - 超快的 TypeScript 编译器
-- [Radix UI](https://www.radix-ui.com/) - 优秀的组件库
-- [Tailwind CSS](https://tailwindcss.com/) - 实用的 CSS 框架
+For custom deployments or proxy services, you can specify a custom API URL in the settings.
+
+## 🎓 Algorithm Learning
+
+### Supported Data Structures
+
+The playground includes built-in support for:
+
+- **Linked Lists** - Create, manipulate, and traverse linked lists
+- **Heaps** - Visualize heap arrays as binary trees
+- **Arrays** - All standard JavaScript array methods
+- **Objects** - Object manipulation and iteration
+
+### Testing Capabilities
+
+Write tests using familiar frameworks:
+
+```javascript
+describe('Array manipulation functions', () => {
+  test('arrayToListNode creates correct list', () => {
+    const head = arrayToListNode([1, 2, 3]);
+    expect(listNodeToArray(head)).toEqual([1, 2, 3]);
+  });
+
+  test('hasCycle detects circular reference', () => {
+    const head = arrayToListNode([1, 2, 3]);
+    createCycle(head);
+    expect(hasCycle(head)).toBe(true);
+  });
+});
+```
+
+## 🚧 Development
+
+### Project Setup
+
+```bash
+# Clone repository
+git clone <your-repo-url>
+cd js-ts-playground
+
+# Install dependencies
+pnpm install
+
+# Start development
+pnpm dev
+```
+
+### Building for Production
+
+```bash
+# Type check and build
+pnpm build
+
+# Preview production build
+pnpm preview
+```
+
+### Code Style
+
+This project uses:
+- **Biome** for code formatting and linting
+- **TypeScript strict mode** for type safety
+- **Conventional Commits** for commit messages
+
+## 🤝 Contributing
+
+Contributions are welcome! Please feel free to submit issues and pull requests.
+
+### Development Workflow
+
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/amazing-feature`
+3. Commit your changes: `git commit -m 'Add amazing feature'`
+4. Push to the branch: `git push origin feature/amazing-feature`
+5. Open a Pull Request
+
+### Code Standards
+
+- Follow the existing code style
+- Write meaningful commit messages
+- Add tests for new features
+- Update documentation as needed
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🙏 Acknowledgments
+
+Built with amazing open-source tools:
+- [Monaco Editor](https://microsoft.github.io/monaco-editor/) - Powerful code editor
+- [SWC](https://swc.rs/) - Super-fast JavaScript/TypeScript compiler
+- [Vercel AI SDK](https://sdk.vercel.sh/) - Unified LLM interface
+- [Radix UI](https://www.radix-ui.com/) - Accessible component library
+- [Tailwind CSS](https://tailwindcss.com/) - Utility-first CSS framework
+- [Monacopilot](https://github.com/ uxworks Monacopilot ) - AI completion for Monaco
 
 ---
 
-**享受编码的乐趣！** 🎉
+**Happy coding!** 🎉
