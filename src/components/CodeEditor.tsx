@@ -9,11 +9,17 @@ import {
 	type CompletionRegistration,
 	registerCompletion,
 } from "monacopilot";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 import { Badge } from "@/components/ui/badge";
 import { usePlaygroundStore } from "@/store/usePlaygroundStore";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipProvider,
+	TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface CodeEditorProps {
 	value: string;
@@ -35,11 +41,34 @@ export default function CodeEditor({
 	filePath,
 }: CodeEditorProps) {
 	const { t } = useTranslation();
-	const { llmSettings } = usePlaygroundStore();
+	const { llmSettings, toggleLlmEnabled } = usePlaygroundStore();
 	const editorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
 	const monacoRef = useRef<typeof monaco | null>(null);
 	const completionRegistrationRef = useRef<CompletionRegistration | null>(null);
 	const [isEditorReady, setIsEditorReady] = useState(false);
+
+	// 计算Inactive的原因
+	const inactiveReason = useMemo(() => {
+		if (!llmSettings.enabled) {
+			return "LLM is disabled. Click to enable.";
+		}
+		if (!isEditorReady) {
+			return "Editor is not ready yet.";
+		}
+		if (!editorRef.current) {
+			return "Editor instance not available.";
+		}
+		if (!monacoRef.current) {
+			return "Monaco instance not available.";
+		}
+		if (!llmSettings.apiKey) {
+			return "API Key is missing. Please configure it in settings.";
+		}
+		if (!llmSettings.model) {
+			return "Model is not selected. Please select a model in settings.";
+		}
+		return null;
+	}, [llmSettings.enabled, llmSettings.apiKey, llmSettings.model, isEditorReady]);
 
 	// Cleaning up the completion provider when component unmounts
 	useEffect(() => {
@@ -57,14 +86,16 @@ export default function CodeEditor({
 			"Auto Completion Active Status:" + !!editorRef.current &&
 			!!monacoRef.current &&
 			!!llmSettings.apiKey &&
-			!!llmSettings.model,
+			!!llmSettings.model &&
+			llmSettings.enabled,
 		);
 		if (
 			!isEditorReady ||
 			!editorRef.current ||
 			!monacoRef.current ||
 			!llmSettings.apiKey ||
-			!llmSettings.model
+			!llmSettings.model ||
+			!llmSettings.enabled
 		) {
 			return;
 		}
@@ -395,17 +426,36 @@ export default function CodeEditor({
 			/>
 
 			{createPortal(
-				<Badge className="text-sm font-medium absolute right-2 bottom-2">
-					LLM AutoCompletion Active Status:
-					{!!editorRef.current &&
-						!!monacoRef.current &&
-						!!llmSettings.apiKey &&
-						!!llmSettings.model ? (
-						<span className="text-green-500 ml-1">Active</span>
-					) : (
-						<span className="text-red-500 ml-1">Inactive</span>
-					)}
-				</Badge>,
+				<TooltipProvider>
+					<Tooltip>
+						<TooltipTrigger asChild>
+							<Badge
+								className="text-sm font-medium absolute right-2 bottom-2 cursor-pointer hover:opacity-80 transition-opacity"
+								onClick={toggleLlmEnabled}
+							>
+								LLM AutoCompletion:
+								{!!editorRef.current &&
+									!!monacoRef.current &&
+									!!llmSettings.apiKey &&
+									!!llmSettings.model &&
+									llmSettings.enabled ? (
+									<span className="text-green-500 ml-1">
+										Active (click to disable)
+									</span>
+								) : (
+									<span className="text-red-500 ml-1">
+										{llmSettings.enabled ? "Inactive" : "Disabled"} (click to enable)
+									</span>
+								)}
+							</Badge>
+						</TooltipTrigger>
+						{inactiveReason && (
+							<TooltipContent>
+								<p>{inactiveReason}</p>
+							</TooltipContent>
+						)}
+					</Tooltip>
+				</TooltipProvider>,
 				document.body,
 			)}
 		</div>

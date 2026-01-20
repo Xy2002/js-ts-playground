@@ -26,6 +26,7 @@ export interface LlmSettings {
 	apiUrl: string;
 	apiKey: string;
 	model: string;
+	enabled: boolean;
 }
 
 export interface CodeContent {
@@ -57,6 +58,7 @@ interface PlaygroundState extends MultiFileState {
 	setLanguage: (language: "javascript" | "typescript") => void;
 	updateSettings: (settings: Partial<UserSettings>) => void;
 	updateLlmSettings: (settings: Partial<LlmSettings>) => void;
+	toggleLlmEnabled: () => void;
 	setExecuting: (isExecuting: boolean) => void;
 	setExecutionResult: (result: ExecutionResult | null) => void;
 	clearOutput: () => void;
@@ -117,6 +119,7 @@ const defaultLlmSettings: LlmSettings = {
 	apiUrl: "https://api.anthropic.com/v1/messages",
 	apiKey: "",
 	model: "claude-3-5-sonnet-20240620",
+	enabled: true,
 };
 
 const defaultCode = {
@@ -329,6 +332,13 @@ export const usePlaygroundStore = create<PlaygroundState>((set, get) => ({
 	updateLlmSettings: (newLlmSettings: Partial<LlmSettings>) => {
 		set((state) => ({
 			llmSettings: { ...state.llmSettings, ...newLlmSettings },
+		}));
+		get().saveToStorage();
+	},
+
+	toggleLlmEnabled: () => {
+		set((state) => ({
+			llmSettings: { ...state.llmSettings, enabled: !state.llmSettings.enabled },
 		}));
 		get().saveToStorage();
 	},

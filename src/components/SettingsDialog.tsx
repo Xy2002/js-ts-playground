@@ -55,6 +55,7 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
 	const [apiUrl, setApiUrl] = useState(llmSettings.apiUrl);
 	const [apiKey, setApiKey] = useState(llmSettings.apiKey);
 	const [model, setModel] = useState(llmSettings.model);
+	const [enabled, setEnabled] = useState(llmSettings.enabled);
 
 	// 模型列表相关状态
 	const [availableModels, setAvailableModels] = useState<ModelInfo[]>([]);
@@ -68,6 +69,7 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
 			setApiUrl(llmSettings.apiUrl);
 			setApiKey(llmSettings.apiKey);
 			setModel(llmSettings.model);
+			setEnabled(llmSettings.enabled);
 			// 加载默认模型列表
 			loadDefaultModels(llmSettings.provider);
 		}
@@ -125,6 +127,7 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
 			apiUrl,
 			apiKey,
 			model,
+			enabled,
 		});
 		onClose();
 	};
