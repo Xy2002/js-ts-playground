@@ -316,6 +316,8 @@ export default function CodeEditor({
     declare function describe(name: string, fn: () => void): void;
     declare function test(name: string, fn: () => void): void;
     declare function it(name: string, fn: () => void): void;
+
+	declare function renderHeap(heap: any[], description:string): void;
     `;
 		monaco.languages.typescript.typescriptDefaults.addExtraLib(
 			sourceCode,

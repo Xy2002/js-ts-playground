@@ -1,8 +1,16 @@
+export interface VisualizationData {
+	type: "heap" | "tree" | "graph" | "array";
+	data: any;
+	timestamp: number;
+	label?: string;
+}
+
 export interface ExecutionResult {
 	success: boolean;
 	logs: string[];
 	errors: string[];
 	executionTime: number;
+	visualizations: VisualizationData[];
 }
 
 export class CodeExecutionService {
@@ -205,7 +213,38 @@ export class CodeExecutionService {
             // 创建一个安全的执行环境
             const logs = [];
             const errors = [];
-            
+            const visualizations = [];
+
+            // renderHeap函数 - 用于可视化堆结构
+            function renderHeap(heap, label) {
+              try {
+                // 序列化堆数据
+                const heapData = JSON.parse(JSON.stringify(heap, (key, value) => {
+                  // 处理循环引用
+                  if (typeof value === 'object' && value !== null) {
+                    if (value.constructor && value.constructor.name === 'ListNode') {
+                      return {
+                        val: value.val,
+                        next: value.next ? '[ListNode]' : null
+                      };
+                    }
+                  }
+                  return value;
+                }, 2));
+
+                visualizations.push({
+                  type: 'heap',
+                  data: heapData,
+                  timestamp: Date.now(),
+                  label: label || 'Heap #' + (visualizations.length + 1)
+                });
+
+                console.log('📊 Heap visualization captured: ' + (label || 'Heap #' + visualizations.length));
+              } catch (error) {
+                console.error('Failed to capture heap visualization:', error.message);
+              }
+            }
+
             // 增强的对象序列化函数，支持环形链表
             function safeStringify(obj, maxDepth = 10, visited = new WeakSet()) {
               if (obj === null || obj === undefined) {
@@ -713,6 +752,7 @@ export class CodeExecutionService {
             // 创建受限的全局环境
             const safeGlobals = {
               console: mockConsole,
+              renderHeap,
               Math,
               Date,
               JSON,
@@ -868,6 +908,7 @@ export class CodeExecutionService {
 					errors,
 					executionTime: Math.round(executionTime * 100) / 100,
 					executionId,
+					visualizations,
 				});
 			} catch (execError) {
 				executionCompleted = true;
@@ -884,12 +925,13 @@ export class CodeExecutionService {
 				);
 
 				self.postMessage({
-					success: false,
-					logs,
-					errors: [...errors, execError.message],
-					executionTime: Math.round(executionTime * 100) / 100,
-					executionId,
-				});
+			success: false,
+			logs,
+			errors: [...errors, execError.message],
+			executionTime: Math.round(executionTime * 100) / 100,
+			executionId,
+			visualizations,
+		});
 			}
 		} catch (error) {
 			// 发送错误信息回主线程
@@ -899,6 +941,7 @@ export class CodeExecutionService {
 				errors: [error instanceof Error ? error.message : String(error)],
 				executionTime: 0,
 				executionId,
+				visualizations: [],
 			});
 		}
 	}
@@ -910,6 +953,7 @@ export class CodeExecutionService {
 			logs: [],
 			errors: ["Runtime Error: " + message + " at line " + lineno],
 			executionTime: 0,
+			visualizations: [],
 		});
 	};
 
@@ -971,6 +1015,7 @@ export class CodeExecutionService {
 				logs: [],
 				errors: ["Worker not available"],
 				executionTime: 0,
+				visualizations: [],
 			};
 		}
 
@@ -980,6 +1025,7 @@ export class CodeExecutionService {
 				logs: [],
 				errors: ["Another execution is in progress"],
 				executionTime: 0,
+				visualizations: [],
 			};
 		}
 
@@ -999,6 +1045,7 @@ export class CodeExecutionService {
 						logs: [],
 						errors: ["⏱️ Worker无响应，已强制重启"],
 						executionTime: 4000,
+						visualizations: [],
 					});
 				}
 			}, 4000); // 4秒超时

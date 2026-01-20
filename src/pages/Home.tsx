@@ -123,6 +123,7 @@ export default function Home() {
 					error instanceof Error ? error.message : "Unknown error occurred",
 				],
 				executionTime: 0,
+				visualizations: [],
 			});
 		} finally {
 			setExecuting(false);
@@ -163,6 +164,7 @@ export default function Home() {
 					error instanceof Error ? error.message : "Unknown error occurred",
 				],
 				executionTime: 0,
+				visualizations: [],
 			});
 		} finally {
 			setExecuting(false);

@@ -1,10 +1,12 @@
 import { Play, Square, Trash2 } from "lucide-react";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
+import HeapVisualization from "@/components/HeapVisualization";
 import type { ExecutionResult } from "@/services/codeExecutionService";
 
 interface OutputDisplayProps {
@@ -21,6 +23,7 @@ export default function OutputDisplay({
 	onStop,
 }: OutputDisplayProps) {
 	const outputRef = useRef<HTMLDivElement>(null);
+	const [showVisualization, setShowVisualization] = useState(true);
 
 	// 自动滚动到底部（当有新输出时）
 	useEffect(() => {
@@ -33,6 +36,18 @@ export default function OutputDisplay({
 			}
 		}
 	}, [result?.logs, result?.errors, isExecuting]);
+
+	// 当有新的可视化数据时，自动显示可视化区域
+	useEffect(() => {
+		if (result?.visualizations && result.visualizations.length > 0) {
+			setShowVisualization(true);
+		}
+	}, [result?.visualizations]);
+
+	// 计算输出区域和可视化区域的高度
+	const hasVisualizations = result?.visualizations && result.visualizations.length > 0;
+	const outputHeight = hasVisualizations && showVisualization ? "50%" : "100%";
+	const visualizationHeight = hasVisualizations && showVisualization ? "50%" : "0%";
 
 	const formatOutput = (logs: string[], errors: string[]) => {
 		const allOutput = [];
@@ -93,7 +108,7 @@ export default function OutputDisplay({
 	return (
 		<Card className="h-full flex flex-col rounded-none">
 			{/* 输出区域头部 */}
-			<CardHeader className="flex flex-row items-center justify-between p-2 sm:p-3 space-y-0">
+			<CardHeader className="flex flex-row items-center justify-between p-2 sm:p-3 space-y-0 flex-shrink-0">
 				<div className="flex items-center gap-1 sm:gap-2">
 					<div className="flex items-center gap-1">
 						{isExecuting ? (
@@ -113,6 +128,17 @@ export default function OutputDisplay({
 				</div>
 
 				<div className="flex items-center gap-1 sm:gap-2">
+					{hasVisualizations && (
+						<Button
+							variant="ghost"
+							size="sm"
+							onClick={() => setShowVisualization(!showVisualization)}
+							className="p-1 sm:p-1.5 text-xs"
+							title="Toggle visualization"
+						>
+							{showVisualization ? "Hide Viz" : "Show Viz"}
+						</Button>
+					)}
 					{isExecuting && onStop && (
 						<Button
 							variant="ghost"
@@ -136,57 +162,69 @@ export default function OutputDisplay({
 				</div>
 			</CardHeader>
 
-			{/* 输出内容区域 */}
-			<CardContent className="flex-1 p-0 min-h-0">
-				<ScrollArea className="h-full" ref={outputRef}>
-					<div className="p-2 space-y-1">
-						{!result && !isExecuting && (
-							<div className="flex items-center justify-center h-full text-muted-foreground">
-								<div className="text-center px-4">
-									<Play className="w-6 h-6 sm:w-8 sm:h-8 mx-auto mb-2 opacity-50" />
-									<p className="text-xs sm:text-sm">
-										Click "Run" to execute your code
-									</p>
-									<p className="text-xs mt-1 hidden sm:block">
-										Console output will appear here
-									</p>
+			{/* 输出内容区域 - 上半部分 */}
+			<div style={{ height: outputHeight }} className="min-h-0">
+				<CardContent className="h-full p-0 min-h-0">
+					<ScrollArea className="h-full" ref={outputRef}>
+						<div className="p-2 space-y-1">
+							{!result && !isExecuting && (
+								<div className="flex items-center justify-center h-full text-muted-foreground">
+									<div className="text-center px-4">
+										<Play className="w-6 h-6 sm:w-8 sm:h-8 mx-auto mb-2 opacity-50" />
+										<p className="text-xs sm:text-sm">
+											Click "Run" to execute your code
+										</p>
+										<p className="text-xs mt-1 hidden sm:block">
+											Console output will appear here
+										</p>
+									</div>
 								</div>
-							</div>
-						)}
+							)}
 
-						{isExecuting && (
-							<div className="flex items-center gap-2 p-2 sm:p-3 text-warning">
-								<div className="animate-spin w-3 h-3 sm:w-4 sm:h-4 border-2 border-current border-t-transparent rounded-full"></div>
-								<span className="text-xs sm:text-sm">Executing code...</span>
-							</div>
-						)}
+							{isExecuting && (
+								<div className="flex items-center gap-2 p-2 sm:p-3 text-warning">
+									<div className="animate-spin w-3 h-3 sm:w-4 sm:h-4 border-2 border-current border-t-transparent rounded-full"></div>
+									<span className="text-xs sm:text-sm">Executing code...</span>
+								</div>
+							)}
 
-						{result && (
-							<div className="space-y-1">
-								{result.logs.length === 0 && result.errors.length === 0 && (
-									<div className="p-2 sm:p-3 text-muted-foreground text-xs sm:text-sm text-center">
-										No output produced
-									</div>
-								)}
+							{result && (
+								<div className="space-y-1">
+									{result.logs.length === 0 && result.errors.length === 0 && (
+										<div className="p-2 sm:p-3 text-muted-foreground text-xs sm:text-sm text-center">
+											No output produced
+										</div>
+									)}
 
-								{formatOutput(result.logs, result.errors).map(renderOutputLine)}
+									{formatOutput(result.logs, result.errors).map(renderOutputLine)}
 
-								{result.success && result.logs.length > 0 && (
-									<div className="mt-2 p-2 bg-green-500/10 border border-green-500/20 text-green-700 dark:text-green-400 text-xs">
-										✅ Execution completed successfully
-									</div>
-								)}
+									{result.success && result.logs.length > 0 && (
+										<div className="mt-2 p-2 bg-green-500/10 border border-green-500/20 text-green-700 dark:text-green-400 text-xs">
+											✅ Execution completed successfully
+										</div>
+									)}
 
-								{!result.success && (
-									<div className="mt-2 p-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 text-xs">
-										❌ Execution failed
-									</div>
-								)}
-							</div>
-						)}
+									{!result.success && (
+										<div className="mt-2 p-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 text-xs">
+											❌ Execution failed
+										</div>
+									)}
+								</div>
+							)}
+						</div>
+					</ScrollArea>
+				</CardContent>
+			</div>
+
+			{/* 可视化区域 - 下半部分 */}
+			{hasVisualizations && showVisualization && (
+				<>
+					<Separator />
+					<div style={{ height: visualizationHeight }} className="min-h-0">
+						<HeapVisualization visualizations={result.visualizations} />
 					</div>
-				</ScrollArea>
-			</CardContent>
+				</>
+			)}
 		</Card>
 	);
 }
