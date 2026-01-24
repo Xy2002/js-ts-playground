@@ -1,4 +1,4 @@
-import { Play, Square, Trash2 } from "lucide-react";
+import { Play, Square, Trash2, TrendingUp, Loader2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
@@ -8,12 +8,15 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import HeapVisualization from "@/components/HeapVisualization";
 import type { ExecutionResult } from "@/services/codeExecutionService";
+import { usePlaygroundStore } from "@/store/usePlaygroundStore";
 
 interface OutputDisplayProps {
 	result: ExecutionResult | null;
 	isExecuting: boolean;
 	onClear: () => void;
 	onStop?: () => void;
+	onAnalyzeComplexity?: () => void;
+	isAnalyzingComplexity?: boolean;
 }
 
 export default function OutputDisplay({
@@ -21,6 +24,8 @@ export default function OutputDisplay({
 	isExecuting,
 	onClear,
 	onStop,
+	onAnalyzeComplexity,
+	isAnalyzingComplexity = false,
 }: OutputDisplayProps) {
 	const outputRef = useRef<HTMLDivElement>(null);
 	const [showVisualization, setShowVisualization] = useState(true);
@@ -139,6 +144,30 @@ export default function OutputDisplay({
 							{showVisualization ? "Hide Viz" : "Show Viz"}
 						</Button>
 					)}
+					{onAnalyzeComplexity && (
+						<Button
+							variant="ghost"
+							size="sm"
+							onClick={onAnalyzeComplexity}
+							disabled={isAnalyzingComplexity}
+							className={`p-1 sm:p-1.5 ${
+								isAnalyzingComplexity
+									? "text-blue-400 cursor-wait"
+									: "text-blue-400 hover:text-blue-300"
+							}`}
+							title={
+								isAnalyzingComplexity
+									? "Analyzing complexity..."
+									: "Analyze code complexity with LLM"
+							}
+						>
+							{isAnalyzingComplexity ? (
+								<Loader2 className="w-3 h-3 sm:w-4 sm:h-4 animate-spin" />
+							) : (
+								<TrendingUp className="w-3 h-3 sm:w-4 sm:h-4" />
+							)}
+						</Button>
+					)}
 					{isExecuting && onStop && (
 						<Button
 							variant="ghost"
@@ -185,6 +214,15 @@ export default function OutputDisplay({
 								<div className="flex items-center gap-2 p-2 sm:p-3 text-warning">
 									<div className="animate-spin w-3 h-3 sm:w-4 sm:h-4 border-2 border-current border-t-transparent rounded-full"></div>
 									<span className="text-xs sm:text-sm">Executing code...</span>
+								</div>
+							)}
+
+							{isAnalyzingComplexity && !isExecuting && (
+								<div className="flex items-center gap-2 p-2 sm:p-3 text-blue-400 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+									<Loader2 className="w-3 h-3 sm:w-4 sm:h-4 animate-spin" />
+									<span className="text-xs sm:text-sm font-medium">
+										Analyzing complexity with LLM...
+									</span>
 								</div>
 							)}
 

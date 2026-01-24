@@ -53,6 +53,11 @@ interface PlaygroundState extends MultiFileState {
 	isExecuting: boolean;
 	executionResult: ExecutionResult | null;
 
+	// 复杂度分析状态
+	isAnalyzingComplexity: boolean;
+	complexityResult: import("@/services/complexityAnalysisService").ComplexityResult | null;
+	showComplexityVisualization: boolean;
+
 	// Actions (保持向后兼容)
 	setCode: (code: string) => void;
 	setLanguage: (language: "javascript" | "typescript") => void;
@@ -64,6 +69,11 @@ interface PlaygroundState extends MultiFileState {
 	clearOutput: () => void;
 	resetToDefault: () => void;
 	clearAllState: () => void;
+
+	// 复杂度分析 Actions
+	setAnalyzingComplexity: (isAnalyzing: boolean) => void;
+	setComplexityResult: (result: import("@/services/complexityAnalysisService").ComplexityResult | null) => void;
+	toggleComplexityVisualization: () => void;
 
 	// 持久化
 	loadFromStorage: () => void;
@@ -275,6 +285,11 @@ export const usePlaygroundStore = create<PlaygroundState>((set, get) => ({
 	isExecuting: false,
 	executionResult: null,
 
+	// 复杂度分析初始状态
+	isAnalyzingComplexity: false,
+	complexityResult: null,
+	showComplexityVisualization: false,
+
 	// 多文件系统状态
 	files: {},
 	folders: {},
@@ -355,6 +370,19 @@ export const usePlaygroundStore = create<PlaygroundState>((set, get) => ({
 		set({ executionResult: null });
 	},
 
+	// 复杂度分析 Actions
+	setAnalyzingComplexity: (isAnalyzing: boolean) => {
+		set({ isAnalyzingComplexity: isAnalyzing });
+	},
+
+	setComplexityResult: (result: import("@/services/complexityAnalysisService").ComplexityResult | null) => {
+		set({ complexityResult: result });
+	},
+
+	toggleComplexityVisualization: () => {
+		set((state) => ({ showComplexityVisualization: !state.showComplexityVisualization }));
+	},
+
 	resetToDefault: () => {
 		const { language, codeHistory } = get();
 		const defaultCodeForLanguage = defaultCode[language];
@@ -396,6 +424,11 @@ export const usePlaygroundStore = create<PlaygroundState>((set, get) => ({
 			// 执行状态
 			isExecuting: false,
 			executionResult: null,
+
+			// 复杂度分析状态
+			isAnalyzingComplexity: false,
+			complexityResult: null,
+			showComplexityVisualization: false,
 
 			// 多文件系统状态
 			files: {},

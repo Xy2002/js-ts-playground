@@ -13,12 +13,14 @@ import CodeEditor from "@/components/CodeEditor";
 import FileExplorer from "@/components/FileExplorer";
 import LanguageSwitch from "@/components/LanguageSwitch";
 import OutputDisplay from "@/components/OutputDisplay";
+import ComplexityVisualization from "@/components/ComplexityVisualization";
 import { SettingsDialog } from "@/components/SettingsDialog";
 import TabManager from "@/components/TabManager";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { executeCode, stopExecution } from "@/services/codeExecutionService";
+import { analyzeComplexity } from "@/services/complexityAnalysisService";
 import { usePlaygroundStore } from "@/store/usePlaygroundStore";
 
 export default function Home() {
@@ -26,8 +28,12 @@ export default function Home() {
 		code,
 		language,
 		settings,
+		llmSettings,
 		isExecuting,
 		executionResult,
+		isAnalyzingComplexity,
+		complexityResult,
+		showComplexityVisualization,
 		setCode,
 		setExecuting,
 		setExecutionResult,
@@ -40,6 +46,9 @@ export default function Home() {
 		files,
 		openTabs,
 		updateFileContent,
+		setAnalyzingComplexity,
+		setComplexityResult,
+		toggleComplexityVisualization,
 	} = usePlaygroundStore();
 	const { t } = useTranslation();
 
@@ -179,6 +188,51 @@ export default function Home() {
 
 	const handleClearOutput = () => {
 		clearOutput();
+	};
+
+	const handleAnalyzeComplexity = async () => {
+		if (isAnalyzingComplexity) return;
+
+		const currentCode = getCurrentCode();
+		if (!currentCode.trim()) {
+			setComplexityResult({
+				timeComplexity: "O(0)",
+				spaceComplexity: "O(0)",
+				explanation: "No code to analyze",
+				codeAnalysis: "",
+				detectedPatterns: [],
+			});
+			toggleComplexityVisualization();
+			return;
+		}
+
+		setAnalyzingComplexity(true);
+		try {
+			const result = await analyzeComplexity(
+				currentCode,
+				getCurrentLanguage(),
+				llmSettings,
+			);
+			setComplexityResult(result);
+			if (!showComplexityVisualization) {
+				toggleComplexityVisualization();
+			}
+		} catch (error) {
+			console.error("Complexity analysis error:", error);
+			setComplexityResult({
+				timeComplexity: "O(?)",
+				spaceComplexity: "O(?)",
+				explanation:
+					error instanceof Error ? error.message : "Failed to analyze complexity",
+				codeAnalysis: "",
+				detectedPatterns: [],
+			});
+			if (!showComplexityVisualization) {
+				toggleComplexityVisualization();
+			}
+		} finally {
+			setAnalyzingComplexity(false);
+		}
 	};
 
 	// 文件浏览器控制
@@ -514,12 +568,21 @@ export default function Home() {
 								</h2>
 							</div>
 							<div className="flex-1 min-h-0">
-								<OutputDisplay
-									result={executionResult}
-									isExecuting={isExecuting}
-									onClear={handleClearOutput}
-									onStop={handleStopExecution}
-								/>
+								{showComplexityVisualization && complexityResult ? (
+									<ComplexityVisualization
+										result={complexityResult}
+										onClose={toggleComplexityVisualization}
+									/>
+								) : (
+									<OutputDisplay
+										result={executionResult}
+										isExecuting={isExecuting}
+										onClear={handleClearOutput}
+										onStop={handleStopExecution}
+										onAnalyzeComplexity={handleAnalyzeComplexity}
+										isAnalyzingComplexity={isAnalyzingComplexity}
+									/>
+								)}
 							</div>
 						</div>
 					</div>
