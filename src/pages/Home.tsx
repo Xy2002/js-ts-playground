@@ -13,6 +13,7 @@ import CodeEditor from "@/components/CodeEditor";
 import FileExplorer from "@/components/FileExplorer";
 import LanguageSwitch from "@/components/LanguageSwitch";
 import OutputDisplay from "@/components/OutputDisplay";
+import { ThemeSwitcher } from "@/components/ThemeSwitcher";
 import ComplexityVisualization from "@/components/ComplexityVisualization";
 import { SettingsDialog } from "@/components/SettingsDialog";
 import TabManager from "@/components/TabManager";
@@ -22,6 +23,7 @@ import { Progress } from "@/components/ui/progress";
 import { executeCode, stopExecution } from "@/services/codeExecutionService";
 import { analyzeComplexity } from "@/services/complexityAnalysisService";
 import { usePlaygroundStore } from "@/store/usePlaygroundStore";
+import { MotionDiv, PageTransition } from "@/components/ui/motion";
 
 export default function Home() {
 	const {
@@ -108,7 +110,7 @@ export default function Home() {
 				handleRunCodeEvent as EventListener,
 			);
 		};
-	}, []); // 空依赖数组，只在挂载时设置一次
+	}, [isExecuting]); // 添加 isExecuting 依赖
 
 	const handleRunCode = async () => {
 		if (isExecuting) return;
@@ -373,22 +375,36 @@ export default function Home() {
 	}, []);
 
 	return (
-		<div className="h-screen flex flex-col bg-background">
-			{/* Header */}
-			<header className="bg-background border-b px-2 sm:px-4 py-3 flex items-center justify-between">
-				<div className="flex items-center space-x-2 sm:space-x-4">
-					<div className="flex items-center space-x-2">
-						<Code2 className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
-						<h1 className="text-lg sm:text-xl font-semibold text-foreground hidden sm:block">
-							{t("header.appName")}
-						</h1>
-						<h1 className="text-lg font-semibold text-foreground sm:hidden">
-							{t("header.appNameShort")}
-						</h1>
-					</div>
-					{/* Language Indicator */}
-					<div className="flex items-center space-x-2">
-						<Badge variant="secondary" className="text-xs sm:text-sm">
+		<PageTransition>
+			<div className="h-screen flex flex-col bg-background">
+				{/* Vercel-style Header */}
+				<header className="glass border-b px-4 py-3 flex items-center justify-between sticky top-0 z-50">
+					<div className="flex items-center gap-4">
+						<MotionDiv
+							className="flex items-center gap-2"
+							initial={{ opacity: 0, x: -10 }}
+							animate={{ opacity: 1, x: 0 }}
+							transition={{ duration: 0.2 }}
+						>
+							<div className="relative">
+								<Code2 className="w-5 h-5 sm:w-6 sm:h-6 text-foreground" />
+								<div className="absolute -top-1 -right-1 w-2 h-2 bg-primary rounded-full animate-pulse" />
+							</div>
+							<div className="flex flex-col">
+								<h1 className="text-base sm:text-lg font-semibold tracking-tight hidden sm:block">
+									{t("header.appName")}
+								</h1>
+								<h1 className="text-base font-semibold tracking-tight sm:hidden">
+									{t("header.appNameShort")}
+								</h1>
+							</div>
+						</MotionDiv>
+
+						{/* Language Badge */}
+						<Badge
+							variant="secondary"
+							className="text-xs font-mono font-medium"
+						>
 							<span className="hidden sm:inline">
 								{getCurrentLanguage() === "typescript"
 									? t("language.typescript")
@@ -401,198 +417,212 @@ export default function Home() {
 							</span>
 						</Badge>
 					</div>
-				</div>
 
-				{/* Action Buttons */}
-				<div className="flex items-center space-x-1 sm:space-x-2">
-					<Button
-						variant="ghost"
-						size="sm"
-						onClick={handleClearOutput}
-						className="flex items-center space-x-1"
-					>
-						<RotateCcw className="w-4 h-4" />
-						<span className="hidden sm:inline">{t("common.clear")}</span>
-					</Button>
-
-					{/* Clear All State Button with Long Press */}
-					<div className="relative">
+					{/* Action Buttons */}
+					<div className="flex items-center gap-1 sm:gap-2">
 						<Button
-							variant={isLongPressingClear ? "destructive" : "ghost"}
+							variant="ghost"
 							size="sm"
-							onMouseDown={handleLongPressClearStart}
-							onMouseUp={handleLongPressClearEnd}
-							onMouseLeave={handleLongPressClearEnd}
-							onTouchStart={handleLongPressClearStart}
-							onTouchEnd={handleLongPressClearEnd}
-							className="flex items-center space-x-1 relative overflow-hidden"
-							title={t("header.clearAllTooltip")}
+							onClick={handleClearOutput}
+							className="text-muted-foreground hover:text-foreground hover:bg-muted"
 						>
-							{/* Progress Bar Background */}
-							{isLongPressingClear && (
-								<div className="absolute inset-0 flex items-center px-2">
-									<Progress value={longPressClearProgress} className="h-1" />
-								</div>
-							)}
-
-							{/* Button Content */}
-							<div className="relative z-10 flex items-center space-x-1">
-								<Trash2
-									className={`w-4 h-4 ${isLongPressingClear ? "animate-pulse" : ""}`}
-								/>
-								<span className="hidden sm:inline">{t("header.clearAll")}</span>
-							</div>
+							<RotateCcw className="w-4 h-4" />
+							<span className="hidden sm:inline ml-1.5">{t("common.clear")}</span>
 						</Button>
-					</div>
 
-					{/* Reset to Default Button with Long Press */}
-					<div className="relative">
-						<Button
-							variant={isLongPressing ? "destructive" : "ghost"}
-							size="sm"
-							onMouseDown={handleLongPressStart}
-							onMouseUp={handleLongPressEnd}
-							onMouseLeave={handleLongPressEnd}
-							onTouchStart={handleLongPressStart}
-							onTouchEnd={handleLongPressEnd}
-							className="flex items-center space-x-1 relative overflow-hidden"
-						>
-							{/* Progress Bar Background */}
-							{isLongPressing && (
-								<div className="absolute inset-0 flex items-center px-2">
-									<Progress value={longPressProgress} className="h-1" />
-								</div>
-							)}
-
-							{/* Button Content */}
-							<div className="relative z-10 flex items-center space-x-1">
-								<RefreshCw
-									className={`w-4 h-4 ${isLongPressing ? "animate-spin" : ""}`}
-								/>
-								<span className="hidden sm:inline">{t("common.reset")}</span>
-							</div>
-						</Button>
-					</div>
-					{isExecuting ? (
-						<Button
-							variant="destructive"
-							size="sm"
-							onClick={handleStopExecution}
-							className="flex items-center space-x-1"
-						>
-							<Square className="w-4 h-4" />
-							<span className="hidden sm:inline">{t("common.stop")}</span>
-						</Button>
-					) : (
-						<Button
-							size="sm"
-							onClick={handleRunCode}
-							className="flex items-center space-x-1"
-						>
-							<Play className="w-4 h-4" />
-							<span className="hidden sm:inline">{t("common.run")}</span>
-						</Button>
-					)}
-					<Button
-						variant="ghost"
-						size="sm"
-						onClick={() => setIsSettingsOpen(true)}
-						className="flex items-center space-x-1"
-					>
-						<Settings className="w-4 h-4" />
-						<span className="hidden sm:inline">{t("common.settings")}</span>
-					</Button>
-					<LanguageSwitch />
-				</div>
-			</header>
-
-			{/* Main Content */}
-			<div className="flex-1 flex overflow-hidden bg-background">
-				{/* File Explorer */}
-				<FileExplorer
-					isOpen={isFileExplorerOpen}
-					width={fileExplorerWidth}
-					onWidthChange={handleFileExplorerWidthChange}
-					onToggle={handleFileExplorerToggle}
-				/>
-
-				{/* Editor Area */}
-				<div className="flex-1 flex flex-col min-w-0">
-					{/* Tab Manager */}
-					<TabManager />
-
-					{/* Editor and Output */}
-					<div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
-						{/* Code Editor Panel */}
-						<div className="flex-1 flex flex-col border-b lg:border-b-0 lg:border-r border-border">
-							<div className="bg-muted px-4 py-2 border-b border-border">
-								<h2 className="text-sm font-medium text-foreground">
-									{t("codeEditor.title")}
-								</h2>
-							</div>
-							<div className="flex-1 min-h-0">
-								{openTabs.length > 0 ? (
-									<CodeEditor
-										value={getCurrentCode()}
-										onChange={handleCodeChange}
-										language={getCurrentLanguage()}
-										theme={settings.theme}
-										fontSize={settings.fontSize}
-										filePath={
-											activeFileId && files[activeFileId]
-												? `file:///${files[activeFileId].name}`
-												: `file:///main.${getCurrentLanguage() === "typescript" ? "ts" : "js"}`
-										}
-									/>
-								) : (
-									<div className="h-full flex items-center justify-center bg-muted/50">
-										<div className="text-center text-muted-foreground">
-											<Code2 className="w-12 h-12 mx-auto mb-4 opacity-50" />
-											<p className="text-lg font-medium mb-2">
-												{t("codeEditor.noOpenFiles")}
-											</p>
-											<p className="text-sm">
-												{t("codeEditor.noOpenFilesDesc")}
-											</p>
-										</div>
+						{/* Clear All State Button */}
+						<div className="relative">
+							<Button
+								variant="ghost"
+								size="sm"
+								onMouseDown={handleLongPressClearStart}
+								onMouseUp={handleLongPressClearEnd}
+								onMouseLeave={handleLongPressClearEnd}
+								onTouchStart={handleLongPressClearStart}
+								onTouchEnd={handleLongPressClearEnd}
+								className="relative overflow-hidden text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+								title={t("header.clearAllTooltip")}
+							>
+								{isLongPressingClear && (
+									<div className="absolute inset-0 flex items-center px-2">
+										<Progress value={longPressClearProgress} className="h-0.5" />
 									</div>
 								)}
-							</div>
+								<div className="relative z-10 flex items-center">
+									<Trash2
+										className={`w-4 h-4 ${isLongPressingClear ? "animate-pulse" : ""}`}
+									/>
+									<span className="hidden sm:inline ml-1.5">
+										{t("header.clearAll")}
+									</span>
+								</div>
+							</Button>
 						</div>
 
-						{/* Output Panel */}
-						<div className="w-full lg:w-96 flex flex-col bg-muted min-h-0">
-							<div className="bg-muted px-4 py-2 border-b border-border">
-								<h2 className="text-sm font-medium text-foreground">
-									{t("output.title")}
-								</h2>
-							</div>
-							<div className="flex-1 min-h-0">
-								{showComplexityVisualization && complexityResult ? (
-									<ComplexityVisualization
-										result={complexityResult}
-										onClose={toggleComplexityVisualization}
-									/>
-								) : (
-									<OutputDisplay
-										result={executionResult}
-										isExecuting={isExecuting}
-										onClear={handleClearOutput}
-										onStop={handleStopExecution}
-										onAnalyzeComplexity={handleAnalyzeComplexity}
-										isAnalyzingComplexity={isAnalyzingComplexity}
-									/>
+						{/* Reset Button */}
+						<div className="relative">
+							<Button
+								variant="ghost"
+								size="sm"
+								onMouseDown={handleLongPressStart}
+								onMouseUp={handleLongPressEnd}
+								onMouseLeave={handleLongPressEnd}
+								onTouchStart={handleLongPressStart}
+								onTouchEnd={handleLongPressEnd}
+								className="relative overflow-hidden text-muted-foreground hover:text-warning hover:bg-warning/10"
+							>
+								{isLongPressing && (
+									<div className="absolute inset-0 flex items-center px-2">
+										<Progress value={longPressProgress} className="h-0.5" />
+									</div>
 								)}
-							</div>
+								<div className="relative z-10 flex items-center">
+									<RefreshCw
+										className={`w-4 h-4 ${isLongPressing ? "animate-spin" : ""}`}
+									/>
+									<span className="hidden sm:inline ml-1.5">
+										{t("common.reset")}
+									</span>
+								</div>
+							</Button>
+						</div>
+
+						{/* Run/Stop Button */}
+						{isExecuting ? (
+							<Button
+								variant="destructive"
+								size="sm"
+								onClick={handleStopExecution}
+								className="min-w-[80px] sm:min-w-[90px]"
+							>
+								<Square className="w-4 h-4" />
+								<span className="hidden sm:inline ml-1.5">{t("common.stop")}</span>
+							</Button>
+						) : (
+							<Button
+								size="sm"
+								onClick={handleRunCode}
+								className="min-w-[80px] sm:min-w-[90px]"
+							>
+								<Play className="w-4 h-4" />
+								<span className="hidden sm:inline ml-1.5">{t("common.run")}</span>
+							</Button>
+						)}
+
+						<Button
+							variant="ghost"
+							size="sm"
+							onClick={() => setIsSettingsOpen(true)}
+							className="text-muted-foreground hover:text-foreground hover:bg-muted"
+						>
+							<Settings className="w-4 h-4" />
+							<span className="hidden sm:inline ml-1.5">
+								{t("common.settings")}
+							</span>
+						</Button>
+						<ThemeSwitcher />
+						<LanguageSwitch />
+					</div>
+				</header>
+
+				{/* Main Content */}
+				<div className="flex-1 flex overflow-hidden">
+					{/* File Explorer */}
+					<FileExplorer
+						isOpen={isFileExplorerOpen}
+						width={fileExplorerWidth}
+						onWidthChange={handleFileExplorerWidthChange}
+						onToggle={handleFileExplorerToggle}
+					/>
+
+					{/* Editor Area */}
+					<div className="flex-1 flex flex-col min-w-0">
+						{/* Tab Manager */}
+						<TabManager />
+
+						{/* Editor and Output */}
+						<div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
+							{/* Code Editor Panel */}
+							<MotionDiv
+								className="flex-1 flex flex-col border-b lg:border-b-0 lg:border-r"
+								initial={{ opacity: 0 }}
+								animate={{ opacity: 1 }}
+								transition={{ delay: 0.1 }}
+							>
+								<div className="bg-muted/50 px-4 py-2 border-b">
+									<h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+										{t("codeEditor.title")}
+									</h2>
+								</div>
+								<div className="flex-1 min-h-0">
+									{openTabs.length > 0 ? (
+										<CodeEditor
+											value={getCurrentCode()}
+											onChange={handleCodeChange}
+											language={getCurrentLanguage()}
+											theme={settings.theme}
+											fontSize={settings.fontSize}
+											filePath={
+												activeFileId && files[activeFileId]
+													? `file:///${files[activeFileId].name}`
+													: `file:///main.${getCurrentLanguage() === "typescript" ? "ts" : "js"}`
+											}
+										/>
+									) : (
+										<div className="h-full flex items-center justify-center bg-muted/30">
+											<div className="text-center text-muted-foreground">
+												<Code2 className="w-12 h-12 mx-auto mb-4 opacity-30" />
+												<p className="text-sm font-medium mb-1">
+													{t("codeEditor.noOpenFiles")}
+												</p>
+												<p className="text-xs">
+													{t("codeEditor.noOpenFilesDesc")}
+												</p>
+											</div>
+										</div>
+									)}
+								</div>
+							</MotionDiv>
+
+							{/* Output Panel */}
+							<MotionDiv
+								className="w-full lg:w-96 flex flex-col bg-muted/30 min-h-0"
+								initial={{ opacity: 0 }}
+								animate={{ opacity: 1 }}
+								transition={{ delay: 0.15 }}
+							>
+								<div className="bg-muted/50 px-4 py-2 border-b">
+									<h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+										{t("output.title")}
+									</h2>
+								</div>
+								<div className="flex-1 min-h-0">
+									{showComplexityVisualization && complexityResult ? (
+										<ComplexityVisualization
+											result={complexityResult}
+											onClose={toggleComplexityVisualization}
+										/>
+									) : (
+										<OutputDisplay
+											result={executionResult}
+											isExecuting={isExecuting}
+											onClear={handleClearOutput}
+											onStop={handleStopExecution}
+											onAnalyzeComplexity={handleAnalyzeComplexity}
+											isAnalyzingComplexity={isAnalyzingComplexity}
+										/>
+									)}
+								</div>
+							</MotionDiv>
 						</div>
 					</div>
 				</div>
-			</div>
 
-			<SettingsDialog
-				isOpen={isSettingsOpen}
-				onClose={() => setIsSettingsOpen(false)}
-			/>
-		</div>
+				<SettingsDialog
+					isOpen={isSettingsOpen}
+					onClose={() => setIsSettingsOpen(false)}
+				/>
+			</div>
+		</PageTransition>
 	);
 }

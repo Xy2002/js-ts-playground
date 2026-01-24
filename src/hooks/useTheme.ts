@@ -1,31 +1,87 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
+import { usePlaygroundStore } from "@/store/usePlaygroundStore";
 
-type Theme = "light" | "dark";
+export type AppTheme = "light" | "dark" | "system";
 
+/**
+ * Theme management hook
+ * Handles applying the app theme (light/dark/system) to the document
+ * and syncing the Monaco editor theme accordingly
+ */
 export function useTheme() {
-	const [theme, setTheme] = useState<Theme>(() => {
-		const savedTheme = localStorage.getItem("theme") as Theme;
-		if (savedTheme) {
-			return savedTheme;
+	const { settings, updateSettings } = usePlaygroundStore();
+	const appTheme = settings.appTheme || "system";
+
+	// Get the effective theme (resolves "system" to actual theme)
+	const getEffectiveTheme = (): "light" | "dark" => {
+		if (appTheme === "system") {
+			return window.matchMedia("(prefers-color-scheme: dark)").matches
+				? "dark"
+				: "light";
 		}
-		return window.matchMedia("(prefers-color-scheme: dark)").matches
-			? "dark"
-			: "light";
-	});
+		return appTheme;
+	};
 
+	// Apply theme to document
 	useEffect(() => {
-		document.documentElement.classList.remove("light", "dark");
-		document.documentElement.classList.add(theme);
-		localStorage.setItem("theme", theme);
-	}, [theme]);
+		const root = document.documentElement;
+		const effectiveTheme = getEffectiveTheme();
 
-	const toggleTheme = () => {
-		setTheme((prevTheme) => (prevTheme === "light" ? "dark" : "light"));
+		// Remove both classes first
+		root.classList.remove("light", "dark");
+
+		// Add the appropriate class
+		root.classList.add(effectiveTheme);
+
+		// Also update the color-scheme property for better native UI support
+		root.style.colorScheme = effectiveTheme;
+	}, [appTheme]);
+
+	// Listen for system theme changes when in system mode
+	useEffect(() => {
+		if (appTheme !== "system") return;
+
+		const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+
+		const handleChange = (e: MediaQueryListEvent) => {
+			const root = document.documentElement;
+			const newTheme = e.matches ? "dark" : "light";
+			root.classList.remove("light", "dark");
+			root.classList.add(newTheme);
+			root.style.colorScheme = newTheme;
+		};
+
+		// Modern browsers
+		mediaQuery.addEventListener("change", handleChange);
+
+		return () => {
+			mediaQuery.removeEventListener("change", handleChange);
+		};
+	}, [appTheme]);
+
+	// Get the matching Monaco editor theme
+	const getMonacoTheme = (): "vs" | "vs-dark" => {
+		const effectiveTheme = getEffectiveTheme();
+		return effectiveTheme === "dark" ? "vs-dark" : "vs";
+	};
+
+	// Sync Monaco theme when app theme changes
+	useEffect(() => {
+		const monacoTheme = getMonacoTheme();
+		if (settings.theme !== monacoTheme) {
+			updateSettings({ theme: monacoTheme });
+		}
+	}, [appTheme, settings.theme, updateSettings]);
+
+	const setTheme = (theme: AppTheme) => {
+		updateSettings({ appTheme: theme });
 	};
 
 	return {
-		theme,
-		toggleTheme,
-		isDark: theme === "dark",
+		theme: appTheme,
+		effectiveTheme: getEffectiveTheme(),
+		setTheme,
+		monacoTheme: getMonacoTheme(),
+		isDark: getEffectiveTheme() === "dark",
 	};
 }

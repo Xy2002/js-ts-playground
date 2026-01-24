@@ -13,7 +13,8 @@ import {
 } from "@/types/multiFile";
 
 export interface UserSettings {
-	theme: "vs-dark" | "light";
+	theme: "vs-dark" | "vs";
+	appTheme: "light" | "dark" | "system";
 	fontSize: number;
 	language: "javascript" | "typescript";
 	autoSave: boolean;
@@ -126,6 +127,7 @@ const STORAGE_KEYS = {
 
 const defaultSettings: UserSettings = {
 	theme: "vs-dark",
+	appTheme: "system",
 	fontSize: 14,
 	language: "javascript",
 	autoSave: true,

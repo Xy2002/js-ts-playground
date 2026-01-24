@@ -20,12 +20,13 @@ import {
 	TooltipProvider,
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface CodeEditorProps {
 	value: string;
 	onChange: (value: string | undefined) => void;
 	language: "javascript" | "typescript";
-	theme: "vs-dark" | "light";
+	theme: "vs-dark" | "vs";
 	fontSize: number;
 	readOnly?: boolean;
 	filePath: string;
@@ -364,7 +365,7 @@ export default function CodeEditor({
 	}, []);
 
 	return (
-		<div className="h-full w-full border border-gray-300 dark:border-gray-600 rounded-lg overflow-hidden">
+		<div className="h-full w-full rounded-lg overflow-hidden border border-border/50 bg-background">
 			<Editor
 				height="100%"
 				language={language}
@@ -379,43 +380,57 @@ export default function CodeEditor({
 				}}
 				loading={
 					<div className="flex items-center justify-center h-full">
-						<div className="text-muted-foreground">
+						<motion.div
+							initial={{ opacity: 0 }}
+							animate={{ opacity: 1 }}
+							className="text-muted-foreground"
+						>
 							{t("codeEditor.loadingEditor")}
-						</div>
+						</motion.div>
 					</div>
 				}
 			/>
 
 			{createPortal(
 				<TooltipProvider>
-					<Tooltip>
-						<TooltipTrigger asChild>
-							<Badge
-								className="text-sm font-medium absolute right-2 bottom-2 cursor-pointer hover:opacity-80 transition-opacity"
-								onClick={toggleLlmEnabled}
-							>
-								LLM AutoCompletion:
-								{!!editorRef.current &&
-									!!monacoRef.current &&
-									!!llmSettings.apiKey &&
-									!!llmSettings.model &&
-									llmSettings.enabled ? (
-									<span className="text-green-500 ml-1">
-										Active (click to disable)
-									</span>
-								) : (
-									<span className="text-red-500 ml-1">
-										{llmSettings.enabled ? "Inactive" : "Disabled"} (click to enable)
-									</span>
-								)}
-							</Badge>
-						</TooltipTrigger>
-						{inactiveReason && (
-							<TooltipContent>
-								<p>{inactiveReason}</p>
-							</TooltipContent>
-						)}
-					</Tooltip>
+					<AnimatePresence>
+						<Tooltip>
+							<TooltipTrigger asChild>
+								<motion.div
+									initial={{ opacity: 0, y: 10 }}
+									animate={{ opacity: 1, y: 0 }}
+									exit={{ opacity: 0, y: 10 }}
+									transition={{ duration: 0.2 }}
+								>
+									<Badge
+										variant="secondary"
+										className="text-xs font-medium absolute right-2 bottom-2 cursor-pointer hover:opacity-80 transition-opacity bg-background/80 backdrop-blur-sm border border-border/50"
+										onClick={toggleLlmEnabled}
+									>
+										LLM:
+										{!!editorRef.current &&
+											!!monacoRef.current &&
+											!!llmSettings.apiKey &&
+											!!llmSettings.model &&
+											llmSettings.enabled ? (
+											<span className="text-green-600 dark:text-green-400 ml-1 font-medium">
+												Active
+											</span>
+										) : (
+											<span className="text-muted-foreground ml-1">
+												{llmSettings.enabled ? "Inactive" : "Disabled"}
+											</span>
+										)}
+									</Badge>
+								</motion.div>
+							</TooltipTrigger>
+							{inactiveReason && (
+								<TooltipContent>
+									<p>{inactiveReason}</p>
+								</TooltipContent>
+							)}
+						</Tooltip>
+					</AnimatePresence>
 				</TooltipProvider>,
 				document.body,
 			)}

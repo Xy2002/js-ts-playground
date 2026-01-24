@@ -1,5 +1,6 @@
 import { Play, Square, Trash2, TrendingUp, Loader2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -82,66 +83,85 @@ export default function OutputDisplay({
 		type: "log" | "error";
 		content: string;
 		id: string;
-	}) => {
+	}, index: number) => {
 		const isError = item.type === "error";
 
 		return (
-			<div
+			<motion.div
 				key={item.id}
-				className={`py-1 px-2 sm:px-3 border-l-2 ${
+				initial={{ opacity: 0, x: -10 }}
+				animate={{ opacity: 1, x: 0 }}
+				transition={{ delay: index * 0.02, duration: 0.2 }}
+				className={`py-2 px-3 border-l-2 ${
 					isError
-						? "border-destructive bg-destructive/10 text-destructive"
-						: "border-primary bg-primary/10 text-primary"
+						? "border-destructive bg-destructive/5 text-destructive"
+						: "border-primary/50 bg-primary/5"
 				}`}
 			>
-				<div className="flex items-start gap-1 sm:gap-2">
+				<div className="flex items-start gap-2">
 					<span
-						className={`text-xs font-mono mt-0.5 ${
-							isError ? "text-destructive" : "text-primary"
+						className={`text-xs mt-0.5 ${
+							isError ? "text-destructive" : "text-primary/70"
 						}`}
 					>
-						{isError ? "❌" : "📝"}
+						{isError ? "●" : "›"}
 					</span>
-					<pre className="font-mono text-xs sm:text-sm whitespace-pre-wrap break-all flex-1 min-w-0">
+					<pre className="font-mono text-sm whitespace-pre-wrap break-all flex-1 min-w-0">
 						{item.content}
 					</pre>
 				</div>
-			</div>
+			</motion.div>
 		);
 	};
 
 	return (
-		<Card className="h-full flex flex-col rounded-none">
-			{/* 输出区域头部 */}
-			<CardHeader className="flex flex-row items-center justify-between p-2 sm:p-3 space-y-0 flex-shrink-0">
-				<div className="flex items-center gap-1 sm:gap-2">
-					<div className="flex items-center gap-1">
+		<Card className="h-full flex flex-col rounded-none border-0 shadow-none bg-transparent">
+			{/* Vercel-style Output Header */}
+			<CardHeader className="flex flex-row items-center justify-between p-3 space-y-0 flex-shrink-0">
+				<div className="flex items-center gap-2">
+					<AnimatePresence mode="wait">
 						{isExecuting ? (
-							<Square className="w-3 h-3 sm:w-4 sm:h-4 text-warning" />
+							<motion.div
+								key="running"
+								initial={{ scale: 0.8, opacity: 0 }}
+								animate={{ scale: 1, opacity: 1 }}
+								exit={{ scale: 0.8, opacity: 0 }}
+								transition={{ duration: 0.15 }}
+							>
+								<div className="w-2 h-2 rounded-full bg-warning animate-pulse" />
+							</motion.div>
 						) : (
-							<Play className="w-3 h-3 sm:w-4 sm:h-4 text-green-500" />
+							<motion.div
+								key="idle"
+								initial={{ scale: 0.8, opacity: 0 }}
+								animate={{ scale: 1, opacity: 1 }}
+								exit={{ scale: 0.8, opacity: 0 }}
+								transition={{ duration: 0.15 }}
+							>
+								<div className="w-2 h-2 rounded-full bg-green-500/50" />
+							</motion.div>
 						)}
-						<span className="text-xs sm:text-sm font-medium">
-							{isExecuting ? "Running..." : "Output"}
-						</span>
-					</div>
+					</AnimatePresence>
+					<span className="text-sm font-semibold tracking-tight">
+						{isExecuting ? "Running" : "Output"}
+					</span>
 					{result && result.executionTime > 0 && (
-						<Badge variant="secondary" className="text-xs hidden sm:inline">
+						<Badge variant="secondary" className="text-xs font-mono bg-muted/50">
 							{result.executionTime}ms
 						</Badge>
 					)}
 				</div>
 
-				<div className="flex items-center gap-1 sm:gap-2">
+				<div className="flex items-center gap-1">
 					{hasVisualizations && (
 						<Button
 							variant="ghost"
 							size="sm"
 							onClick={() => setShowVisualization(!showVisualization)}
-							className="p-1 sm:p-1.5 text-xs"
+							className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground"
 							title="Toggle visualization"
 						>
-							{showVisualization ? "Hide Viz" : "Show Viz"}
+							{showVisualization ? "Hide" : "Show"} Viz
 						</Button>
 					)}
 					{onAnalyzeComplexity && (
@@ -150,10 +170,10 @@ export default function OutputDisplay({
 							size="sm"
 							onClick={onAnalyzeComplexity}
 							disabled={isAnalyzingComplexity}
-							className={`p-1 sm:p-1.5 ${
+							className={`h-7 px-2 text-xs ${
 								isAnalyzingComplexity
-									? "text-blue-400 cursor-wait"
-									: "text-blue-400 hover:text-blue-300"
+									? "text-primary cursor-wait"
+									: "text-muted-foreground hover:text-foreground"
 							}`}
 							title={
 								isAnalyzingComplexity
@@ -162,9 +182,9 @@ export default function OutputDisplay({
 							}
 						>
 							{isAnalyzingComplexity ? (
-								<Loader2 className="w-3 h-3 sm:w-4 sm:h-4 animate-spin" />
+								<Loader2 className="w-3 h-3 animate-spin" />
 							) : (
-								<TrendingUp className="w-3 h-3 sm:w-4 sm:h-4" />
+								<TrendingUp className="w-3 h-3" />
 							)}
 						</Button>
 					)}
@@ -173,20 +193,20 @@ export default function OutputDisplay({
 							variant="ghost"
 							size="sm"
 							onClick={onStop}
-							className="p-1 sm:p-1.5 text-warning hover:text-warning/80"
+							className="h-7 px-2 text-warning hover:text-warning/80 hover:bg-warning/10"
 							title="Stop execution"
 						>
-							<Square className="w-3 h-3 sm:w-4 sm:h-4" />
+							<Square className="w-3 h-3" />
 						</Button>
 					)}
 					<Button
 						variant="ghost"
 						size="sm"
 						onClick={onClear}
-						className="p-1 sm:p-1.5"
+						className="h-7 px-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
 						title="Clear output"
 					>
-						<Trash2 className="w-3 h-3 sm:w-4 sm:h-4" />
+						<Trash2 className="w-3 h-3" />
 					</Button>
 				</div>
 			</CardHeader>
@@ -195,59 +215,99 @@ export default function OutputDisplay({
 			<div style={{ height: outputHeight }} className="min-h-0">
 				<CardContent className="h-full p-0 min-h-0">
 					<ScrollArea className="h-full" ref={outputRef}>
-						<div className="p-2 space-y-1">
+						<div className="p-3 space-y-1">
 							{!result && !isExecuting && (
 								<div className="flex items-center justify-center h-full text-muted-foreground">
-									<div className="text-center px-4">
-										<Play className="w-6 h-6 sm:w-8 sm:h-8 mx-auto mb-2 opacity-50" />
-										<p className="text-xs sm:text-sm">
-											Click "Run" to execute your code
+									<motion.div
+										initial={{ opacity: 0, y: 10 }}
+										animate={{ opacity: 1, y: 0 }}
+										className="text-center px-4"
+									>
+										<div className="w-12 h-12 mx-auto mb-3 rounded-full bg-muted/50 flex items-center justify-center">
+											<Play className="w-5 h-5 opacity-50" />
+										</div>
+										<p className="text-sm font-medium mb-1">
+											Ready to execute
 										</p>
-										<p className="text-xs mt-1 hidden sm:block">
-											Console output will appear here
+										<p className="text-xs">
+											Output will appear here
 										</p>
-									</div>
+									</motion.div>
 								</div>
 							)}
 
 							{isExecuting && (
-								<div className="flex items-center gap-2 p-2 sm:p-3 text-warning">
-									<div className="animate-spin w-3 h-3 sm:w-4 sm:h-4 border-2 border-current border-t-transparent rounded-full"></div>
-									<span className="text-xs sm:text-sm">Executing code...</span>
-								</div>
+								<motion.div
+									initial={{ opacity: 0, y: -10 }}
+									animate={{ opacity: 1, y: 0 }}
+									className="flex items-center gap-2 p-3 text-warning bg-warning/5 border border-warning/20 rounded-lg mb-2"
+								>
+									<motion.div
+										animate={{ rotate: 360 }}
+										transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+									>
+										<Loader2 className="w-4 h-4" />
+									</motion.div>
+									<span className="text-sm font-medium">Executing code...</span>
+								</motion.div>
 							)}
 
 							{isAnalyzingComplexity && !isExecuting && (
-								<div className="flex items-center gap-2 p-2 sm:p-3 text-blue-400 bg-blue-500/10 border border-blue-500/20 rounded-lg">
-									<Loader2 className="w-3 h-3 sm:w-4 sm:h-4 animate-spin" />
-									<span className="text-xs sm:text-sm font-medium">
-										Analyzing complexity with LLM...
+								<motion.div
+									initial={{ opacity: 0, y: -10 }}
+									animate={{ opacity: 1, y: 0 }}
+									className="flex items-center gap-2 p-3 bg-primary/5 border border-primary/20 rounded-lg mb-2"
+								>
+									<Loader2 className="w-4 h-4 animate-spin text-primary" />
+									<span className="text-sm font-medium text-foreground">
+										Analyzing complexity...
 									</span>
-								</div>
+								</motion.div>
 							)}
 
 							{result && (
-								<div className="space-y-1">
-									{result.logs.length === 0 && result.errors.length === 0 && (
-										<div className="p-2 sm:p-3 text-muted-foreground text-xs sm:text-sm text-center">
-											No output produced
-										</div>
-									)}
+								<AnimatePresence mode="popLayout">
+									<div className="space-y-1">
+										{result.logs.length === 0 && result.errors.length === 0 && (
+											<motion.div
+												initial={{ opacity: 0 }}
+												animate={{ opacity: 1 }}
+												exit={{ opacity: 0 }}
+												className="p-3 text-center text-muted-foreground text-sm bg-muted/30 rounded-lg"
+											>
+												No output
+											</motion.div>
+										)}
 
-									{formatOutput(result.logs, result.errors).map(renderOutputLine)}
+										{formatOutput(result.logs, result.errors).map((item, index) =>
+											renderOutputLine(item, index)
+										)}
 
-									{result.success && result.logs.length > 0 && (
-										<div className="mt-2 p-2 bg-green-500/10 border border-green-500/20 text-green-700 dark:text-green-400 text-xs">
-											✅ Execution completed successfully
-										</div>
-									)}
+										{result.success && result.logs.length > 0 && (
+											<motion.div
+												initial={{ opacity: 0, y: 10 }}
+												animate={{ opacity: 1, y: 0 }}
+												transition={{ delay: 0.1 }}
+												className="mt-2 p-2 bg-green-500/10 border border-green-500/20 text-green-700 dark:text-green-400 text-xs rounded-md flex items-center gap-2"
+											>
+												<div className="w-1.5 h-1.5 rounded-full bg-green-500" />
+												<span className="font-medium">Execution completed</span>
+											</motion.div>
+										)}
 
-									{!result.success && (
-										<div className="mt-2 p-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 text-xs">
-											❌ Execution failed
-										</div>
-									)}
-								</div>
+										{!result.success && (
+											<motion.div
+												initial={{ opacity: 0, y: 10 }}
+												animate={{ opacity: 1, y: 0 }}
+												transition={{ delay: 0.1 }}
+												className="mt-2 p-2 bg-destructive/10 border border-destructive/20 text-destructive text-xs rounded-md flex items-center gap-2"
+											>
+												<div className="w-1.5 h-1.5 rounded-full bg-destructive" />
+												<span className="font-medium">Execution failed</span>
+											</motion.div>
+										)}
+									</div>
+								</AnimatePresence>
 							)}
 						</div>
 					</ScrollArea>
@@ -255,29 +315,37 @@ export default function OutputDisplay({
 			</div>
 
 			{/* 可视化区域 - 下半部分 */}
-			{hasVisualizations && showVisualization && (
-				<>
-					<Separator />
-					<div style={{ height: visualizationHeight }} className="min-h-0">
-						{(() => {
-							const heapViz = result.visualizations.filter((v) => v.type === "heap");
-							const treeViz = result.visualizations.filter((v) => v.type === "tree");
+			<AnimatePresence>
+				{hasVisualizations && showVisualization && (
+					<>
+						<Separator />
+						<motion.div
+							initial={{ height: 0, opacity: 0 }}
+							animate={{ height: visualizationHeight, opacity: 1 }}
+							exit={{ height: 0, opacity: 0 }}
+							transition={{ duration: 0.2 }}
+							className="min-h-0 overflow-hidden"
+						>
+							{(() => {
+								const heapViz = result.visualizations.filter((v) => v.type === "heap");
+								const treeViz = result.visualizations.filter((v) => v.type === "tree");
 
-							// If we have both, show tree first (on top), then heap
-							return (
-								<>
-									{treeViz.length > 0 && (
-										<ClassTreeVisualization visualizations={treeViz} />
-									)}
-									{heapViz.length > 0 && (
-										<HeapVisualization visualizations={heapViz} />
-									)}
-								</>
-							);
-						})()}
-					</div>
-				</>
-			)}
+								// If we have both, show tree first (on top), then heap
+								return (
+									<>
+										{treeViz.length > 0 && (
+											<ClassTreeVisualization visualizations={treeViz} />
+										)}
+										{heapViz.length > 0 && (
+											<HeapVisualization visualizations={heapViz} />
+										)}
+									</>
+								);
+							})()}
+						</motion.div>
+					</>
+				)}
+			</AnimatePresence>
 		</Card>
 	);
 }
