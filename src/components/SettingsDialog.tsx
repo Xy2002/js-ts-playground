@@ -1,6 +1,7 @@
 import type React from "react";
+import { Link } from "react-router-dom";
 import { useCallback, useEffect, useId, useState } from "react";
-import { RefreshCw } from "lucide-react";
+import { ExternalLink, RefreshCw } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import {
 	type LlmProvider,
@@ -260,12 +261,25 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
 						</div>
 					)}
 				</div>
-				<DialogFooter>
-					<Button type="button" variant="outline" onClick={onClose}>
-						{t("common.cancel") || "Cancel"}
-					</Button>
-					<Button type="button" onClick={handleSave}>
-						{t("common.save") || "Save"}
+				<DialogFooter className="flex-col sm:flex-row gap-2">
+					<div className="flex gap-2 w-full sm:w-auto">
+						<Button type="button" variant="outline" onClick={onClose} className="flex-1 sm:flex-none">
+							{t("common.cancel") || "Cancel"}
+						</Button>
+						<Button type="button" onClick={handleSave} className="flex-1 sm:flex-none">
+							{t("common.save") || "Save"}
+						</Button>
+					</div>
+					<Button
+						type="button"
+						variant="ghost"
+						asChild
+						className="w-full sm:w-auto text-muted-foreground hover:text-foreground"
+					>
+						<Link to="/settings" onClick={onClose}>
+							<ExternalLink className="w-4 h-4 mr-2" />
+							More Settings
+						</Link>
 					</Button>
 				</DialogFooter>
 			</DialogContent>
