@@ -104,6 +104,13 @@ interface PlaygroundState extends MultiFileState {
 	closeTab: (fileId: string) => void;
 	closeAllTabs: () => void;
 	closeOtherTabs: (fileId: string) => void;
+
+	// 数据导出/导入
+	exportData: (includeLlmSettings?: boolean) => void;
+	importData: (
+		data: import("@/services/dataExportService").ExportData,
+		options?: import("@/services/dataExportService").ImportOptions,
+	) => Promise<void>;
 }
 
 const STORAGE_KEYS = {
@@ -1235,6 +1242,131 @@ export const usePlaygroundStore = create<PlaygroundState>((set, get) => ({
 				openTabs: [{ ...tabToKeep, isActive: true }],
 				activeFileId: keepFileId,
 			});
+		}
+	},
+
+	// 数据导出
+	exportData: (includeLlmSettings = false) => {
+		const {
+			codeHistory,
+			language,
+			settings,
+			llmSettings,
+			files,
+			folders,
+			fileContents,
+			activeFileId,
+			openTabs,
+			isFileExplorerOpen,
+			fileExplorerWidth,
+			expandedFolders,
+		} = get();
+
+		const { dataExportService } = require("@/services/dataExportService");
+
+		const exportData = dataExportService.exportData(
+			codeHistory,
+			language,
+			settings,
+			llmSettings,
+			files,
+			folders,
+			fileContents,
+			activeFileId,
+			openTabs,
+			{
+				isFileExplorerOpen,
+				fileExplorerWidth,
+				expandedFolders,
+			},
+			includeLlmSettings,
+		);
+
+		dataExportService.downloadAsJson(exportData);
+	},
+
+	// 数据导入
+	importData: async (
+		data: import("@/services/dataExportService").ExportData,
+		options: import("@/services/dataExportService").ImportOptions = {
+			includeLlmSettings: false,
+			mergeStrategy: "overwrite",
+			preserveCurrentSettings: false,
+		},
+	) => {
+		const { dataExportService } = require("@/services/dataExportService");
+
+		try {
+			// 验证数据
+			dataExportService.validateImportData(data);
+
+			// 根据选项应用导入的数据
+			const updates: Partial<PlaygroundState> = {};
+
+			// 代码历史
+			if (data.codeHistory) {
+				updates.codeHistory = data.codeHistory;
+				updates.code =
+					data.language === "javascript"
+						? data.codeHistory.javascript
+						: data.codeHistory.typescript;
+			}
+
+			// 语言
+			if (data.language) {
+				updates.language = data.language;
+			}
+
+			// 用户设置
+			if (!options.preserveCurrentSettings && data.settings) {
+				updates.settings = data.settings;
+			}
+
+			// LLM设置
+			if (options.includeLlmSettings && data.llmSettings) {
+				updates.llmSettings = data.llmSettings;
+			}
+
+			// 多文件系统
+			if (data.files && data.folders && data.fileContents) {
+				if (options.mergeStrategy === "overwrite") {
+					updates.files = data.files;
+					updates.folders = data.folders;
+					updates.fileContents = data.fileContents;
+				} else if (options.mergeStrategy === "merge") {
+					const { files, folders, fileContents } = get();
+					updates.files = { ...files, ...data.files };
+					updates.folders = { ...folders, ...data.folders };
+					updates.fileContents = { ...fileContents, ...data.fileContents };
+				}
+				// "skip" 策略不更新文件系统
+			}
+
+			// 会话状态
+			if (data.activeFileId !== undefined) {
+				updates.activeFileId = data.activeFileId;
+			}
+			if (data.openTabs) {
+				updates.openTabs = data.openTabs;
+			}
+
+			// UI状态
+			if (data.uiState) {
+				updates.isFileExplorerOpen = data.uiState.isFileExplorerOpen;
+				updates.fileExplorerWidth = data.uiState.fileExplorerWidth;
+				updates.expandedFolders = new Set(data.uiState.expandedFolders);
+			}
+
+			// 应用更新
+			set(updates);
+
+			// 保存到localStorage
+			get().saveToStorage();
+
+			console.log("Data imported successfully");
+		} catch (error) {
+			console.error("Failed to import data:", error);
+			throw error;
 		}
 	},
 }));

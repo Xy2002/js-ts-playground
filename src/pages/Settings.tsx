@@ -1,13 +1,16 @@
 import {
 	ArrowLeft,
+	Download,
 	Indent,
 	Monitor,
 	Moon,
 	Save,
 	Sun,
 	Type,
+	Upload,
 } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import {
@@ -20,11 +23,13 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
+import DataExportImport from "@/components/DataExportImport";
 import { usePlaygroundStore } from "@/store/usePlaygroundStore";
 
 export default function Settings() {
 	const { settings, updateSettings } = usePlaygroundStore();
 	const { t } = useTranslation();
+	const [dataExportImportOpen, setDataExportImportOpen] = useState(false);
 
 	const handleThemeChange = (theme: "vs-dark" | "light") => {
 		updateSettings({ theme });
@@ -68,6 +73,40 @@ export default function Settings() {
 			{/* Main Content */}
 			<div className="max-w-4xl mx-auto p-3 sm:p-6">
 				<div className="space-y-4 sm:space-y-8">
+					{/* Data Export / Import */}
+					<Card>
+						<CardHeader>
+							<CardTitle className="flex items-center space-x-3">
+								<Download className="w-4 sm:w-5 h-4 sm:h-5 text-blue-600 dark:text-blue-400" />
+								<span>Data Export / Import</span>
+							</CardTitle>
+							<CardDescription>
+								Sync your playground data across devices or backup your work
+							</CardDescription>
+						</CardHeader>
+						<CardContent>
+							<div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+								<Button
+									variant="outline"
+									className="h-auto p-3 sm:p-4 justify-start"
+									onClick={() => setDataExportImportOpen(true)}
+								>
+									<div className="flex items-center space-x-3">
+										<Upload className="w-5 sm:w-6 h-5 sm:h-6 text-green-600 dark:text-green-400" />
+										<div className="text-left">
+											<div className="text-sm sm:text-base font-medium">
+												Export / Import Data
+											</div>
+											<div className="text-xs sm:text-sm text-muted-foreground">
+												Backup or restore your playground
+											</div>
+										</div>
+									</div>
+								</Button>
+							</div>
+						</CardContent>
+					</Card>
+
 					{/* Editor Theme */}
 					<Card>
 						<CardHeader>
@@ -226,6 +265,12 @@ export default function Settings() {
 					</Card>
 				</div>
 			</div>
+
+			{/* Data Export/Import Dialog */}
+			<DataExportImport
+				open={dataExportImportOpen}
+				onOpenChange={setDataExportImportOpen}
+			/>
 		</div>
 	);
 }
