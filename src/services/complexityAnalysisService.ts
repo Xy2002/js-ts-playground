@@ -32,11 +32,7 @@ export async function analyzeComplexity(
 	language: string,
 	llmSettings: LlmSettings,
 ): Promise<ComplexityResult> {
-	const { provider, apiKey, apiUrl, model, enabled } = llmSettings;
-
-	if (!enabled) {
-		throw new Error("LLM is disabled. Please enable it in settings.");
-	}
+	const { provider, apiKey, apiUrl, model } = llmSettings;
 
 	if (!apiKey) {
 		throw new Error("API key is not configured. Please add your API key in settings.");
