@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import type { ExecutionResult } from "@/services/codeExecutionService";
+import { dataExportService } from "@/services/dataExportService";
 import { fileManager } from "@/services/fileManager";
 import {
 	type CreateFileRequest,
@@ -1262,9 +1263,7 @@ export const usePlaygroundStore = create<PlaygroundState>((set, get) => ({
 			expandedFolders,
 		} = get();
 
-		const { dataExportService } = require("@/services/dataExportService");
-
-		const exportData = dataExportService.exportData(
+		const exportedData = dataExportService.exportData(
 			codeHistory,
 			language,
 			settings,
@@ -1282,7 +1281,7 @@ export const usePlaygroundStore = create<PlaygroundState>((set, get) => ({
 			includeLlmSettings,
 		);
 
-		dataExportService.downloadAsJson(exportData);
+		dataExportService.downloadAsJson(exportedData);
 	},
 
 	// 数据导入
@@ -1294,12 +1293,8 @@ export const usePlaygroundStore = create<PlaygroundState>((set, get) => ({
 			preserveCurrentSettings: false,
 		},
 	) => {
-		const { dataExportService } = require("@/services/dataExportService");
-
 		try {
-			// 验证数据
-			dataExportService.validateImportData(data);
-
+			// 数据已经在 importFromFile 中验证过，这里直接应用
 			// 根据选项应用导入的数据
 			const updates: Partial<PlaygroundState> = {};
 

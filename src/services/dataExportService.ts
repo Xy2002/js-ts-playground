@@ -157,7 +157,7 @@ class DataExportService {
 	/**
 	 * 验证导入数据的格式
 	 */
-	private validateImportData(data: any): asserts data is ExportData {
+	validateImportData(data: any): asserts data is ExportData {
 		if (!data || typeof data !== "object") {
 			throw new Error("Invalid data format");
 		}
