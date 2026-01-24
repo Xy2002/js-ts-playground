@@ -187,13 +187,24 @@ export default function HeapVisualization({
 
 		// 绘制节点
 		nodes.forEach((node) => {
+			// Check if this node has changed
+			const changedIndices = currentViz.changes?.heap ?? [];
+			const isChanged = changedIndices.includes(node.index);
+
 			// 绘制圆形背景
 			ctx.beginPath();
 			ctx.arc(node.x, node.y, 20, 0, 2 * Math.PI);
 			ctx.fillStyle = "#3b82f6";
+
+			// Use different styles for changed nodes
+			if (isChanged) {
+				ctx.strokeStyle = "#ef4444"; // Red for changed nodes
+				ctx.lineWidth = 4;
+			} else {
+				ctx.strokeStyle = "#1d4ed8"; // Default blue
+				ctx.lineWidth = 2;
+			}
 			ctx.fill();
-			ctx.strokeStyle = "#1d4ed8";
-			ctx.lineWidth = 2;
 			ctx.stroke();
 
 			// 绘制索引（小字）

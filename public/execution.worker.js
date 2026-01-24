@@ -199,38 +199,65 @@ self.onmessage = async function (e) {
 		const errors = [];
 		const visualizations = [];
 
+		// Track previous data for change detection
+		let lastHeapData = null;
+		let lastTreeData = null;
+
+		// Detect heap changes
+		function detectHeapChanges(prev, current) {
+			const changed = [];
+			const maxLength = Math.max(prev ? prev.length : 0, current.length);
+
+			for (let i = 0; i < maxLength; i++) {
+				if ((prev && prev[i]) !== current[i]) {
+					changed.push(i);
+				}
+			}
+
+			return changed.length > 0 ? changed : null;
+		}
+
 		// renderHeap函数 - 用于可视化堆结构
 		function renderHeap(heap, label) {
 			try {
-				// 序列化堆数据
-				const heapData = JSON.parse(
-					JSON.stringify(
-						heap,
-						(key, value) => {
-							// 处理循环引用
-							if (typeof value === "object" && value !== null) {
-								if (
-									value.constructor &&
-									value.constructor.name === "ListNode"
-								) {
-									return {
-										val: value.val,
-										next: value.next ? "[ListNode]" : null,
-									};
-								}
-							}
-							return value;
-						},
-						2,
-					),
-				);
+				// Support both array format and object format {heap: [...]}
+				let heapData;
+				if (Array.isArray(heap)) {
+					heapData = heap;
+				} else if (
+					heap &&
+					typeof heap === "object" &&
+					"heap" in heap &&
+					Array.isArray(heap.heap)
+				) {
+					heapData = heap.heap;
+				} else {
+					console.error(
+						"renderHeap: Argument must be an array or {heap: array} object",
+					);
+					return;
+				}
 
+				// Detect changes
+				let changes = null;
+				if (lastHeapData) {
+					changes = detectHeapChanges(lastHeapData, heapData);
+				}
+
+				// Serialize data to capture snapshot at this point in time
+				const serializedHeap = JSON.parse(JSON.stringify(heapData));
+
+				// Add to visualizations array
 				visualizations.push({
 					type: "heap",
-					data: heapData,
+					data: serializedHeap,
 					timestamp: Date.now(),
 					label: label || "Heap #" + (visualizations.length + 1),
+					changes: changes ? { heap: changes } : undefined,
 				});
+
+				// Update last heap data
+				lastHeapData = serializedHeap.slice();
 
 				console.log(
 					"📊 Heap visualization captured: " +

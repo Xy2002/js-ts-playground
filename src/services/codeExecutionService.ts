@@ -3,6 +3,10 @@ export interface VisualizationData {
 	data: any;
 	timestamp: number;
 	label?: string;
+	changes?: {
+		heap?: number[]; // Changed indices for heap visualization
+		tree?: string[]; // Changed node paths for tree visualization
+	};
 }
 
 export interface ExecutionResult {
