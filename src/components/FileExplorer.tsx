@@ -25,7 +25,6 @@ export default function FileExplorer({
 }: FileExplorerProps) {
 	const { t } = useTranslation();
 	const [searchQuery, setSearchQuery] = useState("");
-	const [selectedFileId, setSelectedFileId] = useState<string | null>(null);
 	const [isResizing, setIsResizing] = useState(false);
 	const [contextMenu, setContextMenu] = useState<{
 		isOpen: boolean;
@@ -34,11 +33,10 @@ export default function FileExplorer({
 		itemType: "file" | "folder";
 	}>({ isOpen: false, position: { x: 0, y: 0 }, itemId: "", itemType: "file" });
 
-	const { files, folders, expandedFolders, openFile, toggleFolderExpansion } =
+	const { files, folders, expandedFolders, activeFileId, openFile, toggleFolderExpansion } =
 		usePlaygroundStore();
 
 	const handleFileSelect = (fileId: string) => {
-		setSelectedFileId(fileId);
 		openFile(fileId);
 	};
 
@@ -153,7 +151,7 @@ export default function FileExplorer({
 						files={files}
 						folders={folders}
 						expandedFolders={expandedFolders}
-						selectedFileId={selectedFileId}
+						selectedFileId={activeFileId}
 						searchQuery={searchQuery}
 						onFileSelect={handleFileSelect}
 						onFolderToggle={handleFolderToggle}
