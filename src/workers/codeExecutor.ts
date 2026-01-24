@@ -6,6 +6,12 @@ self.onmessage = (e) => {
 		// 创建一个安全的执行环境
 		const logs: string[] = [];
 		const errors: string[] = [];
+		const visualizations: Array<{
+			type: string;
+			data: any;
+			timestamp: number;
+			label?: string;
+		}> = [];
 
 		// 增强的对象序列化函数，支持环形链表
 		function safeStringify(
@@ -212,6 +218,85 @@ self.onmessage = (e) => {
 			return result;
 		}
 
+		// TreeNode class for general tree data structure
+		class TreeNode<T = any> {
+			value: T;
+			children: TreeNode<T>[];
+
+			constructor(value: T, children: TreeNode<T>[] = []) {
+				this.value = value;
+				this.children = children;
+			}
+
+			addChild(child: TreeNode<T> | T): void {
+				if (child instanceof TreeNode) {
+					this.children.push(child);
+				} else {
+					this.children.push(new TreeNode(child));
+				}
+			}
+
+			removeChild(child: TreeNode<T>): void {
+				const index = this.children.indexOf(child);
+				if (index > -1) {
+					this.children.splice(index, 1);
+				}
+			}
+
+			find(predicate: (value: T) => boolean): TreeNode<T> | null {
+				if (predicate(this.value)) {
+					return this;
+				}
+				for (const child of this.children) {
+					const found = child.find(predicate);
+					if (found) return found;
+				}
+				return null;
+			}
+
+			traverse(callback: (node: TreeNode<T>) => void): void {
+				callback(this);
+				for (const child of this.children) {
+					child.traverse(callback);
+				}
+			}
+
+			toString(): string {
+				const result: string[] = [String(this.value)];
+				if (this.children.length > 0) {
+					result.push(
+						`(${this.children.map((c) => c.toString()).join(", ")})`,
+					);
+				}
+				return result.join("");
+			}
+
+			// Helper method to convert to plain object for serialization
+			toJSON(): any {
+				return {
+					value: this.value,
+					children: this.children.map((c) => c.toJSON()),
+				};
+			}
+		}
+
+		// renderTree function to add tree to visualizations
+		function renderTree(root: TreeNode, description: string = ""): void {
+			if (!(root instanceof TreeNode)) {
+				console.error("renderTree: Argument must be a TreeNode instance");
+				return;
+			}
+
+			visualizations.push({
+				type: "tree",
+				data: root.toJSON(),
+				timestamp: Date.now(),
+				label: description || `Tree Visualization ${visualizations.length + 1}`,
+			});
+
+			console.log(`🌳 Tree rendered: ${description || "Tree"}`);
+		}
+
 		// 创建受限的全局环境
 		const safeGlobals = {
 			console: mockConsole,
@@ -231,6 +316,8 @@ self.onmessage = (e) => {
 			ListNode,
 			arrayToListNode,
 			listNodeToArray,
+			TreeNode,
+			renderTree,
 			setTimeout: (fn: () => void, delay: number) => {
 				if (delay > 5000) {
 					throw new Error("Timeout cannot exceed 5 seconds");
@@ -301,6 +388,7 @@ self.onmessage = (e) => {
 			logs,
 			errors,
 			executionTime: Math.round(executionTime * 100) / 100,
+			visualizations,
 		});
 	} catch (error) {
 		// 发送错误信息回主线程
@@ -309,6 +397,7 @@ self.onmessage = (e) => {
 			logs: [],
 			errors: [error instanceof Error ? error.message : String(error)],
 			executionTime: 0,
+			visualizations: [],
 		});
 	}
 };
@@ -320,6 +409,7 @@ self.onerror = (message, _source, lineno) => {
 		logs: [],
 		errors: [`Runtime Error: ${message} at line ${lineno}`],
 		executionTime: 0,
+		visualizations: [],
 	});
 };
 

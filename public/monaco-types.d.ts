@@ -45,3 +45,17 @@ declare function test(name: string, fn: () => void): void;
 declare function it(name: string, fn: () => void): void;
 
 declare function renderHeap(heap: any[], description: string): void;
+
+// Tree data structure
+declare class TreeNode<T = any> {
+	value: T;
+	children: TreeNode<T>[];
+	constructor(value: T, children?: TreeNode<T>[]);
+	addChild(child: TreeNode<T> | T): void;
+	removeChild(child: TreeNode<T>): void;
+	find(predicate: (value: T) => boolean): TreeNode<T> | null;
+	traverse(callback: (node: TreeNode<T>) => void): void;
+	toString(): string;
+}
+
+declare function renderTree(root: TreeNode<any>, description: string): void;

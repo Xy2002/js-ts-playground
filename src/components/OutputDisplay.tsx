@@ -6,9 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
+import ClassTreeVisualization from "@/components/ClassTreeVisualization";
 import HeapVisualization from "@/components/HeapVisualization";
 import type { ExecutionResult } from "@/services/codeExecutionService";
-import { usePlaygroundStore } from "@/store/usePlaygroundStore";
 
 interface OutputDisplayProps {
 	result: ExecutionResult | null;
@@ -259,7 +259,22 @@ export default function OutputDisplay({
 				<>
 					<Separator />
 					<div style={{ height: visualizationHeight }} className="min-h-0">
-						<HeapVisualization visualizations={result.visualizations} />
+						{(() => {
+							const heapViz = result.visualizations.filter((v) => v.type === "heap");
+							const treeViz = result.visualizations.filter((v) => v.type === "tree");
+
+							// If we have both, show tree first (on top), then heap
+							return (
+								<>
+									{treeViz.length > 0 && (
+										<ClassTreeVisualization visualizations={treeViz} />
+									)}
+									{heapViz.length > 0 && (
+										<HeapVisualization visualizations={heapViz} />
+									)}
+								</>
+							);
+						})()}
 					</div>
 				</>
 			)}

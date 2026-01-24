@@ -478,6 +478,82 @@ self.onmessage = async function (e) {
 			return result;
 		}
 
+		// TreeNode class for general tree data structure
+		class TreeNode {
+			constructor(value, children = []) {
+				this.value = value;
+				this.children = children;
+			}
+
+			addChild(child) {
+				if (child instanceof TreeNode) {
+					this.children.push(child);
+				} else {
+					this.children.push(new TreeNode(child));
+				}
+			}
+
+			removeChild(child) {
+				const index = this.children.indexOf(child);
+				if (index > -1) {
+					this.children.splice(index, 1);
+				}
+			}
+
+			find(predicate) {
+				if (predicate(this.value)) {
+					return this;
+				}
+				for (const child of this.children) {
+					const found = child.find(predicate);
+					if (found) return found;
+				}
+				return null;
+			}
+
+			traverse(callback) {
+				callback(this);
+				for (const child of this.children) {
+					child.traverse(callback);
+				}
+			}
+
+			toString() {
+				const result = [String(this.value)];
+				if (this.children.length > 0) {
+					result.push(
+						"(" + this.children.map((c) => c.toString()).join(", ") + ")",
+					);
+				}
+				return result.join("");
+			}
+
+			// Helper method to convert to plain object for serialization
+			toJSON() {
+				return {
+					value: this.value,
+					children: this.children.map((c) => c.toJSON()),
+				};
+			}
+		}
+
+		// renderTree function to add tree to visualizations
+		function renderTree(root, description = "") {
+			if (!(root instanceof TreeNode)) {
+				console.error("renderTree: Argument must be a TreeNode instance");
+				return;
+			}
+
+			visualizations.push({
+				type: "tree",
+				data: root.toJSON(),
+				timestamp: Date.now(),
+				label: description || `Tree Visualization ${visualizations.length + 1}`,
+			});
+
+			console.log("🌳 Tree rendered: " + (description || "Tree"));
+		}
+
 		// Chai Integration and Vitest Runtime Mocks
 		const chai = self.chai;
 		let expectImplementation;
@@ -800,6 +876,7 @@ self.onmessage = async function (e) {
 		const safeGlobals = {
 			console: mockConsole,
 			renderHeap,
+			renderTree,
 			Math,
 			Date,
 			JSON,
@@ -814,6 +891,7 @@ self.onmessage = async function (e) {
 			ReferenceError,
 			SyntaxError,
 			ListNode,
+			TreeNode,
 			arrayToListNode,
 			listNodeToArray,
 			setTimeout: (fn, delay) => {
