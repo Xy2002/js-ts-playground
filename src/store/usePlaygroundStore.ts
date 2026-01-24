@@ -1320,6 +1320,13 @@ export const usePlaygroundStore = create<PlaygroundState>((set, get) => ({
 			// LLM设置
 			if (options.includeLlmSettings && data.llmSettings) {
 				updates.llmSettings = data.llmSettings;
+				console.log("Importing LLM settings:", data.llmSettings);
+			} else {
+				console.log(
+					"LLM settings not imported:",
+					options.includeLlmSettings ? "Option enabled" : "Option disabled",
+					data.llmSettings ? "Data available" : "Data not available",
+				);
 			}
 
 			// 多文件系统

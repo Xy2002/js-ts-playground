@@ -237,7 +237,7 @@ export default function DataExportImport({
 						{importSummary && (
 							<div className="space-y-4">
 								{/* Include LLM Settings */}
-								{importSummary.hasLlmSettings && (
+								{importSummary.hasLlmSettings ? (
 									<div className="flex items-center justify-between">
 										<div className="space-y-0.5">
 											<Label htmlFor="include-llm">
@@ -252,6 +252,17 @@ export default function DataExportImport({
 											checked={includeLlmSettings}
 											onCheckedChange={setIncludeLlmSettings}
 										/>
+									</div>
+								) : (
+									<div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg border">
+										<div className="space-y-0.5">
+											<Label className="text-muted-foreground">
+												LLM Settings Not Available
+											</Label>
+											<div className="text-xs text-muted-foreground">
+												This export was created without API keys
+											</div>
+										</div>
 									</div>
 								)}
 
