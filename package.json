@@ -1,11 +1,11 @@
 {
 	"name": "pixel-art",
 	"private": true,
-	"version": "0.0.0",
+	"version": "1.0.0",
 	"type": "module",
 	"scripts": {
 		"dev": "vite",
-		"build": "tsc -b && vite build",
+		"build": "node scripts/update-version.js && tsc -b && vite build",
 		"lint": "pnpm exec biome lint .",
 		"preview": "vite preview",
 		"check": "tsc -b --noEmit"
