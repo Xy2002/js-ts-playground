@@ -1,4 +1,11 @@
-import { useEffect, useRef, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useCallback } from "react";
+
+interface VersionResponse {
+	version: string;
+	buildDate: string;
+	commit: string;
+}
 
 interface UseVersionCheckOptions {
 	/**
@@ -36,7 +43,12 @@ interface VersionCheckResult {
 	/**
 	 * Error during version check
 	 */
-	error: string | null;
+	error: Error | null;
+
+	/**
+	 * Whether the check is currently loading
+	 */
+	isLoading: boolean;
 
 	/**
 	 * Reload the page to get the latest version
@@ -45,8 +57,40 @@ interface VersionCheckResult {
 }
 
 /**
- * Hook to check for application updates
- * Polls the version endpoint at specified intervals and notifies when a new version is available
+ * Fetch version information from server
+ */
+async function fetchVersion(endpoint: string): Promise<VersionResponse> {
+	const response = await fetch(endpoint, {
+		// Add cache-busting headers to prevent browser/cdn caching
+		cache: "no-store",
+		headers: {
+			"Cache-Control": "no-cache, no-store, must-revalidate",
+			Pragma: "no-cache",
+		},
+	});
+
+	if (!response.ok) {
+		throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+	}
+
+	const data = await response.json();
+
+	if (!data.version) {
+		throw new Error("No version field in response");
+	}
+
+	return data;
+}
+
+/**
+ * Hook to check for application updates using @tanstack/react-query
+ *
+ * Features:
+ * - Automatic polling at specified interval
+ * - Refetch on window focus (user switches back to tab)
+ * - Smart caching and background updates
+ * - Automatic retry on failure
+ * - Garbage collection to manage memory
  */
 export function useVersionCheck({
 	currentVersion,
@@ -54,95 +98,49 @@ export function useVersionCheck({
 	enabled = true,
 	endpoint = "/version.json",
 }: UseVersionCheckOptions): VersionCheckResult {
-	const [hasUpdate, setHasUpdate] = useState(false);
-	const [latestVersion, setLatestVersion] = useState<string | null>(null);
-	const [error, setError] = useState<string | null>(null);
-	const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+	// Query for version information
+	const {
+		data: versionData,
+		error,
+		isLoading,
+	} = useQuery({
+		queryKey: ["version", endpoint],
+		queryFn: () => fetchVersion(endpoint),
+		enabled,
+		refetchInterval: interval,
+		refetchOnWindowFocus: true,
+		refetchOnMount: true,
+		retry: 3,
+		retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+		staleTime: 2 * 60 * 1000, // Consider data stale after 2 minutes
+		gcTime: 10 * 60 * 1000, // Keep in cache for 10 minutes after unused
+	});
 
-	const checkVersion = async () => {
-		try {
-			const response = await fetch(endpoint, {
-				// Add cache-busting to prevent browser caching
-				cache: "no-store",
-				headers: {
-					"Cache-Control": "no-cache",
-				},
-			});
+	// Calculate if update is available
+	const hasUpdate = versionData
+		? versionData.version !== currentVersion
+		: false;
 
-			if (!response.ok) {
-				throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-			}
+	const latestVersion = versionData?.version ?? null;
 
-			const data = await response.json();
-			const serverVersion = data.version;
-
-			if (!serverVersion) {
-				throw new Error("No version field in response");
-			}
-
-			setLatestVersion(serverVersion);
-
-			// Compare versions
-			if (serverVersion !== currentVersion) {
-				console.log(`[Version Check] New version available: ${serverVersion} (current: ${currentVersion})`);
-				setHasUpdate(true);
-			}
-		} catch (err) {
-			const errorMessage = err instanceof Error ? err.message : "Unknown error";
-			console.error("[Version Check] Failed to check version:", errorMessage);
-			setError(errorMessage);
-		}
-	};
-
-	const reload = () => {
-		// Clear cache and reload
+	// Reload function
+	const reload = useCallback(() => {
+		// Clear all caches
 		if ("caches" in window) {
 			caches.keys().then((names) => {
 				names.forEach((name) => caches.delete(name));
 			});
 		}
 
-		// Force reload from server
+		// Force reload from server (bypass cache)
 		window.location.reload();
-	};
-
-	useEffect(() => {
-		if (!enabled) return;
-
-		// Initial check
-		checkVersion();
-
-		// Set up polling
-		timeoutRef.current = setInterval(() => {
-			checkVersion();
-		}, interval);
-
-		return () => {
-			if (timeoutRef.current) {
-				clearInterval(timeoutRef.current);
-			}
-		};
-	}, [currentVersion, interval, enabled, endpoint]);
-
-	// Also check when window regains focus (user switches back to tab)
-	useEffect(() => {
-		if (!enabled) return;
-
-		const handleFocus = () => {
-			checkVersion();
-		};
-
-		window.addEventListener("focus", handleFocus);
-
-		return () => {
-			window.removeEventListener("focus", handleFocus);
-		};
-	}, [enabled]);
+	}, []);
 
 	return {
 		hasUpdate,
 		latestVersion,
 		error,
+		isLoading,
 		reload,
 	};
 }

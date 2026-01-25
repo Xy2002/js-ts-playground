@@ -1,8 +1,25 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import App from "./App";
 import "./index.css";
 import "./i18n";
+
+// Create a QueryClient for @tanstack/react-query
+const queryClient = new QueryClient({
+	defaultOptions: {
+		queries: {
+			// Time after which queries are considered stale
+			staleTime: 5 * 60 * 1000, // 5 minutes
+			// Time before inactive queries are removed from cache
+			gcTime: 10 * 60 * 1000, // 10 minutes
+			// Number of times to retry before giving up
+			retry: 3,
+			// Exponential backoff for retries
+			retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+		},
+	},
+});
 
 // Apply theme immediately to prevent flash
 const applyInitialTheme = () => {
@@ -47,6 +64,8 @@ if (!rootElement) {
 
 createRoot(rootElement).render(
 	<StrictMode>
-		<App />
+		<QueryClientProvider client={queryClient}>
+			<App />
+		</QueryClientProvider>
 	</StrictMode>,
 );

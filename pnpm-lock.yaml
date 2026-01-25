@@ -65,6 +65,9 @@ importers:
       '@swc/wasm-web':
         specifier: ^1.13.3
         version: 1.15.8
+      '@tanstack/react-query':
+        specifier: ^5.90.20
+        version: 5.90.20(react@18.3.1)
       '@typescript/ata':
         specifier: ^0.9.8
         version: 0.9.8(typescript@5.8.3)
@@ -1239,6 +1242,14 @@ packages:
 
   '@swc/wasm-web@1.15.8':
     resolution: {integrity: sha512-8AYJFhzR9R5vX5BLiZg9QLRZIRPEJD9pCFKdzQR6CqKTbx+2LpNuUi8q1l8hZ/G8qFNiSgLLsLYSlAGSfRHa6w==}
+
+  '@tanstack/query-core@5.90.20':
+    resolution: {integrity: sha512-OMD2HLpNouXEfZJWcKeVKUgQ5n+n3A2JFmBaScpNDUqSrQSjiveC7dKMe53uJUg1nDG16ttFPz2xfilz6i2uVg==}
+
+  '@tanstack/react-query@5.90.20':
+    resolution: {integrity: sha512-vXBxa+qeyveVO7OA0jX1z+DeyCA4JKnThKv411jd5SORpBKgkcVnYKCiBgECvADvniBX7tobwBmg01qq9JmMJw==}
+    peerDependencies:
+      react: ^18 || ^19
 
   '@types/babel__core@7.20.5':
     resolution: {integrity: sha512-qoQprZvz5wQFJwMDqeseRXWv3rqMvhgpbXFfVyWhbx9X47POIA6i/+dXefEmZKoAgOaTdaIgNSMqMIU61yRyzA==}
@@ -3250,6 +3261,13 @@ snapshots:
   '@standard-schema/spec@1.1.0': {}
 
   '@swc/wasm-web@1.15.8': {}
+
+  '@tanstack/query-core@5.90.20': {}
+
+  '@tanstack/react-query@5.90.20(react@18.3.1)':
+    dependencies:
+      '@tanstack/query-core': 5.90.20
+      react: 18.3.1
 
   '@types/babel__core@7.20.5':
     dependencies:
