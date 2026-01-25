@@ -31,6 +31,7 @@ export async function analyzeComplexity(
 	code: string,
 	language: string,
 	llmSettings: LlmSettings,
+	userLanguage: string = "en",
 ): Promise<ComplexityResult> {
 	const { provider, apiKey, apiUrl, model } = llmSettings;
 
@@ -63,6 +64,11 @@ export async function analyzeComplexity(
 			throw new Error(`Unsupported provider: ${provider}`);
 	}
 
+	// Determine the language instruction based on user's language setting
+	const languageInstruction = userLanguage === "zh"
+		? "Return ONLY valid JSON, no additional text, and use Chinese for all explanations."
+		: "Return ONLY valid JSON, no additional text, and use English for all explanations.";
+
 	const prompt = `Analyze the following ${language} code for time and space complexity.
 
 Code:
@@ -84,7 +90,7 @@ Focus on:
 2. Space complexity - identify data structures, recursion depth
 3. Algorithm patterns - sorting, searching, dynamic programming, etc.
 
-Return ONLY valid JSON, no additional text.`;
+${languageInstruction}`;
 
 	try {
 		const result = await streamText({

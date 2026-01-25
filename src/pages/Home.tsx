@@ -52,7 +52,7 @@ export default function Home() {
 		setComplexityResult,
 		toggleComplexityVisualization,
 	} = usePlaygroundStore();
-	const { t } = useTranslation();
+	const { t, i18n } = useTranslation();
 
 	// 长按重置功能的状态
 	const [isLongPressing, setIsLongPressing] = useState(false);
@@ -214,6 +214,7 @@ export default function Home() {
 				currentCode,
 				getCurrentLanguage(),
 				llmSettings,
+				i18n.language,
 			);
 			setComplexityResult(result);
 			if (!showComplexityVisualization) {
