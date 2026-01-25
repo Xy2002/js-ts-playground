@@ -43,7 +43,6 @@ export default function Home() {
 		resetToDefault,
 		clearAllState,
 		loadFromStorage,
-		initializeMultiFileSystem,
 		activeFileId,
 		files,
 		openTabs,
@@ -71,11 +70,12 @@ export default function Home() {
 	const [fileExplorerWidth, setFileExplorerWidth] = useState(280);
 	const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
-	// 组件挂载时初始化多文件系统和加载存储的数据
+	// 组件挂载时加载存储的数据（会自动初始化文件系统）
+	// 使用空依赖数组确保只在挂载时运行一次
 	useEffect(() => {
-		initializeMultiFileSystem();
 		loadFromStorage();
-	}, [initializeMultiFileSystem, loadFromStorage]);
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, []);
 
 	// 单独处理Monaco编辑器的运行代码事件监听
 	useEffect(() => {

@@ -461,9 +461,11 @@ export const usePlaygroundStore = create<PlaygroundState>((set, get) => ({
 
 	// 从localStorage加载数据
 	loadFromStorage: () => {
+		console.log("[loadFromStorage] Called at", new Date().toISOString());
 		try {
 			// 加载设置
 			const savedSettings = localStorage.getItem(STORAGE_KEYS.SETTINGS);
+			console.log("[loadFromStorage] Found settings:", !!savedSettings);
 			if (savedSettings) {
 				const settings = JSON.parse(savedSettings);
 				set((state) => ({
@@ -558,6 +560,7 @@ export const usePlaygroundStore = create<PlaygroundState>((set, get) => ({
 
 	// 保存到localStorage
 	saveToStorage: () => {
+		console.log("[saveToStorage] Called at", new Date().toISOString());
 		try {
 			const {
 				settings,
@@ -568,6 +571,13 @@ export const usePlaygroundStore = create<PlaygroundState>((set, get) => ({
 				fileContents,
 				llmSettings,
 			} = get();
+
+			console.log("[saveToStorage] Saving state:", {
+				settingsCount: Object.keys(settings).length,
+				filesCount: Object.keys(files).length,
+				foldersCount: Object.keys(folders).length,
+				contentsCount: Object.keys(fileContents).length,
+			});
 
 			// 保存设置
 			localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(settings));
@@ -639,11 +649,18 @@ export const usePlaygroundStore = create<PlaygroundState>((set, get) => ({
 
 	// 多文件系统初始化
 	initializeMultiFileSystem: () => {
+		console.log("[initializeMultiFileSystem] Called at", new Date().toISOString());
 		try {
 			// 加载现有数据
 			const files = fileManager.loadFiles();
 			const folders = fileManager.loadFolders();
 			const fileContents = fileManager.loadFileContents();
+
+			console.log("[initializeMultiFileSystem] Loaded data:", {
+				filesCount: Object.keys(files).length,
+				foldersCount: Object.keys(folders).length,
+				contentsCount: Object.keys(fileContents).length,
+			});
 
 			// 加载会话状态
 			let sessionState = null;
@@ -674,7 +691,12 @@ export const usePlaygroundStore = create<PlaygroundState>((set, get) => ({
 				Object.keys(files).length === 0 &&
 				Object.keys(folders).length === 0
 			) {
+				console.log("[initializeMultiFileSystem] No existing data found, creating default workspace");
 				const defaultWorkspace = fileManager.createDefaultWorkspace();
+				console.log("[initializeMultiFileSystem] Default workspace created:", {
+					filesCount: Object.keys(defaultWorkspace.files).length,
+					foldersCount: Object.keys(defaultWorkspace.folders).length,
+				});
 				set({
 					files: defaultWorkspace.files,
 					folders: defaultWorkspace.folders,
