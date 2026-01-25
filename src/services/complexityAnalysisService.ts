@@ -185,7 +185,18 @@ export function generateComplexityChart(
 /**
  * Parse Big O notation to match with our predefined classes
  */
-export function parseBigO(notation: string): string {
+export function parseBigO(notation: unknown): string {
+	// Defensive check: ensure notation is a string
+	if (typeof notation !== "string") {
+		console.warn("parseBigO: expected string, got", typeof notation, notation);
+		return "O(?)";
+	}
+
+	// Handle empty or invalid strings
+	if (!notation || notation.trim() === "") {
+		return "O(?)";
+	}
+
 	const normalized = notation.toLowerCase().replace(/\s/g, "");
 
 	const patterns = [
