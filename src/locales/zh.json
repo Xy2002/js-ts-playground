@@ -164,5 +164,41 @@
     "closeTab": "关闭标签页",
     "closeOtherTabs": "关闭其他标签页",
     "closeAllTabs": "关闭所有标签页"
+  },
+  "predefined": {
+    "title": "预定义函数",
+    "tab": "预定义函数",
+    "dataStructures": "数据结构",
+    "listFunctions": "链表函数",
+    "treeFunctions": "树函数",
+    "heapFunctions": "堆函数",
+    "testing": "测试框架",
+    "listNode": {
+      "description": "链表节点类，用于构建单链表"
+    },
+    "treeNode": {
+      "description": "树节点类，支持泛型的通用树结构"
+    },
+    "arrayToListNode": {
+      "description": "将数组转换为链表"
+    },
+    "listNodeToArray": {
+      "description": "将链表转换为数组"
+    },
+    "renderTree": {
+      "description": "在输出面板可视化树结构"
+    },
+    "renderHeap": {
+      "description": "在输出面板可视化堆结构"
+    },
+    "describe": {
+      "description": "创建一个测试套件"
+    },
+    "test": {
+      "description": "创建一个测试用例"
+    },
+    "expect": {
+      "description": "断言函数，支持多种匹配器（toBe, toEqual, toContain等）"
+    }
   }
 }

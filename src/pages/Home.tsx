@@ -13,6 +13,7 @@ import CodeEditor from "@/components/CodeEditor";
 import FileExplorer from "@/components/FileExplorer";
 import LanguageSwitch from "@/components/LanguageSwitch";
 import OutputDisplay from "@/components/OutputDisplay";
+import PredefinedFunctions from "@/components/PredefinedFunctions";
 import { ThemeSwitcher } from "@/components/ThemeSwitcher";
 import ComplexityVisualization from "@/components/ComplexityVisualization";
 import { SettingsDialog } from "@/components/SettingsDialog";
@@ -20,6 +21,7 @@ import TabManager from "@/components/TabManager";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { executeCode, stopExecution } from "@/services/codeExecutionService";
 import { analyzeComplexity } from "@/services/complexityAnalysisService";
 import { usePlaygroundStore } from "@/store/usePlaygroundStore";
@@ -579,32 +581,46 @@ export default function Home() {
 
 							{/* Output Panel */}
 							<MotionDiv
-								className="w-full lg:w-96 flex flex-col bg-muted/30 min-h-0"
+								className="w-full lg:min-w-[500px] lg:max-w-[700px] flex flex-col bg-muted/30 min-h-0"
 								initial={{ opacity: 0 }}
 								animate={{ opacity: 1 }}
 								transition={{ delay: 0.15 }}
 							>
-								<div className="bg-muted/50 px-4 py-2 border-b">
-									<h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-										{t("output.title")}
-									</h2>
-								</div>
 								<div className="flex-1 min-h-0">
-									{showComplexityVisualization && complexityResult ? (
-										<ComplexityVisualization
-											result={complexityResult}
-											onClose={toggleComplexityVisualization}
-										/>
-									) : (
-										<OutputDisplay
-											result={executionResult}
-											isExecuting={isExecuting}
-											onClear={handleClearOutput}
-											onStop={handleStopExecution}
-											onAnalyzeComplexity={handleAnalyzeComplexity}
-											isAnalyzingComplexity={isAnalyzingComplexity}
-										/>
-									)}
+									<Tabs defaultValue="output" className="h-full flex flex-col">
+										<div className="bg-muted/50 px-4 py-2 border-b">
+											<TabsList className="w-full justify-start">
+												<TabsTrigger value="output" className="gap-2">
+													{t("output.title")}
+												</TabsTrigger>
+												<TabsTrigger value="predefined" className="gap-2">
+													{t("predefined.tab")}
+												</TabsTrigger>
+											</TabsList>
+										</div>
+										<div className="flex-1 min-h-0">
+											<TabsContent value="output" className="h-full m-0 p-0">
+												{showComplexityVisualization && complexityResult ? (
+													<ComplexityVisualization
+														result={complexityResult}
+														onClose={toggleComplexityVisualization}
+													/>
+												) : (
+													<OutputDisplay
+														result={executionResult}
+														isExecuting={isExecuting}
+														onClear={handleClearOutput}
+														onStop={handleStopExecution}
+														onAnalyzeComplexity={handleAnalyzeComplexity}
+														isAnalyzingComplexity={isAnalyzingComplexity}
+													/>
+												)}
+											</TabsContent>
+											<TabsContent value="predefined" className="h-full m-0 p-0">
+												<PredefinedFunctions />
+											</TabsContent>
+										</div>
+									</Tabs>
 								</div>
 							</MotionDiv>
 						</div>

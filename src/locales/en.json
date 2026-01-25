@@ -107,5 +107,41 @@
     "closeTab": "Close Tab",
     "closeOtherTabs": "Close Other Tabs",
     "closeAllTabs": "Close All Tabs"
+  },
+  "predefined": {
+    "title": "Predefined Functions",
+    "tab": "Predefined Functions",
+    "dataStructures": "Data Structures",
+    "listFunctions": "List Functions",
+    "treeFunctions": "Tree Functions",
+    "heapFunctions": "Heap Functions",
+    "testing": "Testing Framework",
+    "listNode": {
+      "description": "Linked list node class for building singly linked lists"
+    },
+    "treeNode": {
+      "description": "Generic tree node class supporting any data type"
+    },
+    "arrayToListNode": {
+      "description": "Convert an array to a linked list"
+    },
+    "listNodeToArray": {
+      "description": "Convert a linked list to an array"
+    },
+    "renderTree": {
+      "description": "Visualize tree structure in the output panel"
+    },
+    "renderHeap": {
+      "description": "Visualize heap structure in the output panel"
+    },
+    "describe": {
+      "description": "Create a test suite"
+    },
+    "test": {
+      "description": "Create a test case"
+    },
+    "expect": {
+      "description": "Assertion function with matchers (toBe, toEqual, toContain, etc.)"
+    }
   }
 }
