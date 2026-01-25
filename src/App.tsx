@@ -8,9 +8,6 @@ import { useTheme } from "@/hooks/useTheme";
 import { useVersionCheck } from "@/hooks/useVersionCheck";
 import { usePlaygroundStore } from "@/store/usePlaygroundStore";
 
-// Current version from package.json
-const APP_VERSION = "1.0.0";
-
 function AppContent() {
 	// CRITICAL: Load storage data BEFORE any other hooks that might call saveToStorage
 	const { loadFromStorage } = usePlaygroundStore();
@@ -24,9 +21,26 @@ function AppContent() {
 	// Initialize theme sync (after storage is loaded)
 	useTheme();
 
+	// Load app version from version.json
+	const [appVersion, setAppVersion] = useState<string>("1.0.0");
+
+	useEffect(() => {
+		fetch("/version.json")
+			.then((res) => res.json())
+			.then((data) => {
+				if (data.version) {
+					setAppVersion(data.version);
+				}
+			})
+			.catch(() => {
+				// Fallback to default if fetch fails
+				console.warn("Failed to load version from version.json");
+			});
+	}, []);
+
 	// Check for updates
 	const { hasUpdate, latestVersion, reload } = useVersionCheck({
-		currentVersion: APP_VERSION,
+		currentVersion: appVersion,
 		interval: 5 * 60 * 1000, // Check every 5 minutes
 		enabled: true,
 	});
@@ -34,10 +48,12 @@ function AppContent() {
 	// State for update banner visibility
 	const [showBanner, setShowBanner] = useState(hasUpdate);
 
-	// Update banner visibility when hasUpdate changes
-	if (hasUpdate && !showBanner) {
-		setShowBanner(true);
-	}
+	// When hasUpdate becomes true, show the banner (but don't auto-reshow if user dismissed it)
+	useEffect(() => {
+		if (hasUpdate) {
+			setShowBanner(true);
+		}
+	}, [hasUpdate]);
 
 	const handleDismiss = () => {
 		setShowBanner(false);
@@ -47,7 +63,7 @@ function AppContent() {
 		<>
 			{hasUpdate && showBanner && latestVersion && (
 				<UpdateBanner
-					currentVersion={APP_VERSION}
+					currentVersion={appVersion}
 					latestVersion={latestVersion}
 					onReload={reload}
 					onDismiss={handleDismiss}

@@ -1,26 +1,16 @@
 import { Download, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
+import {
+	Alert,
+	AlertDescription,
+	AlertTitle,
+} from "@/components/ui/alert";
 
 interface UpdateBannerProps {
-	/**
-	 * Current version of the application
-	 */
 	currentVersion: string;
-
-	/**
-	 * Latest version from server
-	 */
 	latestVersion: string;
-
-	/**
-	 * Callback to reload the page
-	 */
 	onReload: () => void;
-
-	/**
-	 * Callback to dismiss the banner
-	 */
 	onDismiss: () => void;
 }
 
@@ -33,48 +23,53 @@ export function UpdateBanner({
 	return (
 		<AnimatePresence>
 			<motion.div
-				initial={{ y: -100, opacity: 0 }}
-				animate={{ y: 0, opacity: 1 }}
-				exit={{ y: -100, opacity: 0 }}
+				initial={{ height: 0, opacity: 0 }}
+				animate={{ height: "auto", opacity: 1 }}
+				exit={{ height: 0, opacity: 0 }}
 				transition={{ type: "spring", stiffness: 300, damping: 30 }}
-				className="fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-primary to-primary/80 text-primary-foreground px-4 py-3 shadow-lg"
+				className="fixed top-0 left-0 right-0 z-[100] px-4 py-3"
 			>
-				<div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
-					<div className="flex items-center gap-3 flex-1 min-w-0">
-						<motion.div
-							animate={{ rotate: [0, 360] }}
-							transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-						>
-							<Download className="w-5 h-5 flex-shrink-0" />
-						</motion.div>
-						<div className="flex-1 min-w-0">
-							<p className="text-sm font-medium">
-								New version available
-							</p>
-							<p className="text-xs opacity-90 truncate">
-								v{latestVersion} is ready (you have v{currentVersion})
-							</p>
-						</div>
-					</div>
+				<div className="max-w-7xl mx-auto">
+					<Alert variant="info" className="border-blue-500/50 bg-blue-50/90 backdrop-blur-sm dark:bg-blue-950/90 dark:border-blue-500 shadow-lg">
+						<div className="flex items-center justify-between gap-4">
+							<div className="flex items-center gap-3 flex-1 min-w-0">
+								<motion.div
+									animate={{ rotate: [0, 360] }}
+									transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+									className="flex-shrink-0"
+								>
+									<Download className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+								</motion.div>
+								<div className="flex-1 min-w-0">
+									<AlertTitle className="text-sm">New version available</AlertTitle>
+									<AlertDescription className="text-xs">
+										Version <span className="font-semibold">{latestVersion}</span> is ready
+										{currentVersion !== latestVersion && (
+											<> (you have v{currentVersion})</>
+										)}
+									</AlertDescription>
+								</div>
+							</div>
 
-					<div className="flex items-center gap-2">
-						<Button
-							size="sm"
-							variant="secondary"
-							onClick={onReload}
-							className="bg-background/10 hover:bg-background/20 text-white border-0"
-						>
-							Update Now
-						</Button>
-						<Button
-							size="sm"
-							variant="ghost"
-							onClick={onDismiss}
-							className="text-white/80 hover:text-white hover:bg-white/10"
-						>
-							<X className="w-4 h-4" />
-						</Button>
-					</div>
+							<div className="flex items-center gap-2 flex-shrink-0">
+								<Button
+									size="sm"
+									onClick={onReload}
+									className="h-8 bg-blue-600 hover:bg-blue-700 text-white dark:bg-blue-500 dark:hover:bg-blue-600"
+								>
+									Update Now
+								</Button>
+								<Button
+									size="sm"
+									variant="ghost"
+									onClick={onDismiss}
+									className="h-8 w-8 p-0"
+								>
+									<X className="w-4 h-4" />
+								</Button>
+							</div>
+						</div>
+					</Alert>
 				</div>
 			</motion.div>
 		</AnimatePresence>
