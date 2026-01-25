@@ -20,14 +20,26 @@ const version = packageJson.version;
 // Get current date in ISO format
 const buildDate = new Date().toISOString().split("T")[0];
 
-// Try to get git commit hash (if in git repo)
+// Try to get git commit hash
+// Priority: Vercel env vars > git command > build timestamp
 let commitHash = "unknown";
-try {
-	const { execSync } = await import("child_process");
-	commitHash = execSync("git rev-parse --short HEAD").toString().trim();
-} catch {
-	// Not in git repo or git not available
-	console.log("Git not available, using unknown commit hash");
+
+// 1. Check for Vercel environment variables (available during Vercel builds)
+if (process.env.VERCEL_GIT_COMMIT_SHA) {
+	commitHash = process.env.VERCEL_GIT_COMMIT_SHA.substring(0, 7); // Short SHA
+	console.log("Using Vercel commit SHA");
+}
+// 2. Fall back to git command (for local builds)
+else {
+	try {
+		const { execSync } = await import("child_process");
+		commitHash = execSync("git rev-parse --short HEAD").toString().trim();
+		console.log("Using git command for commit SHA");
+	} catch {
+		// Not in git repo or git not available
+		console.log("Git not available, using build timestamp as identifier");
+		commitHash = `build-${Date.now()}`;
+	}
 }
 
 // Create version.json content
@@ -45,4 +57,4 @@ fs.writeFileSync(
 	"utf-8"
 );
 
-console.log(`✅ Updated version.json: v${version} (${buildDate})`);
+console.log(`✅ Updated version.json: v${version} (${buildDate}, commit: ${commitHash})`);
