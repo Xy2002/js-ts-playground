@@ -42,7 +42,6 @@ export default function Home() {
 		clearOutput,
 		resetToDefault,
 		clearAllState,
-		loadFromStorage,
 		activeFileId,
 		files,
 		openTabs,
@@ -69,13 +68,6 @@ export default function Home() {
 	const [isFileExplorerOpen, setIsFileExplorerOpen] = useState(true);
 	const [fileExplorerWidth, setFileExplorerWidth] = useState(280);
 	const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-
-	// 组件挂载时加载存储的数据（会自动初始化文件系统）
-	// 使用空依赖数组确保只在挂载时运行一次
-	useEffect(() => {
-		loadFromStorage();
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, []);
 
 	// 单独处理Monaco编辑器的运行代码事件监听
 	useEffect(() => {
