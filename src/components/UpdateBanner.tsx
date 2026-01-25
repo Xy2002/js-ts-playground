@@ -41,8 +41,10 @@ export function UpdateBanner({
 									<Download className="w-5 h-5 text-blue-600 dark:text-blue-400" />
 								</motion.div>
 								<div className="flex-1 min-w-0">
-									<AlertTitle className="text-sm">New version available</AlertTitle>
-									<AlertDescription className="text-xs">
+									<AlertTitle className="text-sm text-blue-900 dark:text-blue-100">
+										New version available
+									</AlertTitle>
+									<AlertDescription className="text-xs text-blue-800/80 dark:text-blue-200/80">
 										Version <span className="font-semibold">{latestVersion}</span> is ready
 										{currentVersion !== latestVersion && (
 											<> (you have v{currentVersion})</>
