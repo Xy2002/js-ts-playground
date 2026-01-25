@@ -561,6 +561,7 @@ export const usePlaygroundStore = create<PlaygroundState>((set, get) => ({
 	// 保存到localStorage
 	saveToStorage: () => {
 		console.log("[saveToStorage] Called at", new Date().toISOString());
+		console.trace("[saveToStorage] Call stack");
 		try {
 			const {
 				settings,

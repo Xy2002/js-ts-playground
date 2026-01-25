@@ -4,22 +4,21 @@ import { VersionInfo } from "@/components/VersionInfo";
 import { UpdateBanner } from "@/components/UpdateBanner";
 import Home from "@/pages/Home";
 import Settings from "@/pages/Settings";
-import { useTheme } from "@/hooks/useTheme";
 import { useVersionCheck } from "@/hooks/useVersionCheck";
 import { usePlaygroundStore } from "@/store/usePlaygroundStore";
 
 function AppContent() {
 	// CRITICAL: Load storage data BEFORE any other hooks that might call saveToStorage
 	const { loadFromStorage } = usePlaygroundStore();
+	const [isStorageLoaded, setIsStorageLoaded] = useState(false);
 
 	// Load data from localStorage on mount (must run first before other hooks)
 	useEffect(() => {
 		loadFromStorage();
+		// Small delay to ensure state is updated before other hooks run
+		setTimeout(() => setIsStorageLoaded(true), 0);
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, []);
-
-	// Initialize theme sync (after storage is loaded)
-	useTheme();
 
 	// Load app version from version.json
 	const [appVersion, setAppVersion] = useState<string>("1.0.0");
@@ -69,10 +68,13 @@ function AppContent() {
 					onDismiss={handleDismiss}
 				/>
 			)}
-			<Routes>
-				<Route path="/" element={<Home />} />
-				<Route path="/settings" element={<Settings />} />
-			</Routes>
+			{/* Only render routes after storage is loaded to prevent saveToStorage before loadFromStorage */}
+			{isStorageLoaded && (
+				<Routes>
+					<Route path="/" element={<Home />} />
+					<Route path="/settings" element={<Settings />} />
+				</Routes>
+			)}
 		</>
 	);
 }

@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { usePlaygroundStore } from "@/store/usePlaygroundStore";
 
 export type AppTheme = "light" | "dark" | "system";
@@ -11,6 +11,15 @@ export type AppTheme = "light" | "dark" | "system";
 export function useTheme() {
 	const { settings, updateSettings } = usePlaygroundStore();
 	const appTheme = settings.appTheme || "system";
+
+	// Track if settings have been loaded from localStorage
+	// We use a ref to avoid triggering re-renders
+	const isInitializedRef = useRef(false);
+
+	useEffect(() => {
+		// Mark as initialized after first render
+		isInitializedRef.current = true;
+	}, []);
 
 	// Get the effective theme (resolves "system" to actual theme)
 	const getEffectiveTheme = (): "light" | "dark" => {
@@ -67,6 +76,10 @@ export function useTheme() {
 
 	// Sync Monaco theme when app theme changes
 	useEffect(() => {
+		// Only sync after settings are loaded (after first render)
+		// This prevents saving empty state before loadFromStorage completes
+		if (!isInitializedRef.current) return;
+
 		const monacoTheme = getMonacoTheme();
 		if (settings.theme !== monacoTheme) {
 			updateSettings({ theme: monacoTheme });
