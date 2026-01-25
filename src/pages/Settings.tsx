@@ -116,10 +116,10 @@ export default function Settings() {
 									<div className="p-2 bg-primary/5 rounded-lg">
 										<Download className="w-4 h-4 text-foreground" />
 									</div>
-									<span>Data Export / Import</span>
+									<span>{t("settings.dataExport.title")}</span>
 								</CardTitle>
 								<CardDescription className="text-sm">
-									Sync your playground data across devices or backup your work
+									{t("settings.dataExport.description")}
 								</CardDescription>
 							</CardHeader>
 							<CardContent>
@@ -134,10 +134,10 @@ export default function Settings() {
 										</div>
 										<div className="text-left">
 											<div className="text-sm font-medium">
-												Export / Import Data
+												{t("settings.dataExport.button")}
 											</div>
 											<div className="text-xs text-muted-foreground">
-												Backup or restore your playground
+												{t("settings.dataExport.buttonDesc")}
 											</div>
 										</div>
 									</div>
@@ -155,10 +155,10 @@ export default function Settings() {
 									<div className="p-2 bg-primary/5 rounded-lg">
 										<Sun className="w-4 h-4 text-foreground" />
 									</div>
-									<span>Application Theme</span>
+									<span>{t("settings.applicationTheme.title")}</span>
 								</CardTitle>
 								<CardDescription className="text-sm">
-									Choose how the application theme is displayed
+									{t("settings.applicationTheme.description")}
 								</CardDescription>
 							</CardHeader>
 							<CardContent>
@@ -182,9 +182,9 @@ export default function Settings() {
 												<Sun className="w-5 h-5 text-warning" />
 											</div>
 											<div>
-												<div className="text-sm font-medium">Light</div>
+												<div className="text-sm font-medium">{t("settings.applicationTheme.light")}</div>
 												<div className="text-xs text-muted-foreground">
-													Always light mode
+													{t("settings.applicationTheme.lightDesc")}
 												</div>
 											</div>
 										</div>
@@ -208,9 +208,9 @@ export default function Settings() {
 												<Moon className="w-5 h-5 text-foreground" />
 											</div>
 											<div>
-												<div className="text-sm font-medium">Dark</div>
+												<div className="text-sm font-medium">{t("settings.applicationTheme.dark")}</div>
 												<div className="text-xs text-muted-foreground">
-													Always dark mode
+													{t("settings.applicationTheme.darkDesc")}
 												</div>
 											</div>
 										</div>
@@ -234,9 +234,9 @@ export default function Settings() {
 												<Monitor className="w-5 h-5 text-foreground" />
 											</div>
 											<div>
-												<div className="text-sm font-medium">System</div>
+												<div className="text-sm font-medium">{t("settings.applicationTheme.system")}</div>
 												<div className="text-xs text-muted-foreground">
-													Follow your system
+													{t("settings.applicationTheme.systemDesc")}
 												</div>
 											</div>
 										</div>
@@ -258,7 +258,7 @@ export default function Settings() {
 									<span>{t("settings.editorTheme.title")}</span>
 								</CardTitle>
 								<CardDescription className="text-sm">
-									Editor theme automatically follows your application theme setting
+									{t("settings.editorTheme.description")}
 								</CardDescription>
 							</CardHeader>
 							<CardContent>
@@ -408,7 +408,7 @@ export default function Settings() {
 													: "border-border hover:border-primary/50 hover:bg-muted/50"
 											}`}
 										>
-											2 spaces
+											{t('settings.codeFormatting.spaces2')}
 										</motion.button>
 										<motion.button
 											whileHover={{ scale: 1.02 }}
@@ -420,7 +420,7 @@ export default function Settings() {
 													: "border-border hover:border-primary/50 hover:bg-muted/50"
 											}`}
 										>
-											4 spaces
+											{t('settings.codeFormatting.spaces4')}
 										</motion.button>
 									</div>
 								</div>

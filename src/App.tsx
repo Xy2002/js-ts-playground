@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Route, BrowserRouter as Router, Routes } from "react-router-dom";
 import { VersionInfo } from "@/components/VersionInfo";
 import { UpdateBanner } from "@/components/UpdateBanner";
+import { Toaster } from "@/components/ui/sonner";
 import Home from "@/pages/Home";
 import Settings from "@/pages/Settings";
 import { useVersionCheck } from "@/hooks/useVersionCheck";
@@ -75,6 +76,7 @@ function AppContent() {
 					<Route path="/settings" element={<Settings />} />
 				</Routes>
 			)}
+			<Toaster />
 		</>
 	);
 }

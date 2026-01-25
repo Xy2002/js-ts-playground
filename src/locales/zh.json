@@ -57,9 +57,19 @@
   },
   "settings": {
     "title": "设置",
+    "applicationTheme": {
+      "title": "应用主题",
+      "description": "选择应用主题的显示方式",
+      "light": "浅色",
+      "lightDesc": "始终浅色模式",
+      "dark": "深色",
+      "darkDesc": "始终深色模式",
+      "system": "跟随系统",
+      "systemDesc": "跟随系统设置"
+    },
     "editorTheme": {
       "title": "编辑器主题",
-      "description": "选择您喜欢的编辑器主题以获得更好的编码体验",
+      "description": "编辑器主题会自动跟随您的应用主题设置",
       "light": "浅色主题",
       "lightDesc": "明亮清洁",
       "dark": "深色主题",
@@ -80,6 +90,53 @@
       "description": "在您输入时自动保存您的工作",
       "enable": "启用自动保存",
       "enableDesc": "更改将自动保存"
+    },
+    "dataExport": {
+      "title": "数据导出 / 导入",
+      "description": "跨设备同步您的 playground 数据或备份您的工作",
+      "button": "导出 / 导入数据",
+      "buttonDesc": "备份或恢复您的 playground",
+      "dialogTitle": "导出 / 导入数据",
+      "dialogDescription": "跨设备同步您的 playground 数据或备份您的工作",
+      "export": {
+        "title": "导出数据",
+        "withoutLlm": "不含 LLM 密钥导出",
+        "withoutLlmDesc": "可安全分享，不包含 API 密钥",
+        "withLlm": "包含 LLM 密钥导出",
+        "withLlmDesc": "包含 API 密钥，请妥善保管"
+      },
+      "import": {
+        "title": "导入数据",
+        "selectFile": "选择 JSON 文件",
+        "summary": "导入摘要",
+        "exportDate": "导出日期",
+        "version": "版本",
+        "files": "文件",
+        "folders": "文件夹",
+        "totalSize": "总大小",
+        "hasLlmSettings": "包含 LLM 设置",
+        "yes": "是",
+        "no": "否",
+        "includeLlm": "包含 LLM 设置",
+        "includeLlmDesc": "从文件导入 API 密钥",
+        "llmNotAvailable": "LLM 设置不可用",
+        "llmNotAvailableDesc": "此导出文件未包含 API 密钥",
+        "preserveSettings": "保留当前设置",
+        "preserveSettingsDesc": "保留您当前的主题、字体大小等设置",
+        "mergeStrategy": "合并策略",
+        "strategyOverwrite": "覆盖 - 替换所有数据",
+        "strategyMerge": "合并 - 与现有数据合并",
+        "strategySkip": "跳过 - 仅保留设置和代码",
+        "warning": "警告：这将替换您当前的所有文件和文件夹。建议先备份当前数据。",
+        "cancel": "取消",
+        "import": "导入",
+        "importing": "导入中..."
+      },
+      "errors": {
+        "parseFailed": "解析导入文件失败：{{error}}\\n\\n请确保文件是有效的 playground 导出文件。",
+        "importSuccess": "数据导入成功！",
+        "importFailed": "导入失败：{{error}}"
+      }
     }
   },
   "dialogs": {
