@@ -50,10 +50,10 @@ export default function OutputDisplay({
 		}
 	}, [result?.visualizations]);
 
-	// 计算输出区域和可视化区域的高度
+	// 计算输出区域和可视化区域的宽度（水平布局）
 	const hasVisualizations = result?.visualizations && result.visualizations.length > 0;
-	const outputHeight = hasVisualizations && showVisualization ? "50%" : "100%";
-	const visualizationHeight = hasVisualizations && showVisualization ? "50%" : "0%";
+	const outputWidth = hasVisualizations && showVisualization ? "50%" : "100%";
+	const visualizationWidth = hasVisualizations && showVisualization ? "50%" : "0%";
 
 	const formatOutput = (logs: string[], errors: string[]) => {
 		const allOutput = [];
@@ -117,7 +117,7 @@ export default function OutputDisplay({
 	return (
 		<Card className="h-full flex flex-col rounded-none border-0 shadow-none bg-transparent">
 			{/* Vercel-style Output Header */}
-			<CardHeader className="flex flex-row items-center justify-between p-3 space-y-0 flex-shrink-0">
+			<CardHeader className="flex flex-row items-center justify-between p-3 space-y-0 flex-shrink-0 border-b">
 				<div className="flex items-center gap-2">
 					<AnimatePresence mode="wait">
 						{isExecuting ? (
@@ -211,8 +211,10 @@ export default function OutputDisplay({
 				</div>
 			</CardHeader>
 
-			{/* 输出内容区域 - 上半部分 */}
-			<div style={{ height: outputHeight }} className="min-h-0">
+			{/* 内容区域 - 水平布局 */}
+			<div className="flex-1 flex flex-row min-h-0">
+				{/* 输出内容区域 - 左侧 */}
+				<div style={{ width: outputWidth }} className="min-w-0 flex flex-col">
 				<CardContent className="h-full p-0 min-h-0">
 					<ScrollArea className="h-full" ref={outputRef}>
 						<div className="p-3 space-y-1">
@@ -314,38 +316,45 @@ export default function OutputDisplay({
 				</CardContent>
 			</div>
 
-			{/* 可视化区域 - 下半部分 */}
+			{/* 垂直分隔符 */}
+			{hasVisualizations && showVisualization && <Separator orientation="vertical" />}
+
+			{/* 可视化区域 - 右侧 */}
 			<AnimatePresence>
 				{hasVisualizations && showVisualization && (
-					<>
-						<Separator />
-						<motion.div
-							initial={{ height: 0, opacity: 0 }}
-							animate={{ height: visualizationHeight, opacity: 1 }}
-							exit={{ height: 0, opacity: 0 }}
-							transition={{ duration: 0.2 }}
-							className="min-h-0 overflow-hidden"
-						>
-							{(() => {
-								const heapViz = result.visualizations.filter((v) => v.type === "heap");
-								const treeViz = result.visualizations.filter((v) => v.type === "tree");
+					<motion.div
+						initial={{ width: 0, opacity: 0 }}
+						animate={{ width: visualizationWidth, opacity: 1 }}
+						exit={{ width: 0, opacity: 0 }}
+						transition={{ duration: 0.2 }}
+						className="min-w-0 overflow-hidden flex flex-col"
+					>
+						<CardContent className="flex-1 p-0 min-h-0">
+							<ScrollArea className="h-full">
+								<div className="p-3">
+									{(() => {
+										const heapViz = result.visualizations.filter((v) => v.type === "heap");
+										const treeViz = result.visualizations.filter((v) => v.type === "tree");
 
-								// If we have both, show tree first (on top), then heap
-								return (
-									<>
-										{treeViz.length > 0 && (
-											<ClassTreeVisualization visualizations={treeViz} />
-										)}
-										{heapViz.length > 0 && (
-											<HeapVisualization visualizations={heapViz} />
-										)}
-									</>
-								);
-							})()}
-						</motion.div>
-					</>
+										// If we have both, show tree first, then heap
+										return (
+											<div className="space-y-4">
+												{treeViz.length > 0 && (
+													<ClassTreeVisualization visualizations={treeViz} />
+												)}
+												{heapViz.length > 0 && (
+													<HeapVisualization visualizations={heapViz} />
+												)}
+											</div>
+										);
+									})()}
+								</div>
+							</ScrollArea>
+						</CardContent>
+					</motion.div>
 				)}
 			</AnimatePresence>
+			</div>
 		</Card>
 	);
 }

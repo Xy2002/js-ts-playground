@@ -26,6 +26,11 @@ import { executeCode, stopExecution } from "@/services/codeExecutionService";
 import { analyzeComplexity } from "@/services/complexityAnalysisService";
 import { usePlaygroundStore } from "@/store/usePlaygroundStore";
 import { MotionDiv, PageTransition } from "@/components/ui/motion";
+import {
+	Group,
+	Panel,
+	Separator as ResizableSeparator,
+} from "react-resizable-panels";
 
 export default function Home() {
 	const {
@@ -68,7 +73,6 @@ export default function Home() {
 
 	// 文件浏览器状态
 	const [isFileExplorerOpen, setIsFileExplorerOpen] = useState(true);
-	const [fileExplorerWidth, setFileExplorerWidth] = useState(280);
 	const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
 	// 单独处理Monaco编辑器的运行代码事件监听
@@ -235,10 +239,6 @@ export default function Home() {
 	// 文件浏览器控制
 	const handleFileExplorerToggle = () => {
 		setIsFileExplorerOpen(!isFileExplorerOpen);
-	};
-
-	const handleFileExplorerWidthChange = (width: number) => {
-		setFileExplorerWidth(width);
 	};
 
 	// 获取当前活跃文件的代码
@@ -521,110 +521,118 @@ export default function Home() {
 				</header>
 
 				{/* Main Content */}
-				<div className="flex-1 flex overflow-hidden">
-					{/* File Explorer */}
-					<FileExplorer
-						isOpen={isFileExplorerOpen}
-						width={fileExplorerWidth}
-						onWidthChange={handleFileExplorerWidthChange}
-						onToggle={handleFileExplorerToggle}
-					/>
+				<div className="flex-1 overflow-hidden">
+					<Group orientation="horizontal" className="h-full">
+						{/* File Explorer */}
+						<Panel
+							defaultSize="20%"
+							minSize="15%"
+							maxSize="80%"
+							collapsible={true}
+							collapsedSize={0}
+						>
+							<FileExplorer
+								isOpen={isFileExplorerOpen}
+								onToggle={handleFileExplorerToggle}
+							/>
+						</Panel>
 
-					{/* Editor Area */}
-					<div className="flex-1 flex flex-col min-w-0">
-						{/* Tab Manager */}
-						<TabManager />
+						<ResizableSeparator className="bg-border hover:bg-primary/50 transition-colors" />
 
-						{/* Editor and Output */}
-						<div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
-							{/* Code Editor Panel */}
-							<MotionDiv
-								className="flex-1 flex flex-col border-b lg:border-b-0 lg:border-r"
-								initial={{ opacity: 0 }}
-								animate={{ opacity: 1 }}
-								transition={{ delay: 0.1 }}
-							>
-								<div className="bg-muted/50 px-4 py-2 border-b">
-									<h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-										{t("codeEditor.title")}
-									</h2>
-								</div>
-								<div className="flex-1 min-h-0">
-									{openTabs.length > 0 ? (
-										<CodeEditor
-											value={getCurrentCode()}
-											onChange={handleCodeChange}
-											language={getCurrentLanguage()}
-											theme={settings.theme}
-											fontSize={settings.fontSize}
-											filePath={
-												activeFileId && files[activeFileId]
-													? `file:///${files[activeFileId].name}`
-													: `file:///main.${getCurrentLanguage() === "typescript" ? "ts" : "js"}`
-											}
-										/>
-									) : (
-										<div className="h-full flex items-center justify-center bg-muted/30">
-											<div className="text-center text-muted-foreground">
-												<Code2 className="w-12 h-12 mx-auto mb-4 opacity-30" />
-												<p className="text-sm font-medium mb-1">
-													{t("codeEditor.noOpenFiles")}
-												</p>
-												<p className="text-xs">
-													{t("codeEditor.noOpenFilesDesc")}
-												</p>
+						{/* Editor and Output Area */}
+						<Panel defaultSize="80%" minSize="30%">
+							<Group orientation="vertical" className="h-full">
+								{/* Tab Manager and Editor */}
+								<Panel defaultSize="60%" minSize="20%">
+									<div className="h-full flex flex-col">
+										{/* Tab Manager */}
+										<TabManager />
+
+										{/* Code Editor */}
+										<div className="flex-1 flex flex-col min-h-0 border-b">
+											<div className="bg-muted/50 px-4 py-2 border-b">
+												<h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+													{t("codeEditor.title")}
+												</h2>
 											</div>
-										</div>
-									)}
-								</div>
-							</MotionDiv>
-
-							{/* Output Panel */}
-							<MotionDiv
-								className="w-full lg:min-w-[500px] lg:max-w-[700px] flex flex-col bg-muted/30 min-h-0"
-								initial={{ opacity: 0 }}
-								animate={{ opacity: 1 }}
-								transition={{ delay: 0.15 }}
-							>
-								<div className="flex-1 min-h-0">
-									<Tabs defaultValue="output" className="h-full flex flex-col">
-										<div className="bg-muted/50 px-4 py-2 border-b">
-											<TabsList className="w-full justify-start">
-												<TabsTrigger value="output" className="gap-2">
-													{t("output.title")}
-												</TabsTrigger>
-												<TabsTrigger value="predefined" className="gap-2">
-													{t("predefined.tab")}
-												</TabsTrigger>
-											</TabsList>
-										</div>
-										<div className="flex-1 min-h-0">
-											<TabsContent value="output" className="h-full m-0 p-0">
-												{showComplexityVisualization && complexityResult ? (
-													<ComplexityVisualization
-														result={complexityResult}
-														onClose={toggleComplexityVisualization}
+											<div className="flex-1 min-h-0">
+												{openTabs.length > 0 ? (
+													<CodeEditor
+														value={getCurrentCode()}
+														onChange={handleCodeChange}
+														language={getCurrentLanguage()}
+														theme={settings.theme}
+														fontSize={settings.fontSize}
+														filePath={
+															activeFileId && files[activeFileId]
+																? `file:///${files[activeFileId].name}`
+																: `file:///main.${getCurrentLanguage() === "typescript" ? "ts" : "js"}`
+														}
 													/>
 												) : (
-													<OutputDisplay
-														result={executionResult}
-														isExecuting={isExecuting}
-														onClear={handleClearOutput}
-														onStop={handleStopExecution}
-														onAnalyzeComplexity={handleAnalyzeComplexity}
-														isAnalyzingComplexity={isAnalyzingComplexity}
-													/>
+													<div className="h-full flex items-center justify-center bg-muted/30">
+														<div className="text-center text-muted-foreground">
+															<Code2 className="w-12 h-12 mx-auto mb-4 opacity-30" />
+															<p className="text-sm font-medium mb-1">
+																{t("codeEditor.noOpenFiles")}
+															</p>
+															<p className="text-xs">
+																{t("codeEditor.noOpenFilesDesc")}
+															</p>
+														</div>
+													</div>
 												)}
-											</TabsContent>
-											<TabsContent value="predefined" className="h-full m-0 p-0">
-												<PredefinedFunctions />
-											</TabsContent>
+											</div>
 										</div>
-									</Tabs>
-								</div>
-							</MotionDiv>
-						</div>
-					</div>
+									</div>
+								</Panel>
+
+								<ResizableSeparator className="bg-border hover:bg-primary/50 transition-colors" />
+
+								{/* Output Panel */}
+								<Panel defaultSize="40%" minSize="20%" maxSize="90%">
+									<div className="h-full flex flex-col bg-muted/30">
+										<div className="flex-1 min-h-0">
+											<Tabs defaultValue="output" className="h-full flex flex-col">
+												<div className="bg-muted/50 px-4 py-2 border-b">
+													<TabsList className="w-full justify-start">
+														<TabsTrigger value="output" className="gap-2">
+															{t("output.title")}
+														</TabsTrigger>
+														<TabsTrigger value="predefined" className="gap-2">
+															{t("predefined.tab")}
+														</TabsTrigger>
+													</TabsList>
+												</div>
+												<div className="flex-1 min-h-0">
+													<TabsContent value="output" className="h-full m-0 p-0">
+														{showComplexityVisualization && complexityResult ? (
+															<ComplexityVisualization
+																result={complexityResult}
+																onClose={toggleComplexityVisualization}
+															/>
+														) : (
+															<OutputDisplay
+																result={executionResult}
+																isExecuting={isExecuting}
+																onClear={handleClearOutput}
+																onStop={handleStopExecution}
+																onAnalyzeComplexity={handleAnalyzeComplexity}
+																isAnalyzingComplexity={isAnalyzingComplexity}
+															/>
+														)}
+													</TabsContent>
+													<TabsContent value="predefined" className="h-full m-0 p-0">
+														<PredefinedFunctions />
+													</TabsContent>
+												</div>
+											</Tabs>
+										</div>
+									</div>
+								</Panel>
+							</Group>
+						</Panel>
+					</Group>
 				</div>
 
 				<SettingsDialog

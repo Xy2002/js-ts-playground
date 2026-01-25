@@ -12,20 +12,15 @@ import FileTree from "./FileTree";
 
 interface FileExplorerProps {
 	isOpen: boolean;
-	width: number;
-	onWidthChange: (width: number) => void;
 	onToggle: () => void;
 }
 
 export default function FileExplorer({
 	isOpen,
-	width,
-	onWidthChange,
 	onToggle,
 }: FileExplorerProps) {
 	const { t } = useTranslation();
 	const [searchQuery, setSearchQuery] = useState("");
-	const [isResizing, setIsResizing] = useState(false);
 	const [contextMenu, setContextMenu] = useState<{
 		isOpen: boolean;
 		position: { x: number; y: number };
@@ -62,33 +57,6 @@ export default function FileExplorer({
 		setContextMenu((prev) => ({ ...prev, isOpen: false }));
 	};
 
-	const handleMouseDown = (e: React.MouseEvent) => {
-		if (e.button !== 0) return; // 只处理左键
-		setIsResizing(true);
-		e.preventDefault();
-	};
-
-	const handleMouseMove = React.useCallback((e: MouseEvent) => {
-		if (!isResizing) return;
-		const newWidth = Math.max(200, Math.min(400, e.clientX));
-		onWidthChange(newWidth);
-	}, [isResizing, onWidthChange]);
-
-	const handleMouseUp = React.useCallback(() => {
-		setIsResizing(false);
-	}, []);
-
-	React.useEffect(() => {
-		if (isResizing) {
-			document.addEventListener("mousemove", handleMouseMove);
-			document.addEventListener("mouseup", handleMouseUp);
-			return () => {
-				document.removeEventListener("mousemove", handleMouseMove);
-				document.removeEventListener("mouseup", handleMouseUp);
-			};
-		}
-	}, [isResizing, handleMouseMove, handleMouseUp]);
-
 	if (!isOpen) {
 		return (
 			<div className="w-12 border-r flex flex-col">
@@ -108,10 +76,7 @@ export default function FileExplorer({
 	}
 
 	return (
-		<Card
-			className="flex flex-col relative rounded-none"
-			style={{ width: `${width}px` }}
-		>
+		<Card className="flex flex-col relative rounded-none h-full">
 			{/* Header */}
 			<CardHeader className="px-3 py-2">
 				<div className="flex items-center justify-between">
@@ -159,12 +124,6 @@ export default function FileExplorer({
 					/>
 				</ScrollArea>
 			</CardContent>
-
-			{/* Resize Handle */}
-			<hr
-				className="absolute top-0 right-0 w-1 h-full cursor-col-resize bg-transparent hover:bg-primary transition-colors"
-				onMouseDown={handleMouseDown}
-			/>
 
 			{/* Context Menu */}
 			<FileContextMenu
