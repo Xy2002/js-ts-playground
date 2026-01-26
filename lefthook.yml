@@ -9,3 +9,7 @@ pre-commit:
       glob: "*"
       run: pnpm format
       
+commit-msg:
+  commands:
+    commitlint:
+      run: pnpm commitlint --edit {1}
