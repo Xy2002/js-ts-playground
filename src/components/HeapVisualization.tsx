@@ -124,8 +124,9 @@ export default function HeapVisualization({
 		let data = currentViz.data;
 		// 如果数据是对象，尝试提取heap数组
 		if (typeof data === "object" && data !== null && !Array.isArray(data)) {
-			if (Array.isArray(data.heap)) {
-				data = data.heap;
+			const dataWithHeap = data as Record<string, unknown>;
+			if (Array.isArray(dataWithHeap.heap)) {
+				data = dataWithHeap.heap;
 			}
 		}
 

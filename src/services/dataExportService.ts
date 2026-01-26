@@ -159,27 +159,29 @@ class DataExportService {
 			throw new Error("Invalid data format");
 		}
 
-		if (!data.version) {
+		const record = data as Record<string, unknown>;
+
+		if (!record.version) {
 			throw new Error("Missing version information");
 		}
 
-		if (!data.codeHistory) {
+		if (!record.codeHistory) {
 			throw new Error("Missing code history");
 		}
 
-		if (!data.settings) {
+		if (!record.settings) {
 			throw new Error("Missing settings");
 		}
 
-		if (!data.files || typeof data.files !== "object") {
+		if (!record.files || typeof record.files !== "object") {
 			throw new Error("Invalid files data");
 		}
 
-		if (!data.folders || typeof data.folders !== "object") {
+		if (!record.folders || typeof record.folders !== "object") {
 			throw new Error("Invalid folders data");
 		}
 
-		if (!data.fileContents || typeof data.fileContents !== "object") {
+		if (!record.fileContents || typeof record.fileContents !== "object") {
 			throw new Error("Invalid file contents");
 		}
 	}
