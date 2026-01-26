@@ -78,11 +78,17 @@ export class FileManager {
 	public loadFiles(): Record<string, FileInfo> {
 		try {
 			const savedFiles = localStorage.getItem(MULTI_FILE_STORAGE_KEYS.FILES);
-			console.log("[FileManager.loadFiles] Storage key:", MULTI_FILE_STORAGE_KEYS.FILES);
+			console.log(
+				"[FileManager.loadFiles] Storage key:",
+				MULTI_FILE_STORAGE_KEYS.FILES,
+			);
 			console.log("[FileManager.loadFiles] Raw data:", savedFiles);
 			if (savedFiles) {
 				const files = JSON.parse(savedFiles);
-				console.log("[FileManager.loadFiles] Parsed files count:", Object.keys(files).length);
+				console.log(
+					"[FileManager.loadFiles] Parsed files count:",
+					Object.keys(files).length,
+				);
 				// 确保时间字段为number类型
 				Object.values(files).forEach((file: FileInfo) => {
 					if (typeof file.createdAt === "string") {
@@ -94,10 +100,15 @@ export class FileManager {
 				});
 				return files;
 			} else {
-				console.log("[FileManager.loadFiles] No saved files found in localStorage");
+				console.log(
+					"[FileManager.loadFiles] No saved files found in localStorage",
+				);
 			}
 		} catch (error) {
-			console.error("[FileManager.loadFiles] Failed to load files from storage:", error);
+			console.error(
+				"[FileManager.loadFiles] Failed to load files from storage:",
+				error,
+			);
 		}
 		return {};
 	}
@@ -148,15 +159,24 @@ export class FileManager {
 	 */
 	public saveFiles(files: Record<string, FileInfo>): void {
 		try {
-			console.log("[FileManager.saveFiles] Saving files count:", Object.keys(files).length);
-			console.log("[FileManager.saveFiles] Storage key:", MULTI_FILE_STORAGE_KEYS.FILES);
+			console.log(
+				"[FileManager.saveFiles] Saving files count:",
+				Object.keys(files).length,
+			);
+			console.log(
+				"[FileManager.saveFiles] Storage key:",
+				MULTI_FILE_STORAGE_KEYS.FILES,
+			);
 			localStorage.setItem(
 				MULTI_FILE_STORAGE_KEYS.FILES,
 				JSON.stringify(files),
 			);
 			console.log("[FileManager.saveFiles] Save successful");
 		} catch (error) {
-			console.error("[FileManager.saveFiles] Failed to save files to storage:", error);
+			console.error(
+				"[FileManager.saveFiles] Failed to save files to storage:",
+				error,
+			);
 			throw new Error("Failed to save files");
 		}
 	}

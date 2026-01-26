@@ -1,5 +1,5 @@
-import * as React from "react";
 import { cva, type VariantProps } from "class-variance-authority";
+import * as React from "react";
 import { cn } from "@/lib/utils";
 
 const alertVariants = cva(
@@ -10,15 +10,14 @@ const alertVariants = cva(
 				default: "bg-background text-foreground",
 				destructive:
 					"border-destructive/50 text-destructive dark:border-destructive",
-				warning:
-					"border-warning/50 text-warning dark:border-warning",
+				warning: "border-warning/50 text-warning dark:border-warning",
 				info: "border-blue-500/50 bg-blue-50 dark:bg-blue-950 dark:border-blue-500",
 			},
 		},
 		defaultVariants: {
 			variant: "default",
 		},
-	}
+	},
 );
 
 const Alert = React.forwardRef<

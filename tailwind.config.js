@@ -1,4 +1,4 @@
-import { createRequire } from 'module';
+import { createRequire } from "node:module";
 
 /** @type {import('tailwindcss').Config} */
 const require = createRequire(import.meta.url);

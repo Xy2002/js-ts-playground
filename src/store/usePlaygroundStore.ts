@@ -57,7 +57,9 @@ interface PlaygroundState extends MultiFileState {
 
 	// 复杂度分析状态
 	isAnalyzingComplexity: boolean;
-	complexityResult: import("@/services/complexityAnalysisService").ComplexityResult | null;
+	complexityResult:
+		| import("@/services/complexityAnalysisService").ComplexityResult
+		| null;
 	showComplexityVisualization: boolean;
 
 	// Actions (保持向后兼容)
@@ -74,7 +76,11 @@ interface PlaygroundState extends MultiFileState {
 
 	// 复杂度分析 Actions
 	setAnalyzingComplexity: (isAnalyzing: boolean) => void;
-	setComplexityResult: (result: import("@/services/complexityAnalysisService").ComplexityResult | null) => void;
+	setComplexityResult: (
+		result:
+			| import("@/services/complexityAnalysisService").ComplexityResult
+			| null,
+	) => void;
 	toggleComplexityVisualization: () => void;
 
 	// 持久化
@@ -363,7 +369,10 @@ export const usePlaygroundStore = create<PlaygroundState>((set, get) => ({
 
 	toggleLlmEnabled: () => {
 		set((state) => ({
-			llmSettings: { ...state.llmSettings, enabled: !state.llmSettings.enabled },
+			llmSettings: {
+				...state.llmSettings,
+				enabled: !state.llmSettings.enabled,
+			},
 		}));
 		get().saveToStorage();
 	},
@@ -385,12 +394,18 @@ export const usePlaygroundStore = create<PlaygroundState>((set, get) => ({
 		set({ isAnalyzingComplexity: isAnalyzing });
 	},
 
-	setComplexityResult: (result: import("@/services/complexityAnalysisService").ComplexityResult | null) => {
+	setComplexityResult: (
+		result:
+			| import("@/services/complexityAnalysisService").ComplexityResult
+			| null,
+	) => {
 		set({ complexityResult: result });
 	},
 
 	toggleComplexityVisualization: () => {
-		set((state) => ({ showComplexityVisualization: !state.showComplexityVisualization }));
+		set((state) => ({
+			showComplexityVisualization: !state.showComplexityVisualization,
+		}));
 	},
 
 	resetToDefault: () => {
@@ -650,7 +665,10 @@ export const usePlaygroundStore = create<PlaygroundState>((set, get) => ({
 
 	// 多文件系统初始化
 	initializeMultiFileSystem: () => {
-		console.log("[initializeMultiFileSystem] Called at", new Date().toISOString());
+		console.log(
+			"[initializeMultiFileSystem] Called at",
+			new Date().toISOString(),
+		);
 		try {
 			// 加载现有数据
 			const files = fileManager.loadFiles();
@@ -692,7 +710,9 @@ export const usePlaygroundStore = create<PlaygroundState>((set, get) => ({
 				Object.keys(files).length === 0 &&
 				Object.keys(folders).length === 0
 			) {
-				console.log("[initializeMultiFileSystem] No existing data found, creating default workspace");
+				console.log(
+					"[initializeMultiFileSystem] No existing data found, creating default workspace",
+				);
 				const defaultWorkspace = fileManager.createDefaultWorkspace();
 				console.log("[initializeMultiFileSystem] Default workspace created:", {
 					filesCount: Object.keys(defaultWorkspace.files).length,

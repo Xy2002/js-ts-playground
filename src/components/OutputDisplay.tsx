@@ -1,14 +1,13 @@
-import { Play, Square, Trash2, TrendingUp, Loader2 } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
+import { Loader2, Play, Square, Trash2, TrendingUp } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-
+import ClassTreeVisualization from "@/components/ClassTreeVisualization";
+import HeapVisualization from "@/components/HeapVisualization";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import ClassTreeVisualization from "@/components/ClassTreeVisualization";
-import HeapVisualization from "@/components/HeapVisualization";
 import type { ExecutionResult } from "@/services/codeExecutionService";
 
 interface OutputDisplayProps {
@@ -32,6 +31,7 @@ export default function OutputDisplay({
 	const [showVisualization, setShowVisualization] = useState(true);
 
 	// 自动滚动到底部（当有新输出时）
+	// biome-ignore lint/correctness/useExhaustiveDependencies: outputRef is stable and we only want to scroll when logs, errors, or executing state changes
 	useEffect(() => {
 		if (outputRef.current) {
 			const scrollElement = outputRef.current.querySelector(
@@ -51,9 +51,11 @@ export default function OutputDisplay({
 	}, [result?.visualizations]);
 
 	// 计算输出区域和可视化区域的宽度（水平布局）
-	const hasVisualizations = result?.visualizations && result.visualizations.length > 0;
+	const hasVisualizations =
+		result?.visualizations && result.visualizations.length > 0;
 	const outputWidth = hasVisualizations && showVisualization ? "50%" : "100%";
-	const visualizationWidth = hasVisualizations && showVisualization ? "50%" : "0%";
+	const visualizationWidth =
+		hasVisualizations && showVisualization ? "50%" : "0%";
 
 	const formatOutput = (logs: string[], errors: string[]) => {
 		const allOutput = [];
@@ -79,11 +81,14 @@ export default function OutputDisplay({
 		return allOutput;
 	};
 
-	const renderOutputLine = (item: {
-		type: "log" | "error";
-		content: string;
-		id: string;
-	}, index: number) => {
+	const renderOutputLine = (
+		item: {
+			type: "log" | "error";
+			content: string;
+			id: string;
+		},
+		index: number,
+	) => {
 		const isError = item.type === "error";
 
 		return (
@@ -146,7 +151,10 @@ export default function OutputDisplay({
 						{isExecuting ? "Running" : "Output"}
 					</span>
 					{result && result.executionTime > 0 && (
-						<Badge variant="secondary" className="text-xs font-mono bg-muted/50">
+						<Badge
+							variant="secondary"
+							className="text-xs font-mono bg-muted/50"
+						>
 							{result.executionTime}ms
 						</Badge>
 					)}
@@ -215,145 +223,158 @@ export default function OutputDisplay({
 			<div className="flex-1 flex flex-row min-h-0">
 				{/* 输出内容区域 - 左侧 */}
 				<div style={{ width: outputWidth }} className="min-w-0 flex flex-col">
-				<CardContent className="h-full p-0 min-h-0">
-					<ScrollArea className="h-full" ref={outputRef}>
-						<div className="p-3 space-y-1">
-							{!result && !isExecuting && (
-								<div className="flex items-center justify-center h-full text-muted-foreground">
-									<motion.div
-										initial={{ opacity: 0, y: 10 }}
-										animate={{ opacity: 1, y: 0 }}
-										className="text-center px-4"
-									>
-										<div className="w-12 h-12 mx-auto mb-3 rounded-full bg-muted/50 flex items-center justify-center">
-											<Play className="w-5 h-5 opacity-50" />
-										</div>
-										<p className="text-sm font-medium mb-1">
-											Ready to execute
-										</p>
-										<p className="text-xs">
-											Output will appear here
-										</p>
-									</motion.div>
-								</div>
-							)}
-
-							{isExecuting && (
-								<motion.div
-									initial={{ opacity: 0, y: -10 }}
-									animate={{ opacity: 1, y: 0 }}
-									className="flex items-center gap-2 p-3 text-warning bg-warning/5 border border-warning/20 rounded-lg mb-2"
-								>
-									<motion.div
-										animate={{ rotate: 360 }}
-										transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-									>
-										<Loader2 className="w-4 h-4" />
-									</motion.div>
-									<span className="text-sm font-medium">Executing code...</span>
-								</motion.div>
-							)}
-
-							{isAnalyzingComplexity && !isExecuting && (
-								<motion.div
-									initial={{ opacity: 0, y: -10 }}
-									animate={{ opacity: 1, y: 0 }}
-									className="flex items-center gap-2 p-3 bg-primary/5 border border-primary/20 rounded-lg mb-2"
-								>
-									<Loader2 className="w-4 h-4 animate-spin text-primary" />
-									<span className="text-sm font-medium text-foreground">
-										Analyzing complexity...
-									</span>
-								</motion.div>
-							)}
-
-							{result && (
-								<AnimatePresence mode="popLayout">
-									<div className="space-y-1">
-										{result.logs.length === 0 && result.errors.length === 0 && (
-											<motion.div
-												initial={{ opacity: 0 }}
-												animate={{ opacity: 1 }}
-												exit={{ opacity: 0 }}
-												className="p-3 text-center text-muted-foreground text-sm bg-muted/30 rounded-lg"
-											>
-												No output
-											</motion.div>
-										)}
-
-										{formatOutput(result.logs, result.errors).map((item, index) =>
-											renderOutputLine(item, index)
-										)}
-
-										{result.success && result.logs.length > 0 && (
-											<motion.div
-												initial={{ opacity: 0, y: 10 }}
-												animate={{ opacity: 1, y: 0 }}
-												transition={{ delay: 0.1 }}
-												className="mt-2 p-2 bg-green-500/10 border border-green-500/20 text-green-700 dark:text-green-400 text-xs rounded-md flex items-center gap-2"
-											>
-												<div className="w-1.5 h-1.5 rounded-full bg-green-500" />
-												<span className="font-medium">Execution completed</span>
-											</motion.div>
-										)}
-
-										{!result.success && (
-											<motion.div
-												initial={{ opacity: 0, y: 10 }}
-												animate={{ opacity: 1, y: 0 }}
-												transition={{ delay: 0.1 }}
-												className="mt-2 p-2 bg-destructive/10 border border-destructive/20 text-destructive text-xs rounded-md flex items-center gap-2"
-											>
-												<div className="w-1.5 h-1.5 rounded-full bg-destructive" />
-												<span className="font-medium">Execution failed</span>
-											</motion.div>
-										)}
-									</div>
-								</AnimatePresence>
-							)}
-						</div>
-					</ScrollArea>
-				</CardContent>
-			</div>
-
-			{/* 垂直分隔符 */}
-			{hasVisualizations && showVisualization && <Separator orientation="vertical" />}
-
-			{/* 可视化区域 - 右侧 */}
-			<AnimatePresence>
-				{hasVisualizations && showVisualization && (
-					<motion.div
-						initial={{ width: 0, opacity: 0 }}
-						animate={{ width: visualizationWidth, opacity: 1 }}
-						exit={{ width: 0, opacity: 0 }}
-						transition={{ duration: 0.2 }}
-						className="min-w-0 overflow-hidden flex flex-col"
-					>
-						<CardContent className="flex-1 p-0 min-h-0">
-							<ScrollArea className="h-full">
-								<div className="p-3">
-									{(() => {
-										const heapViz = result.visualizations.filter((v) => v.type === "heap");
-										const treeViz = result.visualizations.filter((v) => v.type === "tree");
-
-										// If we have both, show tree first, then heap
-										return (
-											<div className="space-y-4">
-												{treeViz.length > 0 && (
-													<ClassTreeVisualization visualizations={treeViz} />
-												)}
-												{heapViz.length > 0 && (
-													<HeapVisualization visualizations={heapViz} />
-												)}
+					<CardContent className="h-full p-0 min-h-0">
+						<ScrollArea className="h-full" ref={outputRef}>
+							<div className="p-3 space-y-1">
+								{!result && !isExecuting && (
+									<div className="flex items-center justify-center h-full text-muted-foreground">
+										<motion.div
+											initial={{ opacity: 0, y: 10 }}
+											animate={{ opacity: 1, y: 0 }}
+											className="text-center px-4"
+										>
+											<div className="w-12 h-12 mx-auto mb-3 rounded-full bg-muted/50 flex items-center justify-center">
+												<Play className="w-5 h-5 opacity-50" />
 											</div>
-										);
-									})()}
-								</div>
-							</ScrollArea>
-						</CardContent>
-					</motion.div>
+											<p className="text-sm font-medium mb-1">
+												Ready to execute
+											</p>
+											<p className="text-xs">Output will appear here</p>
+										</motion.div>
+									</div>
+								)}
+
+								{isExecuting && (
+									<motion.div
+										initial={{ opacity: 0, y: -10 }}
+										animate={{ opacity: 1, y: 0 }}
+										className="flex items-center gap-2 p-3 text-warning bg-warning/5 border border-warning/20 rounded-lg mb-2"
+									>
+										<motion.div
+											animate={{ rotate: 360 }}
+											transition={{
+												duration: 1,
+												repeat: Infinity,
+												ease: "linear",
+											}}
+										>
+											<Loader2 className="w-4 h-4" />
+										</motion.div>
+										<span className="text-sm font-medium">
+											Executing code...
+										</span>
+									</motion.div>
+								)}
+
+								{isAnalyzingComplexity && !isExecuting && (
+									<motion.div
+										initial={{ opacity: 0, y: -10 }}
+										animate={{ opacity: 1, y: 0 }}
+										className="flex items-center gap-2 p-3 bg-primary/5 border border-primary/20 rounded-lg mb-2"
+									>
+										<Loader2 className="w-4 h-4 animate-spin text-primary" />
+										<span className="text-sm font-medium text-foreground">
+											Analyzing complexity...
+										</span>
+									</motion.div>
+								)}
+
+								{result && (
+									<AnimatePresence mode="popLayout">
+										<div className="space-y-1">
+											{result.logs.length === 0 &&
+												result.errors.length === 0 && (
+													<motion.div
+														initial={{ opacity: 0 }}
+														animate={{ opacity: 1 }}
+														exit={{ opacity: 0 }}
+														className="p-3 text-center text-muted-foreground text-sm bg-muted/30 rounded-lg"
+													>
+														No output
+													</motion.div>
+												)}
+
+											{formatOutput(result.logs, result.errors).map(
+												(item, index) => renderOutputLine(item, index),
+											)}
+
+											{result.success && result.logs.length > 0 && (
+												<motion.div
+													initial={{ opacity: 0, y: 10 }}
+													animate={{ opacity: 1, y: 0 }}
+													transition={{ delay: 0.1 }}
+													className="mt-2 p-2 bg-green-500/10 border border-green-500/20 text-green-700 dark:text-green-400 text-xs rounded-md flex items-center gap-2"
+												>
+													<div className="w-1.5 h-1.5 rounded-full bg-green-500" />
+													<span className="font-medium">
+														Execution completed
+													</span>
+												</motion.div>
+											)}
+
+											{!result.success && (
+												<motion.div
+													initial={{ opacity: 0, y: 10 }}
+													animate={{ opacity: 1, y: 0 }}
+													transition={{ delay: 0.1 }}
+													className="mt-2 p-2 bg-destructive/10 border border-destructive/20 text-destructive text-xs rounded-md flex items-center gap-2"
+												>
+													<div className="w-1.5 h-1.5 rounded-full bg-destructive" />
+													<span className="font-medium">Execution failed</span>
+												</motion.div>
+											)}
+										</div>
+									</AnimatePresence>
+								)}
+							</div>
+						</ScrollArea>
+					</CardContent>
+				</div>
+
+				{/* 垂直分隔符 */}
+				{hasVisualizations && showVisualization && (
+					<Separator orientation="vertical" />
 				)}
-			</AnimatePresence>
+
+				{/* 可视化区域 - 右侧 */}
+				<AnimatePresence>
+					{hasVisualizations && showVisualization && (
+						<motion.div
+							initial={{ width: 0, opacity: 0 }}
+							animate={{ width: visualizationWidth, opacity: 1 }}
+							exit={{ width: 0, opacity: 0 }}
+							transition={{ duration: 0.2 }}
+							className="min-w-0 overflow-hidden flex flex-col"
+						>
+							<CardContent className="flex-1 p-0 min-h-0">
+								<ScrollArea className="h-full">
+									<div className="p-3">
+										{(() => {
+											const heapViz = result.visualizations.filter(
+												(v) => v.type === "heap",
+											);
+											const treeViz = result.visualizations.filter(
+												(v) => v.type === "tree",
+											);
+
+											// If we have both, show tree first, then heap
+											return (
+												<div className="space-y-4">
+													{treeViz.length > 0 && (
+														<ClassTreeVisualization visualizations={treeViz} />
+													)}
+													{heapViz.length > 0 && (
+														<HeapVisualization visualizations={heapViz} />
+													)}
+												</div>
+											);
+										})()}
+									</div>
+								</ScrollArea>
+							</CardContent>
+						</motion.div>
+					)}
+				</AnimatePresence>
 			</div>
 		</Card>
 	);

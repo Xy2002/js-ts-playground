@@ -13,8 +13,5 @@ export default defineConfig({
 			process.env.VERCEL_GIT_COMMIT_MESSAGE || "",
 		),
 	},
-	plugins: [
-		react(),
-		tsconfigPaths(),
-	],
+	plugins: [react(), tsconfigPaths()],
 });

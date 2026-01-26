@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
 import { Route, BrowserRouter as Router, Routes } from "react-router-dom";
-import { VersionInfo } from "@/components/VersionInfo";
 import { UpdateBanner } from "@/components/UpdateBanner";
 import { Toaster } from "@/components/ui/sonner";
+import { VersionInfo } from "@/components/VersionInfo";
+import { useVersionCheck } from "@/hooks/useVersionCheck";
 import Home from "@/pages/Home";
 import Settings from "@/pages/Settings";
-import { useVersionCheck } from "@/hooks/useVersionCheck";
 import { usePlaygroundStore } from "@/store/usePlaygroundStore";
 
 function AppContent() {
@@ -14,11 +14,11 @@ function AppContent() {
 	const [isStorageLoaded, setIsStorageLoaded] = useState(false);
 
 	// Load data from localStorage on mount (must run first before other hooks)
+	// biome-ignore lint/correctness/useExhaustiveDependencies: loadFromStorage is stable from Zustand store
 	useEffect(() => {
 		loadFromStorage();
 		// Small delay to ensure state is updated before other hooks run
 		setTimeout(() => setIsStorageLoaded(true), 0);
-		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, []);
 
 	// Load app version from version.json

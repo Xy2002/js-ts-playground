@@ -9,7 +9,7 @@ interface HeapVisualizationProps {
 }
 
 interface TreeNode {
-	value: any;
+	value: unknown;
 	index: number;
 	left: TreeNode | null;
 	right: TreeNode | null;
@@ -25,10 +25,6 @@ export default function HeapVisualization({
 	);
 	const canvasRef = useRef<HTMLCanvasElement>(null);
 	const containerRef = useRef<HTMLDivElement>(null);
-
-	if (visualizations.length === 0) {
-		return null;
-	}
 
 	const currentViz = visualizations[currentIndex];
 	const canGoBack = currentIndex > 0;
@@ -47,7 +43,7 @@ export default function HeapVisualization({
 	};
 
 	// 将数组转换为二叉树结构
-	const buildTreeFromArray = (arr: any[]): TreeNode | null => {
+	const buildTreeFromArray = (arr: unknown[]): TreeNode | null => {
 		if (!Array.isArray(arr) || arr.length === 0) return null;
 
 		const buildNode = (index: number): TreeNode | null => {
@@ -72,7 +68,11 @@ export default function HeapVisualization({
 	};
 
 	// 计算树的布局位置
-	const calculateLayout = (root: TreeNode | null, width: number, height: number) => {
+	const calculateLayout = (
+		root: TreeNode | null,
+		width: number,
+		_height: number,
+	) => {
 		if (!root) return [];
 
 		const nodes: TreeNode[] = [];
@@ -84,11 +84,13 @@ export default function HeapVisualization({
 		queue.push({ node: root, level: 0, offset: 0 });
 
 		while (queue.length > 0) {
-			const { node, level, offset } = queue.shift()!;
+			const shifted = queue.shift();
+			if (!shifted) break;
+			const { node, level, offset } = shifted;
 
 			// 计算节点的x和y坐标
-			const levelWidth = width / Math.pow(2, level);
-			node.x = width / 2 + (offset - Math.pow(2, level - 1) + 0.5) * levelWidth;
+			const levelWidth = width / 2 ** level;
+			node.x = width / 2 + (offset - 2 ** (level - 1) + 0.5) * levelWidth;
 			node.y = level * levelHeight + nodeRadius + 20;
 
 			nodes.push(node);
@@ -98,7 +100,11 @@ export default function HeapVisualization({
 				queue.push({ node: node.left, level: level + 1, offset: offset * 2 });
 			}
 			if (node.right) {
-				queue.push({ node: node.right, level: level + 1, offset: offset * 2 + 1 });
+				queue.push({
+					node: node.right,
+					level: level + 1,
+					offset: offset * 2 + 1,
+				});
 			}
 		}
 
@@ -128,7 +134,11 @@ export default function HeapVisualization({
 			ctx.fillStyle = "#64748b";
 			ctx.font = "14px monospace";
 			ctx.textAlign = "center";
-			ctx.fillText("Data is not an array heap", canvas.width / 2, canvas.height / 2);
+			ctx.fillText(
+				"Data is not an array heap",
+				canvas.width / 2,
+				canvas.height / 2,
+			);
 			return;
 		}
 
@@ -220,7 +230,7 @@ export default function HeapVisualization({
 			ctx.textBaseline = "middle";
 			const valueStr = String(node.value);
 			if (valueStr.length > 4) {
-				ctx.fillText(valueStr.substring(0, 4) + "..", node.x, node.y);
+				ctx.fillText(`${valueStr.substring(0, 4)}..`, node.x, node.y);
 			} else {
 				ctx.fillText(valueStr, node.x, node.y);
 			}
@@ -228,11 +238,13 @@ export default function HeapVisualization({
 	};
 
 	// 当可视化数据或索引改变时重绘
+	// biome-ignore lint/correctness/useExhaustiveDependencies: drawTree is defined inline and currentViz, currentIndex are checked via ref
 	useEffect(() => {
 		drawTree();
 	}, [currentViz, currentIndex]);
 
 	// 当容器大小改变时重绘
+	// biome-ignore lint/correctness/useExhaustiveDependencies: drawTree is defined inline and currentViz, currentIndex are checked via ref
 	useEffect(() => {
 		const container = containerRef.current;
 		if (!container) return;
@@ -244,6 +256,10 @@ export default function HeapVisualization({
 		resizeObserver.observe(container);
 		return () => resizeObserver.disconnect();
 	}, [currentViz, currentIndex]);
+
+	if (visualizations.length === 0) {
+		return null;
+	}
 
 	return (
 		<Card className="h-full flex flex-col rounded-none border-t">
@@ -282,7 +298,10 @@ export default function HeapVisualization({
 				</div>
 			</CardHeader>
 
-			<CardContent className="flex-1 p-0 min-h-0 overflow-auto" ref={containerRef}>
+			<CardContent
+				className="flex-1 p-0 min-h-0 overflow-auto"
+				ref={containerRef}
+			>
 				<canvas ref={canvasRef} className="w-full" />
 			</CardContent>
 		</Card>

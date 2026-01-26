@@ -1,6 +1,6 @@
 let swcInitialized = false;
 let swcInitializing = false;
-let swcModule = null;
+const _swcModule = null;
 let swcInitStartTime = null;
 
 // Initialize SWC WebAssembly module from CDN
@@ -35,7 +35,9 @@ async function initSWC() {
 
 		// Load Chai for assertions
 		try {
-			importScripts("https://cdnjs.cloudflare.com/ajax/libs/chai/4.3.7/chai.min.js");
+			importScripts(
+				"https://cdnjs.cloudflare.com/ajax/libs/chai/4.3.7/chai.min.js",
+			);
 			console.log("✅ Chai断言库加载成功");
 		} catch (e) {
 			console.error("❌ Chai加载失败，将使用内置回退实现:", e);
@@ -58,7 +60,9 @@ async function initSWC() {
 		});
 	} catch (error) {
 		swcInitializing = false;
-		const initTime = swcInitStartTime ? performance.now() - swcInitStartTime : 0;
+		const initTime = swcInitStartTime
+			? performance.now() - swcInitStartTime
+			: 0;
 		console.error(
 			"❌ SWC初始化失败，回退到简单转译. 耗时:",
 			initTime.toFixed(2),
@@ -140,7 +144,7 @@ function fallbackTranspile(tsCode) {
 	try {
 		// 简单的类型移除，只处理最常见的情况
 		// 简单的类型移除，只处理最常见的情况
-		let jsCode = tsCode
+		const jsCode = tsCode
 			// 移除变量类型注解: let x: number = 1 -> let x = 1
 			.replace(/:\s*(string|number|boolean|any)(?=\s*[=;)])/g, "")
 			// 移除函数参数类型: (x: number) -> (x)
@@ -153,11 +157,7 @@ function fallbackTranspile(tsCode) {
 			.replace(/\n\s*\n/g, "\n")
 			.trim();
 		const transpileTime = performance.now() - startTime;
-		console.log(
-			"回退转译完成，耗时:",
-			transpileTime.toFixed(2),
-			"ms",
-		);
+		console.log("回退转译完成，耗时:", transpileTime.toFixed(2), "ms");
 
 		return jsCode;
 	} catch (error) {
@@ -167,7 +167,7 @@ function fallbackTranspile(tsCode) {
 }
 
 // Web Worker for safe code execution
-self.onmessage = async function (e) {
+self.onmessage = async (e) => {
 	const { code, language, executionId } = e.data;
 
 	try {
@@ -175,7 +175,7 @@ self.onmessage = async function (e) {
 			language: language,
 			codeLength: code?.length,
 			codeStart: code?.substring(0, 100),
-			hasInvalidChars: /[^\x00-\x7F]/.test(code || ""),
+			hasInvalidChars: /[\u0080-\uFFFF]/.test(code || ""),
 		});
 
 		// 根据语言类型处理代码
@@ -201,7 +201,7 @@ self.onmessage = async function (e) {
 
 		// Track previous data for change detection
 		let lastHeapData = null;
-		let lastTreeData = null;
+		const _lastTreeData = null;
 
 		// Detect heap changes
 		function detectHeapChanges(prev, current) {
@@ -209,7 +209,7 @@ self.onmessage = async function (e) {
 			const maxLength = Math.max(prev ? prev.length : 0, current.length);
 
 			for (let i = 0; i < maxLength; i++) {
-				if ((prev && prev[i]) !== current[i]) {
+				if (prev?.[i] !== current[i]) {
 					changed.push(i);
 				}
 			}
@@ -252,7 +252,7 @@ self.onmessage = async function (e) {
 					type: "heap",
 					data: serializedHeap,
 					timestamp: Date.now(),
-					label: label || "Heap #" + (visualizations.length + 1),
+					label: label || `Heap #${visualizations.length + 1}`,
 					changes: changes ? { heap: changes } : undefined,
 				});
 
@@ -261,13 +261,10 @@ self.onmessage = async function (e) {
 
 				console.log(
 					"📊 Heap visualization captured: " +
-						(label || "Heap #" + visualizations.length),
+						(label || `Heap #${visualizations.length}`),
 				);
 			} catch (error) {
-				console.error(
-					"Failed to capture heap visualization:",
-					error.message,
-				);
+				console.error("Failed to capture heap visualization:", error.message);
 			}
 		}
 
@@ -298,9 +295,7 @@ self.onmessage = async function (e) {
 				const result =
 					"[" +
 					obj
-						.map((item) =>
-							safeStringify(item, maxDepth - 1, visited),
-						)
+						.map((item) => safeStringify(item, maxDepth - 1, visited))
 						.join(", ") +
 					"]";
 				visited.delete(obj);
@@ -313,14 +308,12 @@ self.onmessage = async function (e) {
 
 			try {
 				const entries = Object.entries(obj).map(([key, value]) => {
-					return (
-						'"' + key + '": ' + safeStringify(value, maxDepth - 1, visited)
-					);
+					return `"${key}": ${safeStringify(value, maxDepth - 1, visited)}`;
 				});
-				const result = "{" + entries.join(", ") + "}";
+				const result = `{${entries.join(", ")}}`;
 				visited.delete(obj);
 				return result;
-			} catch (error) {
+			} catch (_error) {
 				visited.delete(obj);
 				return "[Object]";
 			}
@@ -366,8 +359,7 @@ self.onmessage = async function (e) {
 			result += values.join(" -> ");
 
 			if (cycleStart !== -1) {
-				result +=
-					" -> [cycles back to index " + cycleStart + "]";
+				result += ` -> [cycles back to index ${cycleStart}]`;
 			} else if (current !== null) {
 				result += " -> ...";
 			} else {
@@ -384,16 +376,19 @@ self.onmessage = async function (e) {
 				if (logs.length < 1000) {
 					const message = args
 						.map((arg) =>
-							typeof arg === "object"
-								? safeStringify(arg)
-								: String(arg),
+							typeof arg === "object" ? safeStringify(arg) : String(arg),
 						)
 						.join(" ");
 					logs.push(message);
 
 					// 每100条输出打印一次调试信息，并发送进度到主线程
 					if (logs.length % 100 === 0) {
-						console.log("Worker: 已收集", logs.length, "条日志, 最新:", message);
+						console.log(
+							"Worker: 已收集",
+							logs.length,
+							"条日志, 最新:",
+							message,
+						);
 						// 发送进度消息到主线程
 						self.postMessage({
 							type: "progress",
@@ -403,18 +398,13 @@ self.onmessage = async function (e) {
 						});
 					}
 				} else if (logs.length === 1000) {
-					logs.push(
-						"... (输出过多，已截断剩余日志以防止卡顿)",
-					);
+					logs.push("... (输出过多，已截断剩余日志以防止卡顿)");
 					console.log("Worker: 日志已达到1000条上限，主动发送结果");
 					// 达到1000条时主动发送结果，中断执行
 					self.postMessage({
 						success: false,
 						logs: [...logs],
-						errors: [
-							...errors,
-							"⏱️ 输出过多，已自动终止执行",
-						],
+						errors: [...errors, "⏱️ 输出过多，已自动终止执行"],
 						executionTime: performance.now() - startTime,
 						executionId,
 					});
@@ -429,16 +419,12 @@ self.onmessage = async function (e) {
 				if (errors.length < 100) {
 					const message = args
 						.map((arg) =>
-							typeof arg === "object"
-								? safeStringify(arg)
-								: String(arg),
+							typeof arg === "object" ? safeStringify(arg) : String(arg),
 						)
 						.join(" ");
 					errors.push(message);
 				} else if (errors.length === 100) {
-					errors.push(
-						"... (错误过多，已截断剩余错误信息)",
-					);
+					errors.push("... (错误过多，已截断剩余错误信息)");
 				}
 			},
 			warn: (...args) => {
@@ -447,9 +433,7 @@ self.onmessage = async function (e) {
 						"⚠️ " +
 						args
 							.map((arg) =>
-								typeof arg === "object"
-									? safeStringify(arg)
-									: String(arg),
+								typeof arg === "object" ? safeStringify(arg) : String(arg),
 							)
 							.join(" ");
 					logs.push(message);
@@ -461,9 +445,7 @@ self.onmessage = async function (e) {
 						"ℹ️ " +
 						args
 							.map((arg) =>
-								typeof arg === "object"
-									? safeStringify(arg)
-									: String(arg),
+								typeof arg === "object" ? safeStringify(arg) : String(arg),
 							)
 							.join(" ");
 					logs.push(message);
@@ -548,9 +530,7 @@ self.onmessage = async function (e) {
 			toString() {
 				const result = [String(this.value)];
 				if (this.children.length > 0) {
-					result.push(
-						"(" + this.children.map((c) => c.toString()).join(", ") + ")",
-					);
+					result.push(`(${this.children.map((c) => c.toString()).join(", ")})`);
 				}
 				return result.join("");
 			}
@@ -578,7 +558,7 @@ self.onmessage = async function (e) {
 				label: description || `Tree Visualization ${visualizations.length + 1}`,
 			});
 
-			console.log("🌳 Tree rendered: " + (description || "Tree"));
+			console.log(`🌳 Tree rendered: ${description || "Tree"}`);
 		}
 
 		// Chai Integration and Vitest Runtime Mocks
@@ -648,9 +628,9 @@ self.onmessage = async function (e) {
 							if (isNot) assert.isAbove(received, number);
 							else assert.isAtMost(received, number);
 						},
-						toBeInstanceOf: (constructor) => {
-							if (isNot) assert.notInstanceOf(received, constructor);
-							else assert.instanceOf(received, constructor);
+						toBeInstanceOf: (ctor) => {
+							if (isNot) assert.notInstanceOf(received, ctor);
+							else assert.instanceOf(received, ctor);
 						},
 						toThrow: (message) => {
 							if (isNot) {
@@ -701,10 +681,7 @@ self.onmessage = async function (e) {
 							if (keysA.length !== keysB.length) return false;
 
 							for (const key of keysA) {
-								if (
-									!keysB.includes(key) ||
-									!isDeepEqual(a[key], b[key])
-								)
+								if (!keysB.includes(key) || !isDeepEqual(a[key], b[key]))
 									return false;
 							}
 
@@ -828,14 +805,14 @@ self.onmessage = async function (e) {
 						}
 						return true;
 					},
-					toBeInstanceOf: (constructor) => {
-						const pass = received instanceof constructor;
+					toBeInstanceOf: (ctor) => {
+						const pass = received instanceof ctor;
 						const result = isNot ? !pass : pass;
 						if (!result) {
 							throw new Error(
 								isNot
-									? `Expected value to NOT be instance of ${safeStringify(constructor)}`
-									: `Expected value to be instance of ${safeStringify(constructor)}`,
+									? `Expected value to NOT be instance of ${safeStringify(ctor)}`
+									: `Expected value to be instance of ${safeStringify(ctor)}`,
 							);
 						}
 						return true;
@@ -888,7 +865,7 @@ self.onmessage = async function (e) {
 			const suite = {
 				name,
 				tests: [],
-				status: 'passed',
+				status: "passed",
 				duration: 0,
 			};
 			testResults.currentSuite = suite;
@@ -899,7 +876,7 @@ self.onmessage = async function (e) {
 			try {
 				fn();
 			} catch (e) {
-				suite.status = 'failed';
+				suite.status = "failed";
 				console.error(`❌ Suite failed: ${e.message}`);
 			}
 
@@ -910,13 +887,13 @@ self.onmessage = async function (e) {
 
 		const test = (name, fn) => {
 			const testStartTime = performance.now();
-			let testStatus = 'passed';
+			let testStatus = "passed";
 			let testError = null;
 
 			try {
 				fn();
 			} catch (e) {
-				testStatus = 'failed';
+				testStatus = "failed";
 				testError = e.message;
 				console.error(`  ❌ ${name}: ${e.message}`);
 			}
@@ -933,13 +910,13 @@ self.onmessage = async function (e) {
 				});
 
 				// Update suite status if any test failed
-				if (testStatus === 'failed') {
-					testResults.currentSuite.status = 'failed';
+				if (testStatus === "failed") {
+					testResults.currentSuite.status = "failed";
 				}
 			}
 
 			// Also log to console for backward compatibility
-			if (testStatus === 'passed') {
+			if (testStatus === "passed") {
 				console.log(`  ✅ ${name}`);
 			}
 		};
@@ -1018,9 +995,9 @@ self.onmessage = async function (e) {
 		const executionContext = { ...safeGlobals, ...restrictedGlobals };
 
 		// 死循环检测机制
-		let lastCheckTime = performance.now();
-		let iterationCount = 0;
-		const maxIterationsPerSecond = 1000000; // 每秒最大迭代次数
+		let _lastCheckTime = performance.now();
+		const _iterationCount = 0;
+		const _maxIterationsPerSecond = 1000000; // 每秒最大迭代次数
 
 		// 重写循环相关的全局函数来检测死循环
 		const instrumentedGlobals = {
@@ -1029,26 +1006,26 @@ self.onmessage = async function (e) {
 			console: {
 				...mockConsole,
 				log: (...args) => {
-					lastCheckTime = performance.now();
+					_lastCheckTime = performance.now();
 					mockConsole.log(...args);
 				},
 				error: (...args) => {
-					lastCheckTime = performance.now();
+					_lastCheckTime = performance.now();
 					mockConsole.error(...args);
 				},
 				warn: (...args) => {
-					lastCheckTime = performance.now();
+					_lastCheckTime = performance.now();
 					mockConsole.warn(...args);
 				},
 				info: (...args) => {
-					lastCheckTime = performance.now();
+					_lastCheckTime = performance.now();
 					mockConsole.info(...args);
 				},
 			},
 		};
 
 		// 简化执行代码，依赖超时机制来处理死循环
-		const instrumentedCode = "try { " + executableCode + " } catch (error) { throw error; }";
+		const instrumentedCode = `try { ${executableCode} } catch (error) { throw error; }`;
 
 		// 创建函数来执行代码
 		const executeCode = new Function(
@@ -1070,32 +1047,40 @@ self.onmessage = async function (e) {
 
 				const totalTests = testResults.suites.reduce(
 					(sum, suite) => sum + suite.tests.length,
-					0
+					0,
 				);
 				const passedTests = testResults.suites.reduce(
-					(sum, suite) => sum + suite.tests.filter(t => t.status === 'passed').length,
-					0
+					(sum, suite) =>
+						sum + suite.tests.filter((t) => t.status === "passed").length,
+					0,
 				);
 				const failedTests = totalTests - passedTests;
 
 				const timeoutResult = {
 					success: false,
 					logs: [...logs], // 保留超时前收集到的所有console输出
-					errors: [
-						...errors,
-						"⏱️ 代码执行超时 (3秒限制) - 已显示超时前的输出",
-					],
+					errors: [...errors, "⏱️ 代码执行超时 (3秒限制) - 已显示超时前的输出"],
 					executionTime: 3000,
 					executionId,
 					visualizations,
-					testResults: testResults.suites.length > 0 ? {
-						hasTests: true,
-						suites: testResults.suites,
-						totalTests,
-						passed: passedTests,
-						failed: failedTests,
-						duration: 3000,
-					} : { hasTests: false, suites: [], totalTests: 0, passed: 0, failed: 0, duration: 0 },
+					testResults:
+						testResults.suites.length > 0
+							? {
+									hasTests: true,
+									suites: testResults.suites,
+									totalTests,
+									passed: passedTests,
+									failed: failedTests,
+									duration: 3000,
+								}
+							: {
+									hasTests: false,
+									suites: [],
+									totalTests: 0,
+									passed: 0,
+									failed: 0,
+									duration: 0,
+								},
 				};
 
 				console.error("Worker: 发送超时结果:", {
@@ -1122,11 +1107,12 @@ self.onmessage = async function (e) {
 			// 发送结果回主线程
 			const totalTests = testResults.suites.reduce(
 				(sum, suite) => sum + suite.tests.length,
-				0
+				0,
 			);
 			const passedTests = testResults.suites.reduce(
-				(sum, suite) => sum + suite.tests.filter(t => t.status === 'passed').length,
-				0
+				(sum, suite) =>
+					sum + suite.tests.filter((t) => t.status === "passed").length,
+				0,
 			);
 			const failedTests = totalTests - passedTests;
 
@@ -1137,14 +1123,24 @@ self.onmessage = async function (e) {
 				executionTime: Math.round(executionTime * 100) / 100,
 				executionId,
 				visualizations,
-				testResults: testResults.suites.length > 0 ? {
-					hasTests: true,
-					suites: testResults.suites,
-					totalTests,
-					passed: passedTests,
-					failed: failedTests,
-					duration: Math.round(executionTime * 100) / 100,
-				} : { hasTests: false, suites: [], totalTests: 0, passed: 0, failed: 0, duration: 0 },
+				testResults:
+					testResults.suites.length > 0
+						? {
+								hasTests: true,
+								suites: testResults.suites,
+								totalTests,
+								passed: passedTests,
+								failed: failedTests,
+								duration: Math.round(executionTime * 100) / 100,
+							}
+						: {
+								hasTests: false,
+								suites: [],
+								totalTests: 0,
+								passed: 0,
+								failed: 0,
+								duration: 0,
+							},
 			});
 		} catch (execError) {
 			executionCompleted = true;
@@ -1162,11 +1158,12 @@ self.onmessage = async function (e) {
 
 			const totalTests = testResults.suites.reduce(
 				(sum, suite) => sum + suite.tests.length,
-				0
+				0,
 			);
 			const passedTests = testResults.suites.reduce(
-				(sum, suite) => sum + suite.tests.filter(t => t.status === 'passed').length,
-				0
+				(sum, suite) =>
+					sum + suite.tests.filter((t) => t.status === "passed").length,
+				0,
 			);
 			const failedTests = totalTests - passedTests;
 
@@ -1177,14 +1174,24 @@ self.onmessage = async function (e) {
 				executionTime: Math.round(executionTime * 100) / 100,
 				executionId,
 				visualizations,
-				testResults: testResults.suites.length > 0 ? {
-					hasTests: true,
-					suites: testResults.suites,
-					totalTests,
-					passed: passedTests,
-					failed: failedTests,
-					duration: Math.round(executionTime * 100) / 100,
-				} : { hasTests: false, suites: [], totalTests: 0, passed: 0, failed: 0, duration: 0 },
+				testResults:
+					testResults.suites.length > 0
+						? {
+								hasTests: true,
+								suites: testResults.suites,
+								totalTests,
+								passed: passedTests,
+								failed: failedTests,
+								duration: Math.round(executionTime * 100) / 100,
+							}
+						: {
+								hasTests: false,
+								suites: [],
+								totalTests: 0,
+								passed: 0,
+								failed: 0,
+								duration: 0,
+							},
 			});
 		}
 	} catch (error) {
@@ -1201,11 +1208,11 @@ self.onmessage = async function (e) {
 };
 
 // 处理未捕获的错误
-self.onerror = (message, source, lineno, colno, error) => {
+self.onerror = (message, _source, lineno, _colno, _error) => {
 	self.postMessage({
 		success: false,
 		logs: [],
-		errors: ["Runtime Error: " + message + " at line " + lineno],
+		errors: [`Runtime Error: ${message} at line ${lineno}`],
 		executionTime: 0,
 		visualizations: [],
 	});
@@ -1213,8 +1220,10 @@ self.onerror = (message, source, lineno, colno, error) => {
 
 // 立即开始SWC初始化（预加载）
 console.log("Web Worker已创建，开始预加载SWC模块...");
-initSWC().then(() => {
-	console.log("SWC预加载完成，准备就绪");
-}).catch((error) => {
-	console.warn("SWC预加载失败，将在需要时重试:", error.message);
-});
+initSWC()
+	.then(() => {
+		console.log("SWC预加载完成，准备就绪");
+	})
+	.catch((error) => {
+		console.warn("SWC预加载失败，将在需要时重试:", error.message);
+	});

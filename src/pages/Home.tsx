@@ -8,7 +8,7 @@ import {
 	Square,
 	Trash2,
 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
 	Group,
@@ -77,6 +77,106 @@ export default function Home() {
 	const [isFileExplorerOpen, setIsFileExplorerOpen] = useState(true);
 	const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
+	// 获取当前活跃文件的代码
+	const getCurrentCode = useCallback(() => {
+		if (activeFileId && files[activeFileId]) {
+			const { fileContents } = usePlaygroundStore.getState();
+			return fileContents[activeFileId] || files[activeFileId].content || "";
+		}
+		return code;
+	}, [activeFileId, files, code]);
+
+	// 获取当前活跃文件的语言
+	const getCurrentLanguage = useCallback(() => {
+		if (activeFileId && files[activeFileId]) {
+			const fileName = files[activeFileId].name;
+			const extension = fileName.split(".").pop()?.toLowerCase();
+			if (extension === "ts" || extension === "tsx") {
+				return "typescript";
+			} else if (extension === "js" || extension === "jsx") {
+				return "javascript";
+			}
+		}
+		return language;
+	}, [activeFileId, files, language]);
+
+	const handleRunCode = useCallback(async () => {
+		if (isExecuting) return;
+		setExecuting(true);
+		clearOutput();
+		try {
+			const codeToRun = getCurrentCode();
+			const languageToUse = getCurrentLanguage();
+			const result = await executeCode(codeToRun, languageToUse);
+			console.log("Home组件: 收到执行结果");
+			console.log("Home组件: 成功状态:", result.success);
+			console.log("Home组件: 日志数量:", result.logs.length);
+			console.log("Home组件: 错误数量:", result.errors.length);
+			console.log("Home组件: 前3条日志:", result.logs.slice(0, 3));
+			setExecutionResult(result);
+		} catch (error) {
+			setExecutionResult({
+				success: false,
+				logs: [],
+				errors: [
+					error instanceof Error ? error.message : "Unknown error occurred",
+				],
+				executionTime: 0,
+				visualizations: [],
+			});
+		} finally {
+			setExecuting(false);
+		}
+	}, [
+		isExecuting,
+		clearOutput,
+		getCurrentCode,
+		getCurrentLanguage,
+		setExecutionResult,
+		setExecuting,
+	]);
+
+	// 使用指定的代码和语言运行代码
+	const handleRunCodeWithParams = useCallback(
+		async (code: string, language: "javascript" | "typescript") => {
+			if (isExecuting) return;
+			setExecuting(true);
+			clearOutput();
+			try {
+				// Debug logging to understand what's being executed
+				console.log(
+					"执行代码 - 长度:",
+					code.length,
+					"语言:",
+					language,
+					"前100字符:",
+					code.substring(0, 100),
+				);
+				const result = await executeCode(code, language);
+				console.log("Home组件(Params): 收到执行结果");
+				console.log("Home组件(Params): 成功状态:", result.success);
+				console.log("Home组件(Params): 日志数量:", result.logs.length);
+				console.log("Home组件(Params): 错误数量:", result.errors.length);
+				console.log("Home组件(Params): 前3条日志:", result.logs.slice(0, 3));
+				setExecutionResult(result);
+			} catch (error) {
+				console.error("代码执行出错:", error);
+				setExecutionResult({
+					success: false,
+					logs: [],
+					errors: [
+						error instanceof Error ? error.message : "Unknown error occurred",
+					],
+					executionTime: 0,
+					visualizations: [],
+				});
+			} finally {
+				setExecuting(false);
+			}
+		},
+		[isExecuting, clearOutput, setExecutionResult, setExecuting],
+	);
+
 	// 单独处理Monaco编辑器的运行代码事件监听
 	useEffect(() => {
 		const handleRunCodeEvent = (event: CustomEvent) => {
@@ -110,77 +210,7 @@ export default function Home() {
 				handleRunCodeEvent as EventListener,
 			);
 		};
-	}, [isExecuting]); // 添加 isExecuting 依赖
-
-	const handleRunCode = async () => {
-		if (isExecuting) return;
-		setExecuting(true);
-		clearOutput();
-		try {
-			const codeToRun = getCurrentCode();
-			const languageToUse = getCurrentLanguage();
-			const result = await executeCode(codeToRun, languageToUse);
-			console.log("Home组件: 收到执行结果");
-			console.log("Home组件: 成功状态:", result.success);
-			console.log("Home组件: 日志数量:", result.logs.length);
-			console.log("Home组件: 错误数量:", result.errors.length);
-			console.log("Home组件: 前3条日志:", result.logs.slice(0, 3));
-			setExecutionResult(result);
-		} catch (error) {
-			setExecutionResult({
-				success: false,
-				logs: [],
-				errors: [
-					error instanceof Error ? error.message : "Unknown error occurred",
-				],
-				executionTime: 0,
-				visualizations: [],
-			});
-		} finally {
-			setExecuting(false);
-		}
-	};
-
-	// 使用指定的代码和语言运行代码
-	const handleRunCodeWithParams = async (
-		code: string,
-		language: "javascript" | "typescript",
-	) => {
-		if (isExecuting) return;
-		setExecuting(true);
-		clearOutput();
-		try {
-			// Debug logging to understand what's being executed
-			console.log(
-				"执行代码 - 长度:",
-				code.length,
-				"语言:",
-				language,
-				"前100字符:",
-				code.substring(0, 100),
-			);
-			const result = await executeCode(code, language);
-			console.log("Home组件(Params): 收到执行结果");
-			console.log("Home组件(Params): 成功状态:", result.success);
-			console.log("Home组件(Params): 日志数量:", result.logs.length);
-			console.log("Home组件(Params): 错误数量:", result.errors.length);
-			console.log("Home组件(Params): 前3条日志:", result.logs.slice(0, 3));
-			setExecutionResult(result);
-		} catch (error) {
-			console.error("代码执行出错:", error);
-			setExecutionResult({
-				success: false,
-				logs: [],
-				errors: [
-					error instanceof Error ? error.message : "Unknown error occurred",
-				],
-				executionTime: 0,
-				visualizations: [],
-			});
-		} finally {
-			setExecuting(false);
-		}
-	};
+	}, [isExecuting, handleRunCodeWithParams, handleRunCode]);
 
 	const handleStopExecution = () => {
 		console.log("用户点击停止按钮");
@@ -243,29 +273,6 @@ export default function Home() {
 	// 文件浏览器控制
 	const handleFileExplorerToggle = () => {
 		setIsFileExplorerOpen(!isFileExplorerOpen);
-	};
-
-	// 获取当前活跃文件的代码
-	const getCurrentCode = () => {
-		if (activeFileId && files[activeFileId]) {
-			const { fileContents } = usePlaygroundStore.getState();
-			return fileContents[activeFileId] || files[activeFileId].content || "";
-		}
-		return code;
-	};
-
-	// 获取当前活跃文件的语言
-	const getCurrentLanguage = () => {
-		if (activeFileId && files[activeFileId]) {
-			const fileName = files[activeFileId].name;
-			const extension = fileName.split(".").pop()?.toLowerCase();
-			if (extension === "ts" || extension === "tsx") {
-				return "typescript";
-			} else if (extension === "js" || extension === "jsx") {
-				return "javascript";
-			}
-		}
-		return language;
 	};
 
 	// 处理代码更改

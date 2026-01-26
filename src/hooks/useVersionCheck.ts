@@ -128,7 +128,9 @@ export function useVersionCheck({
 		// Clear all caches
 		if ("caches" in window) {
 			caches.keys().then((names) => {
-				names.forEach((name) => caches.delete(name));
+				names.forEach((name) => {
+					void caches.delete(name);
+				});
 			});
 		}
 

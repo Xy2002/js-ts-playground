@@ -1,9 +1,9 @@
-import { BookOpen, Code, Braces, FileCode, Workflow } from "lucide-react";
+import { BookOpen, Braces, Code, FileCode, Workflow } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { Badge } from "@/components/ui/badge";
 
 interface FunctionDoc {
 	name: string;
@@ -71,7 +71,8 @@ root.addChild(new TreeNode('child'));`,
 				{
 					name: "renderTree",
 					description: t("predefined.renderTree.description"),
-					signature: "renderTree(root: TreeNode<any>, description: string): void",
+					signature:
+						"renderTree(root: TreeNode<any>, description: string): void",
 					example: `renderTree(root, "Binary Tree");`,
 				},
 			],
@@ -131,6 +132,7 @@ expect(arr).toEqual([1,2,3]);`,
 					{categories.map((category, categoryIndex) => {
 						const Icon = category.icon;
 						return (
+							// biome-ignore lint/suspicious/noArrayIndexKey: categories is a static array that never changes order
 							<div key={categoryIndex}>
 								<div className="flex items-center gap-2 mb-3">
 									<Icon className={`w-5 h-5 ${category.color}`} />
@@ -139,6 +141,7 @@ expect(arr).toEqual([1,2,3]);`,
 								<div className="space-y-3 ml-7">
 									{category.functions.map((func, funcIndex) => (
 										<Card
+											// biome-ignore lint/suspicious/noArrayIndexKey: functions array is static within each category
 											key={funcIndex}
 											className="border-border/50 bg-muted/30"
 										>
@@ -163,10 +166,7 @@ expect(arr).toEqual([1,2,3]);`,
 														<Separator />
 														<div>
 															<div className="flex items-center gap-1 mb-1">
-																<Badge
-																	variant="outline"
-																	className="text-xs"
-																>
+																<Badge variant="outline" className="text-xs">
 																	Example
 																</Badge>
 															</div>

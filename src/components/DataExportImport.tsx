@@ -1,9 +1,8 @@
-import { Download, Upload, FileJson, AlertCircle } from "lucide-react";
+import { AlertCircle, Download, FileJson, Upload } from "lucide-react";
 import { useCallback, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
-import { toast } from "@/components/ui/sonner";
 import {
 	Dialog,
 	DialogContent,
@@ -14,9 +13,10 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { toast } from "@/components/ui/sonner";
 import { Switch } from "@/components/ui/switch";
-import { dataExportService } from "@/services/dataExportService";
 import type { ImportOptions } from "@/services/dataExportService";
+import { dataExportService } from "@/services/dataExportService";
 import { usePlaygroundStore } from "@/store/usePlaygroundStore";
 
 interface DataExportImportProps {
@@ -36,9 +36,8 @@ export default function DataExportImport({
 		typeof dataExportService.generateImportSummary
 	> | null>(null);
 	const [includeLlmSettings, setIncludeLlmSettings] = useState(false);
-	const [mergeStrategy, setMergeStrategy] = useState<
-		ImportOptions["mergeStrategy"]
-	>("overwrite");
+	const [mergeStrategy, setMergeStrategy] =
+		useState<ImportOptions["mergeStrategy"]>("overwrite");
 	const [preserveSettings, setPreserveSettings] = useState(false);
 	const [isImporting, setIsImporting] = useState(false);
 
@@ -74,7 +73,7 @@ export default function DataExportImport({
 					});
 			}
 		},
-		[],
+		[t],
 	);
 
 	// 导入数据
@@ -145,7 +144,9 @@ export default function DataExportImport({
 					<div className="space-y-3">
 						<div className="flex items-center gap-2">
 							<Download className="w-5 h-5 text-blue-500" />
-							<h3 className="text-lg font-semibold">{t("settings.dataExport.export.title")}</h3>
+							<h3 className="text-lg font-semibold">
+								{t("settings.dataExport.export.title")}
+							</h3>
 						</div>
 
 						<div className="grid grid-cols-2 gap-3">
@@ -156,7 +157,9 @@ export default function DataExportImport({
 							>
 								<FileJson className="w-6 h-6" />
 								<div className="text-left">
-									<div className="font-medium">{t("settings.dataExport.export.withoutLlm")}</div>
+									<div className="font-medium">
+										{t("settings.dataExport.export.withoutLlm")}
+									</div>
 									<div className="text-xs text-muted-foreground mt-1">
 										{t("settings.dataExport.export.withoutLlmDesc")}
 									</div>
@@ -170,7 +173,9 @@ export default function DataExportImport({
 							>
 								<FileJson className="w-6 h-6 text-orange-500" />
 								<div className="text-left">
-									<div className="font-medium">{t("settings.dataExport.export.withLlm")}</div>
+									<div className="font-medium">
+										{t("settings.dataExport.export.withLlm")}
+									</div>
 									<div className="text-xs text-muted-foreground mt-1">
 										{t("settings.dataExport.export.withLlmDesc")}
 									</div>
@@ -183,7 +188,9 @@ export default function DataExportImport({
 					<div className="space-y-3">
 						<div className="flex items-center gap-2">
 							<Upload className="w-5 h-5 text-green-500" />
-							<h3 className="text-lg font-semibold">{t("settings.dataExport.import.title")}</h3>
+							<h3 className="text-lg font-semibold">
+								{t("settings.dataExport.import.title")}
+							</h3>
 						</div>
 
 						{/* File Input */}
@@ -201,40 +208,56 @@ export default function DataExportImport({
 								onClick={() => fileInputRef.current?.click()}
 							>
 								<FileJson className="w-4 h-4 mr-2" />
-								{importFile ? importFile.name : t("settings.dataExport.import.selectFile")}
+								{importFile
+									? importFile.name
+									: t("settings.dataExport.import.selectFile")}
 							</Button>
 						</div>
 
 						{/* Import Summary */}
 						{importSummary && (
 							<div className="border rounded-lg p-4 space-y-2 bg-muted/50">
-								<div className="font-medium">{t("settings.dataExport.import.summary")}:</div>
+								<div className="font-medium">
+									{t("settings.dataExport.import.summary")}:
+								</div>
 								<div className="grid grid-cols-2 gap-2 text-sm">
 									<div>
-										<span className="text-muted-foreground">{t("settings.dataExport.import.exportDate")}:</span>{" "}
+										<span className="text-muted-foreground">
+											{t("settings.dataExport.import.exportDate")}:
+										</span>{" "}
 										{formatDate(importSummary.exportDate)}
 									</div>
 									<div>
-										<span className="text-muted-foreground">{t("settings.dataExport.import.version")}:</span>{" "}
+										<span className="text-muted-foreground">
+											{t("settings.dataExport.import.version")}:
+										</span>{" "}
 										{importSummary.version}
 									</div>
 									<div>
-										<span className="text-muted-foreground">{t("settings.dataExport.import.files")}:</span>{" "}
+										<span className="text-muted-foreground">
+											{t("settings.dataExport.import.files")}:
+										</span>{" "}
 										{importSummary.files}
 									</div>
 									<div>
-										<span className="text-muted-foreground">{t("settings.dataExport.import.folders")}:</span>{" "}
+										<span className="text-muted-foreground">
+											{t("settings.dataExport.import.folders")}:
+										</span>{" "}
 										{importSummary.folders}
 									</div>
 									<div>
-										<span className="text-muted-foreground">{t("settings.dataExport.import.totalSize")}:</span>{" "}
+										<span className="text-muted-foreground">
+											{t("settings.dataExport.import.totalSize")}:
+										</span>{" "}
 										{formatFileSize(importSummary.totalFileSize)}
 									</div>
 									<div>
 										<span className="text-muted-foreground">
 											{t("settings.dataExport.import.hasLlmSettings")}:
 										</span>{" "}
-										{importSummary.hasLlmSettings ? t("settings.dataExport.import.yes") : t("settings.dataExport.import.no")}
+										{importSummary.hasLlmSettings
+											? t("settings.dataExport.import.yes")
+											: t("settings.dataExport.import.no")}
 									</div>
 								</div>
 							</div>
@@ -301,19 +324,28 @@ export default function DataExportImport({
 									>
 										<div className="flex items-center space-x-2">
 											<RadioGroupItem value="overwrite" id="overwrite" />
-											<Label htmlFor="overwrite" className="font-normal cursor-pointer">
+											<Label
+												htmlFor="overwrite"
+												className="font-normal cursor-pointer"
+											>
 												{t("settings.dataExport.import.strategyOverwrite")}
 											</Label>
 										</div>
 										<div className="flex items-center space-x-2">
 											<RadioGroupItem value="merge" id="merge" />
-											<Label htmlFor="merge" className="font-normal cursor-pointer">
+											<Label
+												htmlFor="merge"
+												className="font-normal cursor-pointer"
+											>
 												{t("settings.dataExport.import.strategyMerge")}
 											</Label>
 										</div>
 										<div className="flex items-center space-x-2">
 											<RadioGroupItem value="skip" id="skip" />
-											<Label htmlFor="skip" className="font-normal cursor-pointer">
+											<Label
+												htmlFor="skip"
+												className="font-normal cursor-pointer"
+											>
 												{t("settings.dataExport.import.strategySkip")}
 											</Label>
 										</div>
@@ -338,11 +370,10 @@ export default function DataExportImport({
 					<Button variant="outline" onClick={() => onOpenChange(false)}>
 						{t("settings.dataExport.import.cancel")}
 					</Button>
-					<Button
-						onClick={handleImport}
-						disabled={!importFile || isImporting}
-					>
-						{isImporting ? t("settings.dataExport.import.importing") : t("settings.dataExport.import.import")}
+					<Button onClick={handleImport} disabled={!importFile || isImporting}>
+						{isImporting
+							? t("settings.dataExport.import.importing")
+							: t("settings.dataExport.import.import")}
 					</Button>
 				</DialogFooter>
 			</DialogContent>

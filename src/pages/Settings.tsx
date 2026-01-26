@@ -1,3 +1,4 @@
+import { motion } from "framer-motion";
 import {
 	ArrowLeft,
 	Download,
@@ -9,24 +10,22 @@ import {
 	Type,
 	Upload,
 } from "lucide-react";
-import { Link } from "react-router-dom";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { Link } from "react-router-dom";
+import DataExportImport from "@/components/DataExportImport";
 import { Button } from "@/components/ui/button";
 import {
-	Card,
 	CardContent,
 	CardDescription,
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
+import { MotionCard, PageTransition } from "@/components/ui/motion";
 import { Separator } from "@/components/ui/separator";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
-import DataExportImport from "@/components/DataExportImport";
 import { usePlaygroundStore } from "@/store/usePlaygroundStore";
-import { PageTransition, MotionCard, staggerContainer } from "@/components/ui/motion";
-import { motion } from "framer-motion";
 
 const containerVariants = {
 	hidden: { opacity: 0 },
@@ -174,15 +173,19 @@ export default function Settings() {
 										}`}
 									>
 										<div className="flex items-center gap-3">
-											<div className={`p-2 rounded-md ${
-												settings.appTheme === "light"
-													? "bg-warning/20"
-													: "bg-muted"
-											}`}>
+											<div
+												className={`p-2 rounded-md ${
+													settings.appTheme === "light"
+														? "bg-warning/20"
+														: "bg-muted"
+												}`}
+											>
 												<Sun className="w-5 h-5 text-warning" />
 											</div>
 											<div>
-												<div className="text-sm font-medium">{t("settings.applicationTheme.light")}</div>
+												<div className="text-sm font-medium">
+													{t("settings.applicationTheme.light")}
+												</div>
 												<div className="text-xs text-muted-foreground">
 													{t("settings.applicationTheme.lightDesc")}
 												</div>
@@ -200,15 +203,19 @@ export default function Settings() {
 										}`}
 									>
 										<div className="flex items-center gap-3">
-											<div className={`p-2 rounded-md ${
-												settings.appTheme === "dark"
-													? "bg-primary/20"
-													: "bg-muted"
-											}`}>
+											<div
+												className={`p-2 rounded-md ${
+													settings.appTheme === "dark"
+														? "bg-primary/20"
+														: "bg-muted"
+												}`}
+											>
 												<Moon className="w-5 h-5 text-foreground" />
 											</div>
 											<div>
-												<div className="text-sm font-medium">{t("settings.applicationTheme.dark")}</div>
+												<div className="text-sm font-medium">
+													{t("settings.applicationTheme.dark")}
+												</div>
 												<div className="text-xs text-muted-foreground">
 													{t("settings.applicationTheme.darkDesc")}
 												</div>
@@ -226,15 +233,19 @@ export default function Settings() {
 										}`}
 									>
 										<div className="flex items-center gap-3">
-											<div className={`p-2 rounded-md ${
-												settings.appTheme === "system"
-													? "bg-primary/20"
-													: "bg-muted"
-											}`}>
+											<div
+												className={`p-2 rounded-md ${
+													settings.appTheme === "system"
+														? "bg-primary/20"
+														: "bg-muted"
+												}`}
+											>
 												<Monitor className="w-5 h-5 text-foreground" />
 											</div>
 											<div>
-												<div className="text-sm font-medium">{t("settings.applicationTheme.system")}</div>
+												<div className="text-sm font-medium">
+													{t("settings.applicationTheme.system")}
+												</div>
 												<div className="text-xs text-muted-foreground">
 													{t("settings.applicationTheme.systemDesc")}
 												</div>
@@ -274,11 +285,11 @@ export default function Settings() {
 										}`}
 									>
 										<div className="flex items-center gap-3">
-											<div className={`p-2 rounded-md ${
-												settings.theme === "vs"
-													? "bg-warning/20"
-													: "bg-muted"
-											}`}>
+											<div
+												className={`p-2 rounded-md ${
+													settings.theme === "vs" ? "bg-warning/20" : "bg-muted"
+												}`}
+											>
 												<Sun className="w-5 h-5 text-warning" />
 											</div>
 											<div>
@@ -302,19 +313,21 @@ export default function Settings() {
 										}`}
 									>
 										<div className="flex items-center gap-3">
-											<div className={`p-2 rounded-md ${
-												settings.theme === "vs-dark"
-													? "bg-primary/20"
-													: "bg-muted"
-											}`}>
+											<div
+												className={`p-2 rounded-md ${
+													settings.theme === "vs-dark"
+														? "bg-primary/20"
+														: "bg-muted"
+												}`}
+											>
 												<Moon className="w-5 h-5 text-foreground" />
 											</div>
 											<div>
 												<div className="text-sm font-medium">
-													{t('settings.editorTheme.dark')}
+													{t("settings.editorTheme.dark")}
 												</div>
 												<div className="text-xs text-muted-foreground">
-													{t('settings.editorTheme.darkDesc')}
+													{t("settings.editorTheme.darkDesc")}
 												</div>
 											</div>
 										</div>
@@ -340,9 +353,9 @@ export default function Settings() {
 								{/* Font Size */}
 								<div className="space-y-3">
 									<div className="flex items-center justify-between">
-										<label className="text-sm font-medium">
-											{t('settings.fontSettings.fontSize')}
-										</label>
+										<span className="text-sm font-medium">
+											{t("settings.fontSettings.fontSize")}
+										</span>
 										<span className="text-xs font-mono text-muted-foreground bg-muted px-2 py-1 rounded">
 											{settings.fontSize}px
 										</span>
@@ -394,9 +407,9 @@ export default function Settings() {
 							<CardContent className="space-y-4">
 								{/* Indent Size */}
 								<div className="space-y-3">
-									<label className="text-sm font-medium">
-										{t('settings.codeFormatting.indentSize')}
-									</label>
+									<span className="text-sm font-medium">
+										{t("settings.codeFormatting.indentSize")}
+									</span>
 									<div className="flex gap-2">
 										<motion.button
 											whileHover={{ scale: 1.02 }}
@@ -408,7 +421,7 @@ export default function Settings() {
 													: "border-border hover:border-primary/50 hover:bg-muted/50"
 											}`}
 										>
-											{t('settings.codeFormatting.spaces2')}
+											{t("settings.codeFormatting.spaces2")}
 										</motion.button>
 										<motion.button
 											whileHover={{ scale: 1.02 }}
@@ -420,7 +433,7 @@ export default function Settings() {
 													: "border-border hover:border-primary/50 hover:bg-muted/50"
 											}`}
 										>
-											{t('settings.codeFormatting.spaces4')}
+											{t("settings.codeFormatting.spaces4")}
 										</motion.button>
 									</div>
 								</div>
@@ -440,15 +453,17 @@ export default function Settings() {
 									<span>{t("settings.autoSave.title")}</span>
 								</CardTitle>
 								<CardDescription className="text-sm">
-									{t('settings.autoSave.description')}
+									{t("settings.autoSave.description")}
 								</CardDescription>
 							</CardHeader>
 							<CardContent>
 								<div className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
 									<div className="space-y-0.5">
-										<div className="text-sm font-medium">{t('settings.autoSave.enable')}</div>
+										<div className="text-sm font-medium">
+											{t("settings.autoSave.enable")}
+										</div>
 										<div className="text-xs text-muted-foreground">
-											{t('settings.autoSave.enableDesc')}
+											{t("settings.autoSave.enableDesc")}
 										</div>
 									</div>
 									<Switch

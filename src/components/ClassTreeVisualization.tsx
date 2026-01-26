@@ -1,5 +1,5 @@
 import { ChevronLeft, ChevronRight, Network } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { VisualizationData } from "@/services/codeExecutionService";
 import { Button } from "./ui/button";
 import { Card, CardContent, CardHeader } from "./ui/card";
@@ -9,7 +9,7 @@ interface ClassTreeVisualizationProps {
 }
 
 interface VisualTreeNode {
-	value: any;
+	value: unknown;
 	children: VisualTreeNode[];
 	x: number;
 	y: number;
@@ -24,10 +24,6 @@ export default function ClassTreeVisualization({
 	);
 	const canvasRef = useRef<HTMLCanvasElement>(null);
 	const containerRef = useRef<HTMLDivElement>(null);
-
-	if (visualizations.length === 0) {
-		return null;
-	}
 
 	const currentViz = visualizations[currentIndex];
 	const canGoBack = currentIndex > 0;
@@ -45,67 +41,77 @@ export default function ClassTreeVisualization({
 		}
 	};
 
-	// 计算树的深度
-	const getTreeDepth = (node: VisualTreeNode): number => {
+	// Use refs for stable references to recursive functions
+	const getTreeDepthRef = useRef<(node: VisualTreeNode) => number>();
+	const getTreeWidthRef = useRef<(node: VisualTreeNode) => number>();
+
+	getTreeDepthRef.current = (node: VisualTreeNode): number => {
 		if (!node.children || node.children.length === 0) return 1;
-		return 1 + Math.max(...node.children.map((child) => getTreeDepth(child)));
+		return (
+			1 +
+			Math.max(
+				...node.children.map((child) => getTreeDepthRef.current?.(child) ?? 0),
+			)
+		);
 	};
 
-	// 计算树的宽度（叶子节点数）
-	const getTreeWidth = (node: VisualTreeNode): number => {
+	getTreeWidthRef.current = (node: VisualTreeNode): number => {
 		if (!node.children || node.children.length === 0) return 1;
-		return node.children.reduce((sum, child) => sum + getTreeWidth(child), 0);
+		return node.children.reduce(
+			(sum, child) => sum + (getTreeWidthRef.current?.(child) ?? 0),
+			0,
+		);
 	};
 
 	// 计算树的布局位置
-	const calculateLayout = (
-		root: VisualTreeNode,
-		startX: number,
-		startY: number,
-		levelHeight: number,
-		siblingSpacing: number,
-	) => {
-		const depth = getTreeDepth(root);
-		const width = getTreeWidth(root);
-
-		const layoutNode = (
-			node: VisualTreeNode,
-			x: number,
-			y: number,
-			availableWidth: number,
-			level: number,
+	const calculateLayout = useCallback(
+		(
+			root: VisualTreeNode,
+			startX: number,
+			startY: number,
+			levelHeight: number,
+			siblingSpacing: number,
 		) => {
-			node.x = x;
-			node.y = y;
-			node.level = level;
+			// biome-ignore lint/style/noNonNullAssertion: Ref is set above
+			const width = getTreeWidthRef.current!(root);
 
-			if (node.children && node.children.length > 0) {
-				const totalChildWidth = node.children.reduce(
-					(sum, child) => sum + getTreeWidth(child),
-					0,
-				);
-				let currentX = x - availableWidth / 2;
+			const layoutNode = (
+				node: VisualTreeNode,
+				x: number,
+				y: number,
+				availableWidth: number,
+				level: number,
+			) => {
+				node.x = x;
+				node.y = y;
+				node.level = level;
 
-				node.children.forEach((child) => {
-					const childWidth = getTreeWidth(child);
-					const childX = currentX + (childWidth * siblingSpacing) / 2;
-					layoutNode(
-						child,
-						childX,
-						y + levelHeight,
-						childWidth * siblingSpacing,
-						level + 1,
-					);
-					currentX += childWidth * siblingSpacing;
-				});
-			}
-		};
+				if (node.children && node.children.length > 0) {
+					let currentX = x - availableWidth / 2;
 
-		layoutNode(root, startX, startY, width * siblingSpacing, 0);
-	};
+					node.children.forEach((child) => {
+						// biome-ignore lint/style/noNonNullAssertion: Ref is set above
+						const childWidth = getTreeWidthRef.current!(child);
+						const childX = currentX + (childWidth * siblingSpacing) / 2;
+						layoutNode(
+							child,
+							childX,
+							y + levelHeight,
+							childWidth * siblingSpacing,
+							level + 1,
+						);
+						currentX += childWidth * siblingSpacing;
+					});
+				}
+			};
+
+			layoutNode(root, startX, startY, width * siblingSpacing, 0);
+		},
+		[],
+	);
 
 	// 绘制树
-	const drawTree = () => {
+	const drawTree = useCallback(() => {
 		const canvas = canvasRef.current;
 		const container = containerRef.current;
 		if (!canvas || !container) return;
@@ -114,18 +120,14 @@ export default function ClassTreeVisualization({
 		if (!ctx) return;
 
 		// 获取数据
-		let data = currentViz.data;
+		const data = currentViz.data;
 
 		// 检查是否是TreeNode结构
 		if (!data || typeof data !== "object") {
 			ctx.fillStyle = "#64748b";
 			ctx.font = "14px monospace";
 			ctx.textAlign = "center";
-			ctx.fillText(
-				"Invalid tree data",
-				canvas.width / 2,
-				canvas.height / 2,
-			);
+			ctx.fillText("Invalid tree data", canvas.width / 2, canvas.height / 2);
 			return;
 		}
 
@@ -139,17 +141,25 @@ export default function ClassTreeVisualization({
 		ctx.clearRect(0, 0, canvas.width, canvas.height);
 
 		// 构建树节点
-		const buildTreeNode = (data: any): VisualTreeNode => {
+		const buildTreeNode = (data: unknown): VisualTreeNode => {
 			const node: VisualTreeNode = {
-				value: data.value ?? data.val ?? data,
+				value:
+					(data as { value?: unknown; val?: unknown } | null)?.value ??
+					(data as { val?: unknown } | null)?.val ??
+					data,
 				children: [],
 				x: 0,
 				y: 0,
 				level: 0,
 			};
 
-			if (data.children && Array.isArray(data.children)) {
-				node.children = data.children.map((child: any) =>
+			if (
+				data &&
+				typeof data === "object" &&
+				"children" in data &&
+				Array.isArray(data.children)
+			) {
+				node.children = data.children.map((child: unknown) =>
 					buildTreeNode(child),
 				);
 			}
@@ -160,7 +170,8 @@ export default function ClassTreeVisualization({
 		const root = buildTreeNode(data);
 
 		// 计算树的深度
-		const depth = getTreeDepth(root);
+		// biome-ignore lint/style/noNonNullAssertion: Ref is set above
+		const depth = getTreeDepthRef.current!(root);
 		const levelHeight = 80;
 		const requiredHeight = depth * levelHeight + 100;
 		const actualHeight = Math.max(containerHeight, requiredHeight);
@@ -171,26 +182,23 @@ export default function ClassTreeVisualization({
 		}
 
 		// 计算布局 - 确保最小间距，防止节点重叠
-		const treeWidth = getTreeWidth(root);
+		// biome-ignore lint/style/noNonNullAssertion: Ref is set above
+		const treeWidth = getTreeWidthRef.current!(root);
 		const minSpacing = 60;
 		const maxSpacing = 150;
 		let siblingSpacing = Math.min(maxSpacing, canvas.width / (treeWidth + 1));
 		siblingSpacing = Math.max(minSpacing, siblingSpacing);
 
-		calculateLayout(
-			root,
-			canvas.width / 2,
-			50,
-			levelHeight,
-			siblingSpacing,
-		);
+		calculateLayout(root, canvas.width / 2, 50, levelHeight, siblingSpacing);
 
 		// 收集所有节点用于绘制
 		const allNodes: VisualTreeNode[] = [];
 		const collectNodes = (node: VisualTreeNode) => {
 			allNodes.push(node);
 			if (node.children) {
-				node.children.forEach((child) => collectNodes(child));
+				node.children.forEach((child) => {
+					collectNodes(child);
+				});
 			}
 		};
 		collectNodes(root);
@@ -243,19 +251,19 @@ export default function ClassTreeVisualization({
 
 			const valueStr = String(node.value ?? "");
 			if (valueStr.length > 6) {
-				ctx.fillText(valueStr.substring(0, 5) + "..", node.x, node.y);
+				ctx.fillText(`${valueStr.substring(0, 5)}..`, node.x, node.y);
 			} else if (valueStr.length > 0) {
 				ctx.fillText(valueStr, node.x, node.y);
 			} else {
 				ctx.fillText("null", node.x, node.y);
 			}
 		});
-	};
+	}, [currentViz, calculateLayout]);
 
 	// 当可视化数据或索引改变时重绘
 	useEffect(() => {
 		drawTree();
-	}, [currentViz, currentIndex]);
+	}, [drawTree]);
 
 	// 当容器大小改变时重绘
 	useEffect(() => {
@@ -268,7 +276,7 @@ export default function ClassTreeVisualization({
 
 		resizeObserver.observe(container);
 		return () => resizeObserver.disconnect();
-	}, [currentViz, currentIndex]);
+	}, [drawTree]);
 
 	return (
 		<Card className="h-full flex flex-col rounded-none border-t">
@@ -307,7 +315,10 @@ export default function ClassTreeVisualization({
 				</div>
 			</CardHeader>
 
-			<CardContent className="flex-1 p-0 min-h-0 overflow-auto" ref={containerRef}>
+			<CardContent
+				className="flex-1 p-0 min-h-0 overflow-auto"
+				ref={containerRef}
+			>
 				<canvas ref={canvasRef} className="w-full" />
 			</CardContent>
 		</Card>

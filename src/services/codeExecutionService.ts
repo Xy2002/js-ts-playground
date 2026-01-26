@@ -1,6 +1,6 @@
 export interface VisualizationData {
 	type: "heap" | "tree" | "graph" | "array";
-	data: any;
+	data: unknown;
 	timestamp: number;
 	label?: string;
 	changes?: {

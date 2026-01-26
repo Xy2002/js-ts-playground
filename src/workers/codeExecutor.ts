@@ -8,7 +8,7 @@ self.onmessage = (e) => {
 		const errors: string[] = [];
 		const visualizations: Array<{
 			type: string;
-			data: any;
+			data: unknown;
 			timestamp: number;
 			label?: string;
 		}> = [];
@@ -219,7 +219,7 @@ self.onmessage = (e) => {
 		}
 
 		// TreeNode class for general tree data structure
-		class TreeNode<T = any> {
+		class TreeNode<T = unknown> {
 			value: T;
 			children: TreeNode<T>[];
 
@@ -264,15 +264,13 @@ self.onmessage = (e) => {
 			toString(): string {
 				const result: string[] = [String(this.value)];
 				if (this.children.length > 0) {
-					result.push(
-						`(${this.children.map((c) => c.toString()).join(", ")})`,
-					);
+					result.push(`(${this.children.map((c) => c.toString()).join(", ")})`);
 				}
 				return result.join("");
 			}
 
 			// Helper method to convert to plain object for serialization
-			toJSON(): any {
+			toJSON(): { value: T; children: unknown[] } {
 				return {
 					value: this.value,
 					children: this.children.map((c) => c.toJSON()),

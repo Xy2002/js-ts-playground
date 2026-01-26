@@ -50,6 +50,7 @@ export default function FileTab({
 	};
 
 	return (
+		// biome-ignore lint/a11y/useSemanticElements: Using div for tab component is semantically correct
 		<div
 			role="button"
 			tabIndex={0}

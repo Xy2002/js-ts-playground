@@ -1,17 +1,18 @@
-import type React from "react";
-import { Link } from "react-router-dom";
-import { useCallback, useEffect, useId, useState } from "react";
 import { ExternalLink, RefreshCw } from "lucide-react";
+import type React from "react";
+import { useCallback, useEffect, useId, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { Link } from "react-router-dom";
+import { useToast } from "@/hooks/use-toast";
+import {
+	fetchModels,
+	getFallbackModels,
+	type ModelInfo,
+} from "@/services/llmService";
 import {
 	type LlmProvider,
 	usePlaygroundStore,
 } from "@/store/usePlaygroundStore";
-import {
-	type ModelInfo,
-	fetchModels,
-	getFallbackModels,
-} from "@/services/llmService";
 import { Button } from "./ui/button";
 import {
 	Dialog,
@@ -36,7 +37,6 @@ import {
 	TooltipProvider,
 	TooltipTrigger,
 } from "./ui/tooltip";
-import { useToast } from "@/hooks/use-toast";
 
 export interface SettingsDialogProps {
 	isOpen: boolean;
@@ -64,6 +64,7 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
 	const [modelSearchOpen, setModelSearchOpen] = useState(false);
 
 	// Reset local state when dialog opens or store changes
+	// biome-ignore lint/correctness/useExhaustiveDependencies: loadDefaultModels is stable and we only want to sync when isOpen or llmSettings change
 	useEffect(() => {
 		if (isOpen) {
 			setProvider(llmSettings.provider);
@@ -77,6 +78,7 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
 	}, [isOpen, llmSettings]);
 
 	// 当provider改变时，加载对应的模型列表
+	// biome-ignore lint/correctness/useExhaustiveDependencies: loadDefaultModels is stable and we only want to reload when provider or isOpen changes
 	useEffect(() => {
 		if (isOpen) {
 			loadDefaultModels(provider);
@@ -263,10 +265,19 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
 				</div>
 				<DialogFooter className="flex-col sm:flex-row gap-2">
 					<div className="flex gap-2 w-full sm:w-auto">
-						<Button type="button" variant="outline" onClick={onClose} className="flex-1 sm:flex-none">
+						<Button
+							type="button"
+							variant="outline"
+							onClick={onClose}
+							className="flex-1 sm:flex-none"
+						>
 							{t("common.cancel") || "Cancel"}
 						</Button>
-						<Button type="button" onClick={handleSave} className="flex-1 sm:flex-none">
+						<Button
+							type="button"
+							onClick={handleSave}
+							className="flex-1 sm:flex-none"
+						>
 							{t("common.save") || "Save"}
 						</Button>
 					</div>

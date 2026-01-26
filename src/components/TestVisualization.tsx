@@ -1,11 +1,10 @@
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import {
-	CheckCircle2,
-	XCircle,
 	AlertCircle,
-	ChevronsUpDown,
+	CheckCircle2,
 	ChevronDown,
 	ChevronRight,
+	XCircle,
 } from "lucide-react";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
@@ -80,19 +79,11 @@ export default function TestVisualization({ results }: TestVisualizationProps) {
 						<AlertCircle className="w-5 h-5 opacity-50" />
 					</div>
 					<p className="text-sm font-medium mb-1">No tests detected</p>
-					<p className="text-xs">
-						Use describe() and it() to run tests
-					</p>
+					<p className="text-xs">Use describe() and it() to run tests</p>
 				</motion.div>
 			</div>
 		);
 	}
-
-	const statusColor = {
-		passed: "text-green-500",
-		failed: "text-destructive",
-		skipped: "text-muted-foreground",
-	};
 
 	const statusBgColor = {
 		passed: "bg-green-500/10",
@@ -118,7 +109,9 @@ export default function TestVisualization({ results }: TestVisualizationProps) {
 			<CardHeader className="flex flex-row items-center justify-between p-3 space-y-0 flex-shrink-0 border-b">
 				<div className="flex items-center gap-2">
 					<div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-					<span className="text-sm font-semibold tracking-tight">Test Results</span>
+					<span className="text-sm font-semibold tracking-tight">
+						Test Results
+					</span>
 				</div>
 
 				<div className="flex items-center gap-2">
@@ -152,6 +145,7 @@ export default function TestVisualization({ results }: TestVisualizationProps) {
 							>
 								{/* Suite Header */}
 								<button
+									type="button"
 									onClick={() => toggleSuite(suite.name)}
 									className="w-full flex items-center justify-between p-3 hover:bg-muted/50 transition-colors"
 								>
@@ -199,6 +193,7 @@ export default function TestVisualization({ results }: TestVisualizationProps) {
 														className={`rounded-md border ${statusBorderColor[test.status]} ${statusBgColor[test.status]} overflow-hidden`}
 													>
 														<button
+															type="button"
 															onClick={() => toggleTest(test.name)}
 															className="w-full flex items-center gap-2 p-2 hover:bg-muted/30 transition-colors text-left"
 														>
@@ -258,7 +253,9 @@ export default function TestVisualization({ results }: TestVisualizationProps) {
 										? "bg-destructive/10 border-destructive/20"
 										: "bg-green-500/10 border-green-500/20"
 								} ${
-									results.failed > 0 ? "text-destructive" : "text-green-700 dark:text-green-400"
+									results.failed > 0
+										? "text-destructive"
+										: "text-green-700 dark:text-green-400"
 								}`}
 							>
 								<div className="flex items-center gap-2">

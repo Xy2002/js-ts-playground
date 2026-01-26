@@ -1,7 +1,4 @@
-import type {
-	UserSettings,
-	LlmSettings,
-} from "@/store/usePlaygroundStore";
+import type { LlmSettings, UserSettings } from "@/store/usePlaygroundStore";
 import type { FileInfo, FolderInfo } from "@/types/multiFile";
 
 /**
@@ -157,7 +154,7 @@ class DataExportService {
 	/**
 	 * 验证导入数据的格式
 	 */
-	validateImportData(data: any): asserts data is ExportData {
+	validateImportData(data: unknown): asserts data is ExportData {
 		if (!data || typeof data !== "object") {
 			throw new Error("Invalid data format");
 		}

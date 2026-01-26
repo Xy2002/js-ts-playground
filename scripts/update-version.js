@@ -5,9 +5,9 @@
  * This file should be run during the build process
  */
 
-import fs from "fs";
-import path from "path";
-import { fileURLToPath } from "url";
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -32,7 +32,7 @@ if (process.env.VERCEL_GIT_COMMIT_SHA) {
 // 2. Fall back to git command (for local builds)
 else {
 	try {
-		const { execSync } = await import("child_process");
+		const { execSync } = await import("node:child_process");
 		commitHash = execSync("git rev-parse --short HEAD").toString().trim();
 		console.log("Using git command for commit SHA");
 	} catch {
@@ -54,7 +54,9 @@ const versionJsonPath = path.resolve(__dirname, "../public/version.json");
 fs.writeFileSync(
 	versionJsonPath,
 	JSON.stringify(versionData, null, 2),
-	"utf-8"
+	"utf-8",
 );
 
-console.log(`✅ Updated version.json: v${version} (${buildDate}, commit: ${commitHash})`);
+console.log(
+	`✅ Updated version.json: v${version} (${buildDate}, commit: ${commitHash})`,
+);

@@ -3,7 +3,7 @@
  * Subtle, refined animations that enhance without distracting
  */
 
-import { motion, type HTMLMotionProps, type Variants } from "framer-motion";
+import { type HTMLMotionProps, motion, type Variants } from "framer-motion";
 import { forwardRef } from "react";
 
 // Animation variants with Vercel-style ease curves
@@ -98,20 +98,21 @@ MotionCard.displayName = "MotionCard";
 /**
  * MotionButton - Button with press animation
  */
-export const MotionButton = forwardRef<HTMLButtonElement, HTMLMotionProps<"button">>(
-	(props, ref) => {
-		return (
-			<motion.button
-				ref={ref}
-				whileTap={{ scale: 0.98 }}
-				whileHover={{ scale: 1.02 }}
-				transition={defaultTransition}
-				className={`press-scale ${props.className || ""}`}
-				{...props}
-			/>
-		);
-	},
-);
+export const MotionButton = forwardRef<
+	HTMLButtonElement,
+	HTMLMotionProps<"button">
+>((props, ref) => {
+	return (
+		<motion.button
+			ref={ref}
+			whileTap={{ scale: 0.98 }}
+			whileHover={{ scale: 1.02 }}
+			transition={defaultTransition}
+			className={`press-scale ${props.className || ""}`}
+			{...props}
+		/>
+	);
+});
 MotionButton.displayName = "MotionButton";
 
 /**

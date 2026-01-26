@@ -3,6 +3,7 @@ import { createMistral } from "@ai-sdk/mistral";
 import { createOpenAI } from "@ai-sdk/openai";
 import { Editor, type EditorProps } from "@monaco-editor/react";
 import { generateText, type LanguageModel } from "ai";
+import { AnimatePresence, motion } from "framer-motion";
 import type * as monaco from "monaco-editor";
 import {
 	CompletionCopilot,
@@ -13,14 +14,13 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 import { Badge } from "@/components/ui/badge";
-import { usePlaygroundStore } from "@/store/usePlaygroundStore";
 import {
 	Tooltip,
 	TooltipContent,
 	TooltipProvider,
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { motion, AnimatePresence } from "framer-motion";
+import { usePlaygroundStore } from "@/store/usePlaygroundStore";
 
 interface CodeEditorProps {
 	value: string;
@@ -69,7 +69,12 @@ export default function CodeEditor({
 			return "Model is not selected. Please select a model in settings.";
 		}
 		return null;
-	}, [llmSettings.enabled, llmSettings.apiKey, llmSettings.model, isEditorReady]);
+	}, [
+		llmSettings.enabled,
+		llmSettings.apiKey,
+		llmSettings.model,
+		isEditorReady,
+	]);
 
 	// Cleaning up the completion provider when component unmounts
 	useEffect(() => {
@@ -84,11 +89,13 @@ export default function CodeEditor({
 	// Dynamic registration logic based on settings
 	useEffect(() => {
 		console.log(
-			"Auto Completion Active Status:" + !!editorRef.current &&
-			!!monacoRef.current &&
-			!!llmSettings.apiKey &&
-			!!llmSettings.model &&
-			llmSettings.enabled,
+			`Auto Completion Active Status: ${
+				!!editorRef.current &&
+				!!monacoRef.current &&
+				!!llmSettings.apiKey &&
+				!!llmSettings.model &&
+				llmSettings.enabled
+			}`,
 		);
 		if (
 			!isEditorReady ||
@@ -119,7 +126,6 @@ export default function CodeEditor({
 						case "mistral":
 							model = createMistral(commonOptions)(llmSettings.model);
 							break;
-						case "anthropic":
 						default:
 							model = createAnthropic(commonOptions)(llmSettings.model);
 							break;
@@ -299,7 +305,7 @@ export default function CodeEditor({
 			// Ctrl/Cmd + A: 全选
 			editor.setSelection(
 				editor.getModel()?.getFullModelRange() ||
-				new monaco.Selection(1, 1, 1, 1),
+					new monaco.Selection(1, 1, 1, 1),
 			);
 		});
 
@@ -409,10 +415,10 @@ export default function CodeEditor({
 									>
 										LLM:
 										{!!editorRef.current &&
-											!!monacoRef.current &&
-											!!llmSettings.apiKey &&
-											!!llmSettings.model &&
-											llmSettings.enabled ? (
+										!!monacoRef.current &&
+										!!llmSettings.apiKey &&
+										!!llmSettings.model &&
+										llmSettings.enabled ? (
 											<span className="text-green-600 dark:text-green-400 ml-1 font-medium">
 												Active
 											</span>

@@ -1,6 +1,6 @@
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import App from "./App";
 import "./index.css";
 import "./i18n";
@@ -47,7 +47,9 @@ const applyInitialTheme = () => {
 		}
 	} else {
 		// Default to system theme if no settings
-		const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+		const prefersDark = window.matchMedia(
+			"(prefers-color-scheme: dark)",
+		).matches;
 		const root = document.documentElement;
 		const theme = prefersDark ? "dark" : "light";
 		root.classList.add(theme);

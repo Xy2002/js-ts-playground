@@ -1,6 +1,5 @@
-import { Moon, Sun, Monitor } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
-import { useTheme, type AppTheme } from "@/hooks/useTheme";
+import { AnimatePresence, motion } from "framer-motion";
+import { Monitor, Moon, Sun } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
 	DropdownMenu,
@@ -8,6 +7,7 @@ import {
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { type AppTheme, useTheme } from "@/hooks/useTheme";
 
 const themes: { value: AppTheme; label: string; icon: typeof Sun }[] = [
 	{ value: "light", label: "Light", icon: Sun },

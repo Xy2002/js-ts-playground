@@ -32,6 +32,7 @@ export function useTheme() {
 	};
 
 	// Apply theme to document
+	// biome-ignore lint/correctness/useExhaustiveDependencies: getEffectiveTheme is stable and we only need appTheme
 	useEffect(() => {
 		const root = document.documentElement;
 		const effectiveTheme = getEffectiveTheme();
@@ -75,6 +76,7 @@ export function useTheme() {
 	};
 
 	// Sync Monaco theme when app theme changes
+	// biome-ignore lint/correctness/useExhaustiveDependencies: getMonacoTheme is stable and we only need appTheme
 	useEffect(() => {
 		// Only sync after settings are loaded (after first render)
 		// This prevents saving empty state before loadFromStorage completes

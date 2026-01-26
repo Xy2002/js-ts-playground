@@ -9,8 +9,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 const languages = [
-	{ code: 'zh', name: '中文' },
-	{ code: 'en', name: 'English' },
+	{ code: "zh", name: "中文" },
+	{ code: "en", name: "English" },
 ];
 
 export default function LanguageSwitch() {
@@ -20,12 +20,17 @@ export default function LanguageSwitch() {
 		i18n.changeLanguage(langCode);
 	};
 
-	const currentLang = languages.find(lang => lang.code === i18n.language) || languages[0];
+	const currentLang =
+		languages.find((lang) => lang.code === i18n.language) || languages[0];
 
 	return (
 		<DropdownMenu>
 			<DropdownMenuTrigger asChild>
-				<Button variant="ghost" size="sm" className="flex items-center space-x-1">
+				<Button
+					variant="ghost"
+					size="sm"
+					className="flex items-center space-x-1"
+				>
 					<Globe className="w-4 h-4" />
 					<span className="hidden sm:inline">{currentLang.name}</span>
 				</Button>

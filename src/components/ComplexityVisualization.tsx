@@ -1,10 +1,13 @@
+import { TrendingUp, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { X, TrendingUp } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import type { ComplexityChartData, ComplexityResult } from "@/services/complexityAnalysisService";
+import type {
+	ComplexityChartData,
+	ComplexityResult,
+} from "@/services/complexityAnalysisService";
 import { parseBigO } from "@/services/complexityAnalysisService";
 
 interface ComplexityVisualizationProps {
@@ -20,12 +23,14 @@ export default function ComplexityVisualization({
 	const [activeTab, setActiveTab] = useState<"time" | "space">("time");
 	const [chartData, setChartData] = useState<ComplexityChartData | null>(null);
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: generateChartData is defined below and result is the only dependency
 	useEffect(() => {
 		// Generate chart data from result
 		const data = generateChartData(result);
 		setChartData(data);
 	}, [result]);
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: drawChart is defined below and chartData/activeTab are the only dependencies
 	useEffect(() => {
 		if (chartData && canvasRef.current) {
 			drawChart(chartData, activeTab);
@@ -37,13 +42,13 @@ export default function ComplexityVisualization({
 
 		// Define common complexity functions
 		const complexityFunctions = {
-			"O(1)": (n: number) => 1,
+			"O(1)": (_n: number) => 1,
 			"O(log n)": (n: number) => Math.log2(n || 1),
 			"O(n)": (n: number) => n,
 			"O(n log n)": (n: number) => n * Math.log2(n || 1),
 			"O(n²)": (n: number) => n * n,
 			"O(n³)": (n: number) => n * n * n,
-			"O(2^n)": (n: number) => Math.pow(2, Math.min(n, 10)), // Limit for visualization
+			"O(2^n)": (n: number) => 2 ** Math.min(n, 10), // Limit for visualization
 		};
 
 		// Calculate values for each complexity class
@@ -91,7 +96,9 @@ export default function ComplexityVisualization({
 
 		// Get detected complexity
 		const detectedComplexity =
-			type === "time" ? data.detectedTimeComplexity : data.detectedSpaceComplexity;
+			type === "time"
+				? data.detectedTimeComplexity
+				: data.detectedSpaceComplexity;
 
 		// Define colors for different complexity classes
 		const colors: { [key: string]: string } = {
@@ -145,7 +152,8 @@ export default function ComplexityVisualization({
 		}
 
 		// Draw complexity curves
-		const complexities = type === "time" ? data.timeComplexities : data.spaceComplexities;
+		const complexities =
+			type === "time" ? data.timeComplexities : data.spaceComplexities;
 
 		Object.entries(complexities).forEach(([complexity, values]) => {
 			const color = colors[complexity] || "#6b7280";
@@ -210,7 +218,11 @@ export default function ComplexityVisualization({
 		ctx.save();
 		ctx.translate(20, padding.top + chartHeight / 2);
 		ctx.rotate(-Math.PI / 2);
-		ctx.fillText(type === "time" ? "Operations (log scale)" : "Space (log scale)", 0, 0);
+		ctx.fillText(
+			type === "time" ? "Operations (log scale)" : "Space (log scale)",
+			0,
+			0,
+		);
 		ctx.restore();
 
 		// Draw legend
@@ -302,21 +314,25 @@ export default function ComplexityVisualization({
 								</div>
 							)}
 
-							{result.detectedPatterns && result.detectedPatterns.length > 0 && (
-								<div>
-									<h4 className="text-sm font-semibold mb-2">Detected Patterns</h4>
-									<div className="flex flex-wrap gap-2">
-										{result.detectedPatterns.map((pattern, index) => (
-											<span
-												key={index}
-												className="px-2 py-1 bg-blue-500/10 border border-blue-500/20 text-blue-400 rounded text-xs"
-											>
-												{pattern}
-											</span>
-										))}
+							{result.detectedPatterns &&
+								result.detectedPatterns.length > 0 && (
+									<div>
+										<h4 className="text-sm font-semibold mb-2">
+											Detected Patterns
+										</h4>
+										<div className="flex flex-wrap gap-2">
+											{result.detectedPatterns.map((pattern, index) => (
+												<span
+													// biome-ignore lint/suspicious/noArrayIndexKey: detectedPatterns is a dynamic array where items don't have unique IDs
+													key={index}
+													className="px-2 py-1 bg-blue-500/10 border border-blue-500/20 text-blue-400 rounded text-xs"
+												>
+													{pattern}
+												</span>
+											))}
+										</div>
 									</div>
-								</div>
-							)}
+								)}
 						</div>
 					</div>
 				</ScrollArea>

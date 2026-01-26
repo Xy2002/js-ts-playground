@@ -1,5 +1,6 @@
 import { ChevronLeft, ChevronRight, FolderOpen } from "lucide-react";
-import React, { useState } from "react";
+import type React from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -15,10 +16,7 @@ interface FileExplorerProps {
 	onToggle: () => void;
 }
 
-export default function FileExplorer({
-	isOpen,
-	onToggle,
-}: FileExplorerProps) {
+export default function FileExplorer({ isOpen, onToggle }: FileExplorerProps) {
 	const { t } = useTranslation();
 	const [searchQuery, setSearchQuery] = useState("");
 	const [contextMenu, setContextMenu] = useState<{
@@ -28,8 +26,14 @@ export default function FileExplorer({
 		itemType: "file" | "folder";
 	}>({ isOpen: false, position: { x: 0, y: 0 }, itemId: "", itemType: "file" });
 
-	const { files, folders, expandedFolders, activeFileId, openFile, toggleFolderExpansion } =
-		usePlaygroundStore();
+	const {
+		files,
+		folders,
+		expandedFolders,
+		activeFileId,
+		openFile,
+		toggleFolderExpansion,
+	} = usePlaygroundStore();
 
 	const handleFileSelect = (fileId: string) => {
 		openFile(fileId);
@@ -66,7 +70,7 @@ export default function FileExplorer({
 						size="sm"
 						onClick={onToggle}
 						className="w-6 h-6 p-0"
-						title={t('fileExplorer.expand')}
+						title={t("fileExplorer.expand")}
 					>
 						<ChevronRight className="w-4 h-4" />
 					</Button>
@@ -82,14 +86,16 @@ export default function FileExplorer({
 				<div className="flex items-center justify-between">
 					<div className="flex items-center space-x-2">
 						<FolderOpen className="w-4 h-4" />
-						<span className="text-sm font-medium">{t('fileExplorer.title')}</span>
+						<span className="text-sm font-medium">
+							{t("fileExplorer.title")}
+						</span>
 					</div>
 					<Button
 						variant="ghost"
 						size="sm"
 						onClick={onToggle}
 						className="w-6 h-6 p-0"
-						title={t('fileExplorer.collapse')}
+						title={t("fileExplorer.collapse")}
 					>
 						<ChevronLeft className="w-4 h-4" />
 					</Button>
@@ -103,7 +109,7 @@ export default function FileExplorer({
 				<FileSearchBox
 					value={searchQuery}
 					onChange={setSearchQuery}
-					placeholder={t('fileExplorer.searchPlaceholder')}
+					placeholder={t("fileExplorer.searchPlaceholder")}
 				/>
 			</div>
 

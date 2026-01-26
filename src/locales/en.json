@@ -1,147 +1,147 @@
 {
-  "common": {
-    "back": "Back",
-    "clear": "Clear",
-    "save": "Save",
-    "cancel": "Cancel",
-    "confirm": "Confirm",
-    "delete": "Delete",
-    "create": "Create",
-    "rename": "Rename",
-    "duplicate": "Duplicate",
-    "run": "Run",
-    "stop": "Stop",
-    "loading": "Loading...",
-    "settings": "Settings",
-    "reset": "Reset"
-  },
-  "header": {
-    "appName": "JS/TS Playground",
-    "appNameShort": "Playground",
-    "backToPlayground": "Back to Playground",
-    "clearAll": "Clear All",
-    "clearAllTooltip": "Long press for 3 seconds to clear all state (including code, settings and files)",
-    "reset": "Reset"
-  },
-  "language": {
-    "javascript": "JavaScript",
-    "typescript": "TypeScript",
-    "js": "JS",
-    "ts": "TS"
-  },
-  "fileExplorer": {
-    "title": "File Explorer",
-    "searchPlaceholder": "Search files...",
-    "expand": "Expand file explorer",
-    "collapse": "Collapse file explorer",
-    "noFiles": "No files found",
-    "createFile": "New File",
-    "createFolder": "New Folder",
-    "delete": "Delete",
-    "rename": "Rename",
-    "duplicate": "Duplicate"
-  },
-  "codeEditor": {
-    "title": "Code Editor",
-    "noOpenFiles": "No open files",
-    "noOpenFilesDesc": "Please select a file from the file explorer on the left to start editing",
-    "loadingEditor": "Loading editor..."
-  },
-  "output": {
-    "title": "Output",
-    "executing": "Executing...",
-    "noOutput": "No output",
-    "executionTime": "Execution time",
-    "error": "Error",
-    "log": "Log"
-  },
-  "settings": {
-    "title": "Settings",
-    "editorTheme": {
-      "title": "Editor Theme",
-      "description": "Choose your preferred editor theme for better coding experience",
-      "light": "Light Theme",
-      "lightDesc": "Bright and clean",
-      "dark": "Dark Theme",
-      "darkDesc": "Easy on the eyes"
-    },
-    "fontSettings": {
-      "title": "Font Settings",
-      "fontSize": "Font Size"
-    },
-    "codeFormatting": {
-      "title": "Code Formatting",
-      "indentSize": "Indentation Size",
-      "spaces2": "2 spaces",
-      "spaces4": "4 spaces"
-    },
-    "autoSave": {
-      "title": "Auto Save",
-      "description": "Automatically save your work as you type",
-      "enable": "Enable Auto Save",
-      "enableDesc": "Changes will be saved automatically"
-    }
-  },
-  "dialogs": {
-    "confirm": {
-      "title": "Confirm Action",
-      "deleteFile": "Are you sure you want to delete the file \"{{name}}\"? This action cannot be undone.",
-      "deleteFolder": "Are you sure you want to delete the folder \"{{name}}\"? This will delete the folder and all its contents. This action cannot be undone."
-    },
-    "input": {
-      "fileName": "File Name",
-      "folderName": "Folder Name",
-      "newName": "New Name",
-      "createFile": "Create File",
-      "createFolder": "Create Folder",
-      "renameFile": "Rename File",
-      "renameFolder": "Rename Folder"
-    }
-  },
-  "contextMenu": {
-    "newFile": "New File",
-    "newFolder": "New Folder",
-    "rename": "Rename",
-    "duplicate": "Duplicate",
-    "delete": "Delete",
-    "closeTab": "Close Tab",
-    "closeOtherTabs": "Close Other Tabs",
-    "closeAllTabs": "Close All Tabs"
-  },
-  "predefined": {
-    "title": "Predefined Functions",
-    "tab": "Predefined Functions",
-    "dataStructures": "Data Structures",
-    "listFunctions": "List Functions",
-    "treeFunctions": "Tree Functions",
-    "heapFunctions": "Heap Functions",
-    "testing": "Testing Framework",
-    "listNode": {
-      "description": "Linked list node class for building singly linked lists"
-    },
-    "treeNode": {
-      "description": "Generic tree node class supporting any data type"
-    },
-    "arrayToListNode": {
-      "description": "Convert an array to a linked list"
-    },
-    "listNodeToArray": {
-      "description": "Convert a linked list to an array"
-    },
-    "renderTree": {
-      "description": "Visualize tree structure in the output panel"
-    },
-    "renderHeap": {
-      "description": "Visualize heap structure in the output panel"
-    },
-    "describe": {
-      "description": "Create a test suite"
-    },
-    "test": {
-      "description": "Create a test case"
-    },
-    "expect": {
-      "description": "Assertion function with matchers (toBe, toEqual, toContain, etc.)"
-    }
-  }
+	"common": {
+		"back": "Back",
+		"clear": "Clear",
+		"save": "Save",
+		"cancel": "Cancel",
+		"confirm": "Confirm",
+		"delete": "Delete",
+		"create": "Create",
+		"rename": "Rename",
+		"duplicate": "Duplicate",
+		"run": "Run",
+		"stop": "Stop",
+		"loading": "Loading...",
+		"settings": "Settings",
+		"reset": "Reset"
+	},
+	"header": {
+		"appName": "JS/TS Playground",
+		"appNameShort": "Playground",
+		"backToPlayground": "Back to Playground",
+		"clearAll": "Clear All",
+		"clearAllTooltip": "Long press for 3 seconds to clear all state (including code, settings and files)",
+		"reset": "Reset"
+	},
+	"language": {
+		"javascript": "JavaScript",
+		"typescript": "TypeScript",
+		"js": "JS",
+		"ts": "TS"
+	},
+	"fileExplorer": {
+		"title": "File Explorer",
+		"searchPlaceholder": "Search files...",
+		"expand": "Expand file explorer",
+		"collapse": "Collapse file explorer",
+		"noFiles": "No files found",
+		"createFile": "New File",
+		"createFolder": "New Folder",
+		"delete": "Delete",
+		"rename": "Rename",
+		"duplicate": "Duplicate"
+	},
+	"codeEditor": {
+		"title": "Code Editor",
+		"noOpenFiles": "No open files",
+		"noOpenFilesDesc": "Please select a file from the file explorer on the left to start editing",
+		"loadingEditor": "Loading editor..."
+	},
+	"output": {
+		"title": "Output",
+		"executing": "Executing...",
+		"noOutput": "No output",
+		"executionTime": "Execution time",
+		"error": "Error",
+		"log": "Log"
+	},
+	"settings": {
+		"title": "Settings",
+		"editorTheme": {
+			"title": "Editor Theme",
+			"description": "Choose your preferred editor theme for better coding experience",
+			"light": "Light Theme",
+			"lightDesc": "Bright and clean",
+			"dark": "Dark Theme",
+			"darkDesc": "Easy on the eyes"
+		},
+		"fontSettings": {
+			"title": "Font Settings",
+			"fontSize": "Font Size"
+		},
+		"codeFormatting": {
+			"title": "Code Formatting",
+			"indentSize": "Indentation Size",
+			"spaces2": "2 spaces",
+			"spaces4": "4 spaces"
+		},
+		"autoSave": {
+			"title": "Auto Save",
+			"description": "Automatically save your work as you type",
+			"enable": "Enable Auto Save",
+			"enableDesc": "Changes will be saved automatically"
+		}
+	},
+	"dialogs": {
+		"confirm": {
+			"title": "Confirm Action",
+			"deleteFile": "Are you sure you want to delete the file \"{{name}}\"? This action cannot be undone.",
+			"deleteFolder": "Are you sure you want to delete the folder \"{{name}}\"? This will delete the folder and all its contents. This action cannot be undone."
+		},
+		"input": {
+			"fileName": "File Name",
+			"folderName": "Folder Name",
+			"newName": "New Name",
+			"createFile": "Create File",
+			"createFolder": "Create Folder",
+			"renameFile": "Rename File",
+			"renameFolder": "Rename Folder"
+		}
+	},
+	"contextMenu": {
+		"newFile": "New File",
+		"newFolder": "New Folder",
+		"rename": "Rename",
+		"duplicate": "Duplicate",
+		"delete": "Delete",
+		"closeTab": "Close Tab",
+		"closeOtherTabs": "Close Other Tabs",
+		"closeAllTabs": "Close All Tabs"
+	},
+	"predefined": {
+		"title": "Predefined Functions",
+		"tab": "Predefined Functions",
+		"dataStructures": "Data Structures",
+		"listFunctions": "List Functions",
+		"treeFunctions": "Tree Functions",
+		"heapFunctions": "Heap Functions",
+		"testing": "Testing Framework",
+		"listNode": {
+			"description": "Linked list node class for building singly linked lists"
+		},
+		"treeNode": {
+			"description": "Generic tree node class supporting any data type"
+		},
+		"arrayToListNode": {
+			"description": "Convert an array to a linked list"
+		},
+		"listNodeToArray": {
+			"description": "Convert a linked list to an array"
+		},
+		"renderTree": {
+			"description": "Visualize tree structure in the output panel"
+		},
+		"renderHeap": {
+			"description": "Visualize heap structure in the output panel"
+		},
+		"describe": {
+			"description": "Create a test suite"
+		},
+		"test": {
+			"description": "Create a test case"
+		},
+		"expect": {
+			"description": "Assertion function with matchers (toBe, toEqual, toContain, etc.)"
+		}
+	}
 }

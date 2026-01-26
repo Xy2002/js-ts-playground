@@ -1,8 +1,8 @@
 import { createAnthropic } from "@ai-sdk/anthropic";
-import { createOpenAI } from "@ai-sdk/openai";
 import { createMistral } from "@ai-sdk/mistral";
+import { createOpenAI } from "@ai-sdk/openai";
 import { streamText } from "ai";
-import type { LlmProvider, LlmSettings } from "@/store/usePlaygroundStore";
+import type { LlmSettings } from "@/store/usePlaygroundStore";
 
 export interface ComplexityResult {
 	timeComplexity: string;
@@ -36,11 +36,16 @@ export async function analyzeComplexity(
 	const { provider, apiKey, apiUrl, model } = llmSettings;
 
 	if (!apiKey) {
-		throw new Error("API key is not configured. Please add your API key in settings.");
+		throw new Error(
+			"API key is not configured. Please add your API key in settings.",
+		);
 	}
 
 	// Create the appropriate client
-	let client: any;
+	let client:
+		| ReturnType<typeof createOpenAI>
+		| ReturnType<typeof createAnthropic>
+		| ReturnType<typeof createMistral>;
 	switch (provider) {
 		case "openai":
 			client = createOpenAI({
@@ -65,9 +70,10 @@ export async function analyzeComplexity(
 	}
 
 	// Determine the language instruction based on user's language setting
-	const languageInstruction = userLanguage === "zh"
-		? "Return ONLY valid JSON, no additional text, and use Chinese for all explanations."
-		: "Return ONLY valid JSON, no additional text, and use English for all explanations.";
+	const languageInstruction =
+		userLanguage === "zh"
+			? "Return ONLY valid JSON, no additional text, and use Chinese for all explanations."
+			: "Return ONLY valid JSON, no additional text, and use English for all explanations.";
 
 	const prompt = `Analyze the following ${language} code for time and space complexity.
 
@@ -132,17 +138,16 @@ export function generateComplexityChart(
 	result: ComplexityResult,
 ): ComplexityChartData {
 	const inputSize = [1, 2, 5, 10, 20, 50, 100];
-	const maxInput = Math.max(...inputSize);
 
 	// Define common complexity functions
 	const complexityFunctions = {
-		"O(1)": (n: number) => 1,
+		"O(1)": (_n: number) => 1,
 		"O(log n)": (n: number) => Math.log2(n || 1),
 		"O(n)": (n: number) => n,
 		"O(n log n)": (n: number) => n * Math.log2(n || 1),
 		"O(n²)": (n: number) => n * n,
 		"O(n³)": (n: number) => n * n * n,
-		"O(2^n)": (n: number) => Math.pow(2, n),
+		"O(2^n)": (n: number) => 2 ** n,
 		"O(n!)": (n: number) => {
 			let result = 1;
 			for (let i = 1; i <= n; i++) result *= i;
