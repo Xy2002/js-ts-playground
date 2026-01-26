@@ -1,0 +1,15 @@
+pre-commit:
+  parallel: true
+  commands:
+    version:
+      glob: "*"
+      run: pnpm biome version
+
+    lint:
+      glob: "*"
+      run: pnpm lint {staged_files} --no-errors-on-unmatched
+
+    format:
+      glob: "*"
+      run: pnpm format
+      
