@@ -1,5 +1,6 @@
 import {
 	Code2,
+	Github,
 	Play,
 	RefreshCw,
 	RotateCcw,
@@ -9,28 +10,28 @@ import {
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import CodeEditor from "@/components/CodeEditor";
-import FileExplorer from "@/components/FileExplorer";
-import LanguageSwitch from "@/components/LanguageSwitch";
-import OutputDisplay from "@/components/OutputDisplay";
-import PredefinedFunctions from "@/components/PredefinedFunctions";
-import { ThemeSwitcher } from "@/components/ThemeSwitcher";
-import ComplexityVisualization from "@/components/ComplexityVisualization";
-import { SettingsDialog } from "@/components/SettingsDialog";
-import TabManager from "@/components/TabManager";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { executeCode, stopExecution } from "@/services/codeExecutionService";
-import { analyzeComplexity } from "@/services/complexityAnalysisService";
-import { usePlaygroundStore } from "@/store/usePlaygroundStore";
-import { MotionDiv, PageTransition } from "@/components/ui/motion";
 import {
 	Group,
 	Panel,
 	Separator as ResizableSeparator,
 } from "react-resizable-panels";
+import CodeEditor from "@/components/CodeEditor";
+import ComplexityVisualization from "@/components/ComplexityVisualization";
+import FileExplorer from "@/components/FileExplorer";
+import LanguageSwitch from "@/components/LanguageSwitch";
+import OutputDisplay from "@/components/OutputDisplay";
+import PredefinedFunctions from "@/components/PredefinedFunctions";
+import { SettingsDialog } from "@/components/SettingsDialog";
+import TabManager from "@/components/TabManager";
+import { ThemeSwitcher } from "@/components/ThemeSwitcher";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { MotionDiv, PageTransition } from "@/components/ui/motion";
+import { Progress } from "@/components/ui/progress";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { executeCode, stopExecution } from "@/services/codeExecutionService";
+import { analyzeComplexity } from "@/services/complexityAnalysisService";
+import { usePlaygroundStore } from "@/store/usePlaygroundStore";
 
 export default function Home() {
 	const {
@@ -224,7 +225,9 @@ export default function Home() {
 				timeComplexity: "O(?)",
 				spaceComplexity: "O(?)",
 				explanation:
-					error instanceof Error ? error.message : "Failed to analyze complexity",
+					error instanceof Error
+						? error.message
+						: "Failed to analyze complexity",
 				codeAnalysis: "",
 				detectedPatterns: [],
 			});
@@ -422,7 +425,9 @@ export default function Home() {
 							className="text-muted-foreground hover:text-foreground hover:bg-muted"
 						>
 							<RotateCcw className="w-4 h-4" />
-							<span className="hidden sm:inline ml-1.5">{t("common.clear")}</span>
+							<span className="hidden sm:inline ml-1.5">
+								{t("common.clear")}
+							</span>
 						</Button>
 
 						{/* Clear All State Button */}
@@ -440,7 +445,10 @@ export default function Home() {
 							>
 								{isLongPressingClear && (
 									<div className="absolute inset-0 flex items-center px-2">
-										<Progress value={longPressClearProgress} className="h-0.5" />
+										<Progress
+											value={longPressClearProgress}
+											className="h-0.5"
+										/>
 									</div>
 								)}
 								<div className="relative z-10 flex items-center">
@@ -491,7 +499,9 @@ export default function Home() {
 								className="min-w-[80px] sm:min-w-[90px]"
 							>
 								<Square className="w-4 h-4" />
-								<span className="hidden sm:inline ml-1.5">{t("common.stop")}</span>
+								<span className="hidden sm:inline ml-1.5">
+									{t("common.stop")}
+								</span>
 							</Button>
 						) : (
 							<Button
@@ -500,7 +510,9 @@ export default function Home() {
 								className="min-w-[80px] sm:min-w-[90px]"
 							>
 								<Play className="w-4 h-4" />
-								<span className="hidden sm:inline ml-1.5">{t("common.run")}</span>
+								<span className="hidden sm:inline ml-1.5">
+									{t("common.run")}
+								</span>
 							</Button>
 						)}
 
@@ -517,6 +529,15 @@ export default function Home() {
 						</Button>
 						<ThemeSwitcher />
 						<LanguageSwitch />
+						<a
+							href="https://github.com/Xy2002/js-ts-playground"
+							target="_blank"
+							rel="noopener noreferrer"
+							className="text-muted-foreground hover:text-foreground hover:bg-muted rounded-md p-2 transition-colors"
+							title="GitHub"
+						>
+							<Github className="w-4 h-4" />
+						</a>
 					</div>
 				</header>
 
@@ -593,7 +614,10 @@ export default function Home() {
 								<Panel defaultSize="40%" minSize="20%" maxSize="90%">
 									<div className="h-full flex flex-col bg-muted/30">
 										<div className="flex-1 min-h-0">
-											<Tabs defaultValue="output" className="h-full flex flex-col">
+											<Tabs
+												defaultValue="output"
+												className="h-full flex flex-col"
+											>
 												<div className="bg-muted/50 px-4 py-2 border-b">
 													<TabsList className="w-full justify-start">
 														<TabsTrigger value="output" className="gap-2">
@@ -605,7 +629,10 @@ export default function Home() {
 													</TabsList>
 												</div>
 												<div className="flex-1 min-h-0">
-													<TabsContent value="output" className="h-full m-0 p-0">
+													<TabsContent
+														value="output"
+														className="h-full m-0 p-0"
+													>
 														{showComplexityVisualization && complexityResult ? (
 															<ComplexityVisualization
 																result={complexityResult}
@@ -622,7 +649,10 @@ export default function Home() {
 															/>
 														)}
 													</TabsContent>
-													<TabsContent value="predefined" className="h-full m-0 p-0">
+													<TabsContent
+														value="predefined"
+														className="h-full m-0 p-0"
+													>
 														<PredefinedFunctions />
 													</TabsContent>
 												</div>
