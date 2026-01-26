@@ -8,6 +8,10 @@ pre-commit:
     format:
       glob: "*"
       run: pnpm format
+
+    check:
+      glob: "*"
+      run: pnpm check
       
 commit-msg:
   commands:
