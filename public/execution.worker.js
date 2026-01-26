@@ -875,25 +875,72 @@ self.onmessage = async function (e) {
 			// Add more vi utils as needed
 		};
 
-		// Test block mocks (just execute directly for now in playground)
+		// Test runner - collect test results
+		const testResults = {
+			suites: [],
+			currentSuite: null,
+			suiteStartTime: null,
+			testStartTime: null,
+		};
+
 		const describe = (name, fn) => {
+			const suiteStartTime = performance.now();
+			const suite = {
+				name,
+				tests: [],
+				status: 'passed',
+				duration: 0,
+			};
+			testResults.currentSuite = suite;
+			testResults.suiteStartTime = suiteStartTime;
+
 			console.log(`\n📝 Suite: ${name}`);
+
 			try {
 				fn();
 			} catch (e) {
+				suite.status = 'failed';
 				console.error(`❌ Suite failed: ${e.message}`);
 			}
+
+			suite.duration = Math.round(performance.now() - suiteStartTime);
+			testResults.suites.push(suite);
+			testResults.currentSuite = null;
 		};
 
 		const test = (name, fn) => {
-			// console.log(`  🔹 Test: ${name}`);
+			const testStartTime = performance.now();
+			let testStatus = 'passed';
+			let testError = null;
+
 			try {
 				fn();
-				// If we get here, no assertions failed
-				console.log(`  ✅ ${name}`);
 			} catch (e) {
+				testStatus = 'failed';
+				testError = e.message;
 				console.error(`  ❌ ${name}: ${e.message}`);
-				// Don't re-throw, so other tests can continue and we don't get double error logs
+			}
+
+			const testDuration = Math.round(performance.now() - testStartTime);
+
+			// Add to current suite if exists
+			if (testResults.currentSuite) {
+				testResults.currentSuite.tests.push({
+					name,
+					status: testStatus,
+					error: testError,
+					duration: testDuration,
+				});
+
+				// Update suite status if any test failed
+				if (testStatus === 'failed') {
+					testResults.currentSuite.status = 'failed';
+				}
+			}
+
+			// Also log to console for backward compatibility
+			if (testStatus === 'passed') {
+				console.log(`  ✅ ${name}`);
 			}
 		};
 
@@ -1021,6 +1068,16 @@ self.onmessage = async function (e) {
 				console.error("Worker: 已收集错误数量:", errors.length);
 				console.error("Worker: 前5条日志:", logs.slice(0, 5));
 
+				const totalTests = testResults.suites.reduce(
+					(sum, suite) => sum + suite.tests.length,
+					0
+				);
+				const passedTests = testResults.suites.reduce(
+					(sum, suite) => sum + suite.tests.filter(t => t.status === 'passed').length,
+					0
+				);
+				const failedTests = totalTests - passedTests;
+
 				const timeoutResult = {
 					success: false,
 					logs: [...logs], // 保留超时前收集到的所有console输出
@@ -1031,6 +1088,14 @@ self.onmessage = async function (e) {
 					executionTime: 3000,
 					executionId,
 					visualizations,
+					testResults: testResults.suites.length > 0 ? {
+						hasTests: true,
+						suites: testResults.suites,
+						totalTests,
+						passed: passedTests,
+						failed: failedTests,
+						duration: 3000,
+					} : { hasTests: false, suites: [], totalTests: 0, passed: 0, failed: 0, duration: 0 },
 				};
 
 				console.error("Worker: 发送超时结果:", {
@@ -1055,6 +1120,16 @@ self.onmessage = async function (e) {
 			console.log("代码执行完成，耗时:", executionTime.toFixed(2), "ms");
 
 			// 发送结果回主线程
+			const totalTests = testResults.suites.reduce(
+				(sum, suite) => sum + suite.tests.length,
+				0
+			);
+			const passedTests = testResults.suites.reduce(
+				(sum, suite) => sum + suite.tests.filter(t => t.status === 'passed').length,
+				0
+			);
+			const failedTests = totalTests - passedTests;
+
 			self.postMessage({
 				success: true,
 				logs,
@@ -1062,6 +1137,14 @@ self.onmessage = async function (e) {
 				executionTime: Math.round(executionTime * 100) / 100,
 				executionId,
 				visualizations,
+				testResults: testResults.suites.length > 0 ? {
+					hasTests: true,
+					suites: testResults.suites,
+					totalTests,
+					passed: passedTests,
+					failed: failedTests,
+					duration: Math.round(executionTime * 100) / 100,
+				} : { hasTests: false, suites: [], totalTests: 0, passed: 0, failed: 0, duration: 0 },
 			});
 		} catch (execError) {
 			executionCompleted = true;
@@ -1077,6 +1160,16 @@ self.onmessage = async function (e) {
 				"ms",
 			);
 
+			const totalTests = testResults.suites.reduce(
+				(sum, suite) => sum + suite.tests.length,
+				0
+			);
+			const passedTests = testResults.suites.reduce(
+				(sum, suite) => sum + suite.tests.filter(t => t.status === 'passed').length,
+				0
+			);
+			const failedTests = totalTests - passedTests;
+
 			self.postMessage({
 				success: false,
 				logs,
@@ -1084,6 +1177,14 @@ self.onmessage = async function (e) {
 				executionTime: Math.round(executionTime * 100) / 100,
 				executionId,
 				visualizations,
+				testResults: testResults.suites.length > 0 ? {
+					hasTests: true,
+					suites: testResults.suites,
+					totalTests,
+					passed: passedTests,
+					failed: failedTests,
+					duration: Math.round(executionTime * 100) / 100,
+				} : { hasTests: false, suites: [], totalTests: 0, passed: 0, failed: 0, duration: 0 },
 			});
 		}
 	} catch (error) {

@@ -9,12 +9,36 @@ export interface VisualizationData {
 	};
 }
 
+export interface TestResult {
+	status: "passed" | "failed" | "skipped";
+	name: string;
+	error?: string;
+	duration?: number;
+}
+
+export interface TestSuite {
+	name: string;
+	tests: TestResult[];
+	status: "passed" | "failed" | "skipped";
+	duration: number;
+}
+
+export interface TestExecutionResults {
+	hasTests: boolean;
+	suites: TestSuite[];
+	totalTests: number;
+	passed: number;
+	failed: number;
+	duration: number;
+}
+
 export interface ExecutionResult {
 	success: boolean;
 	logs: string[];
 	errors: string[];
 	executionTime: number;
 	visualizations: VisualizationData[];
+	testResults?: TestExecutionResults;
 }
 
 export class CodeExecutionService {

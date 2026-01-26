@@ -23,6 +23,7 @@ import OutputDisplay from "@/components/OutputDisplay";
 import PredefinedFunctions from "@/components/PredefinedFunctions";
 import { SettingsDialog } from "@/components/SettingsDialog";
 import TabManager from "@/components/TabManager";
+import TestVisualization from "@/components/TestVisualization";
 import { ThemeSwitcher } from "@/components/ThemeSwitcher";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -623,6 +624,18 @@ export default function Home() {
 														<TabsTrigger value="output" className="gap-2">
 															{t("output.title")}
 														</TabsTrigger>
+														{executionResult?.testResults?.hasTests && (
+															<TabsTrigger value="tests" className="gap-2">
+																Tests
+																<Badge
+																	variant="secondary"
+																	className="text-xs font-mono bg-muted/50"
+																>
+																	{executionResult.testResults.passed}/
+																	{executionResult.testResults.totalTests}
+																</Badge>
+															</TabsTrigger>
+														)}
 														<TabsTrigger value="predefined" className="gap-2">
 															{t("predefined.tab")}
 														</TabsTrigger>
@@ -649,6 +662,16 @@ export default function Home() {
 															/>
 														)}
 													</TabsContent>
+													{executionResult?.testResults?.hasTests && (
+														<TabsContent
+															value="tests"
+															className="h-full m-0 p-0"
+														>
+															<TestVisualization
+																results={executionResult.testResults}
+															/>
+														</TabsContent>
+													)}
 													<TabsContent
 														value="predefined"
 														className="h-full m-0 p-0"
