@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Route, BrowserRouter as Router, Routes } from "react-router-dom";
+import { Analytics } from "@vercel/analytics/react";
 import { UpdateBanner } from "@/components/UpdateBanner";
 import { Toaster } from "@/components/ui/sonner";
 import { VersionInfo } from "@/components/VersionInfo";
@@ -86,6 +87,7 @@ export default function App() {
 		<Router>
 			<AppContent />
 			<VersionInfo />
+			<Analytics />
 		</Router>
 	);
 }
