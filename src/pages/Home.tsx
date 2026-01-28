@@ -8,6 +8,7 @@ import {
 	Square,
 	Trash2,
 } from "lucide-react";
+import type * as monaco from "monaco-editor";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -21,6 +22,7 @@ import FileExplorer from "@/components/FileExplorer";
 import LanguageSwitch from "@/components/LanguageSwitch";
 import OutputDisplay from "@/components/OutputDisplay";
 import PredefinedFunctions from "@/components/PredefinedFunctions";
+import ProblemsPanel from "@/components/ProblemsPanel";
 import { SettingsDialog } from "@/components/SettingsDialog";
 import TabManager from "@/components/TabManager";
 import TestVisualization from "@/components/TestVisualization";
@@ -76,6 +78,10 @@ export default function Home() {
 	// 文件浏览器状态
 	const [isFileExplorerOpen, setIsFileExplorerOpen] = useState(true);
 	const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+
+	// Problems 状态
+	const [markers, setMarkers] = useState<monaco.editor.IMarker[]>([]);
+	const editorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
 
 	// 获取当前活跃文件的代码
 	const getCurrentCode = useCallback(() => {
@@ -269,6 +275,36 @@ export default function Home() {
 			setAnalyzingComplexity(false);
 		}
 	};
+
+	// 处理 markers 变化
+	const handleMarkersChange = useCallback(
+		(newMarkers: monaco.editor.IMarker[]) => {
+			setMarkers(newMarkers);
+		},
+		[],
+	);
+
+	// 处理跳转到错误位置
+	const handleJumpToMarker = useCallback(
+		(marker: {
+			startLineNumber: number;
+			startColumn: number;
+			endLineNumber: number;
+			endColumn: number;
+		}) => {
+			if (editorRef.current) {
+				editorRef.current.revealLineInCenter(marker.startLineNumber);
+				editorRef.current.setSelection({
+					startLineNumber: marker.startLineNumber,
+					startColumn: marker.startColumn,
+					endLineNumber: marker.endLineNumber,
+					endColumn: marker.endColumn,
+				});
+				editorRef.current.focus();
+			}
+		},
+		[],
+	);
 
 	// 文件浏览器控制
 	const handleFileExplorerToggle = () => {
@@ -597,6 +633,10 @@ export default function Home() {
 																? `file:///${files[activeFileId].name}`
 																: `file:///main.${getCurrentLanguage() === "typescript" ? "ts" : "js"}`
 														}
+														onMarkersChange={handleMarkersChange}
+														onEditorMounted={(editor) => {
+															editorRef.current = editor;
+														}}
 													/>
 												) : (
 													<div className="h-full flex items-center justify-center bg-muted/30">
@@ -643,6 +683,17 @@ export default function Home() {
 																</Badge>
 															</TabsTrigger>
 														)}
+														<TabsTrigger value="problems" className="gap-2">
+															Problems
+															{markers.length > 0 && (
+																<Badge
+																	variant="destructive"
+																	className="text-xs font-mono"
+																>
+																	{markers.length}
+																</Badge>
+															)}
+														</TabsTrigger>
 														<TabsTrigger value="predefined" className="gap-2">
 															{t("predefined.tab")}
 														</TabsTrigger>
@@ -679,6 +730,18 @@ export default function Home() {
 															/>
 														</TabsContent>
 													)}
+													<TabsContent
+														value="problems"
+														className="h-full m-0 p-0"
+													>
+														<ProblemsPanel
+															markers={markers}
+															isVisible={true}
+															onToggle={() => {}}
+															onJumpToMarker={handleJumpToMarker}
+															alwaysExpanded={true}
+														/>
+													</TabsContent>
 													<TabsContent
 														value="predefined"
 														className="h-full m-0 p-0"

@@ -30,6 +30,8 @@ interface CodeEditorProps {
 	fontSize: number;
 	readOnly?: boolean;
 	filePath: string;
+	onMarkersChange?: (markers: monaco.editor.IMarker[]) => void;
+	onEditorMounted?: (editor: monaco.editor.IStandaloneCodeEditor) => void;
 }
 
 export default function CodeEditor({
@@ -40,6 +42,8 @@ export default function CodeEditor({
 	fontSize,
 	readOnly = false,
 	filePath,
+	onMarkersChange,
+	onEditorMounted,
 }: CodeEditorProps) {
 	const { t } = useTranslation();
 	const { llmSettings, toggleLlmEnabled } = usePlaygroundStore();
@@ -181,6 +185,78 @@ export default function CodeEditor({
 		editorRef.current = editor;
 		monacoRef.current = monaco;
 		setIsEditorReady(true);
+
+		// 通知父组件编辑器已挂载
+		if (onEditorMounted) {
+			onEditorMounted(editor);
+		}
+
+		// 监听 markers 变化
+		const updateMarkers = () => {
+			const model = editor.getModel();
+			if (model) {
+				const currentMarkers = monaco.editor.getModelMarkers({
+					resource: model.uri,
+				});
+				if (onMarkersChange) {
+					onMarkersChange(currentMarkers);
+				}
+			}
+		};
+
+		// 初始化 markers
+		updateMarkers();
+
+		// 智能轮询策略：
+		// 1. 用户输入后短时间内高频轮询（100ms）
+		// 2. 一段时间无输入后降低频率（1000ms）
+		// 3. 长时间无输入后停止轮询
+		let pollTimer: NodeJS.Timeout | null = null;
+		let activePollInterval: NodeJS.Timeout | null = null;
+
+		const startActivePolling = () => {
+			// 清除之前的轮询
+			if (activePollInterval) {
+				clearInterval(activePollInterval);
+			}
+			if (pollTimer) {
+				clearTimeout(pollTimer);
+			}
+
+			// 高频轮询：用户正在输入，每 100ms 检查一次
+			activePollInterval = setInterval(() => {
+				updateMarkers();
+			}, 100);
+
+			// 2秒后降低频率
+			pollTimer = setTimeout(() => {
+				if (activePollInterval) {
+					clearInterval(activePollInterval);
+				}
+
+				// 降低频率：每 500ms 检查一次
+				activePollInterval = setInterval(() => {
+					updateMarkers();
+				}, 500);
+
+				// 再过 3 秒停止轮询
+				pollTimer = setTimeout(() => {
+					if (activePollInterval) {
+						clearInterval(activePollInterval);
+						activePollInterval = null;
+					}
+				}, 3000);
+			}, 2000);
+		};
+
+		// 监听内容变化，启动智能轮询
+		editor.onDidChangeModelContent(() => {
+			startActivePolling();
+		});
+
+		// 启动初始轮询
+		startActivePolling();
+
 		// 检测是否为移动设备
 		const isMobile = window.innerWidth < 768;
 
