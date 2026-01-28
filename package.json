@@ -10,7 +10,11 @@
 		"format": "biome format --write",
 		"preview": "vite preview",
 		"check": "tsc -b --noEmit",
-		"prepare": "is-ci || lefthook install"
+		"prepare": "is-ci || lefthook install",
+		"release": "node scripts/release.js",
+		"release:patch": "node scripts/release.js patch",
+		"release:minor": "node scripts/release.js minor",
+		"release:major": "node scripts/release.js major"
 	},
 	"dependencies": {
 		"@ai-sdk/anthropic": "^3.0.15",
