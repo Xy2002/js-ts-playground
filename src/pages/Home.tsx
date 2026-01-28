@@ -113,7 +113,45 @@ export default function Home() {
 		try {
 			const codeToRun = getCurrentCode();
 			const languageToUse = getCurrentLanguage();
-			const result = await executeCode(codeToRun, languageToUse);
+
+			// Prepare all files for multi-file execution
+			const { fileContents } = usePlaygroundStore.getState();
+			const allFilesInfo: Record<
+				string,
+				{ content: string; language: string; path: string }
+			> = {};
+
+			// Build file info map
+			for (const [fileId, file] of Object.entries(files)) {
+				const content = fileContents[fileId] || file.content || "";
+				const extension = file.name.split(".").pop()?.toLowerCase();
+				const fileLanguage =
+					extension === "ts" || extension === "tsx"
+						? "typescript"
+						: "javascript";
+
+				allFilesInfo[file.path] = {
+					content,
+					language: fileLanguage,
+					path: file.path,
+				};
+			}
+
+			// Determine entry file path
+			const entryFilePath = activeFileId
+				? files[activeFileId]?.path
+				: undefined;
+
+			console.log("Executing code with multi-file support:");
+			console.log("Entry file:", entryFilePath);
+			console.log("Total files:", Object.keys(allFilesInfo).length);
+
+			const result = await executeCode(
+				codeToRun,
+				languageToUse,
+				allFilesInfo,
+				entryFilePath,
+			);
 			console.log("Home组件: 收到执行结果");
 			console.log("Home组件: 成功状态:", result.success);
 			console.log("Home组件: 日志数量:", result.logs.length);
@@ -158,6 +196,9 @@ export default function Home() {
 					"前100字符:",
 					code.substring(0, 100),
 				);
+
+				// For URL-based code execution, we don't have multi-file support
+				// Execute as single file
 				const result = await executeCode(code, language);
 				console.log("Home组件(Params): 收到执行结果");
 				console.log("Home组件(Params): 成功状态:", result.success);
@@ -630,7 +671,7 @@ export default function Home() {
 														fontSize={settings.fontSize}
 														filePath={
 															activeFileId && files[activeFileId]
-																? `file:///${files[activeFileId].name}`
+																? `file:///${files[activeFileId].path.startsWith("/") ? files[activeFileId].path.substring(1) : files[activeFileId].path}`
 																: `file:///main.${getCurrentLanguage() === "typescript" ? "ts" : "js"}`
 														}
 														onMarkersChange={handleMarkersChange}

@@ -95,6 +95,8 @@ export class CodeExecutionService {
 	async executeCode(
 		code: string,
 		language: "javascript" | "typescript",
+		allFiles?: Record<string, { content: string; language: string; path: string }>,
+		entryFilePath?: string,
 	): Promise<ExecutionResult> {
 		if (!this.worker) {
 			return {
@@ -185,6 +187,8 @@ export class CodeExecutionService {
 				code,
 				language,
 				executionId: this.currentExecutionId,
+				allFiles,
+				entryFilePath,
 			});
 		});
 	}
@@ -238,8 +242,10 @@ export const codeExecutionService = new CodeExecutionService();
 export const executeCode = (
 	code: string,
 	language: "javascript" | "typescript",
+	allFiles?: Record<string, { content: string; language: string; path: string }>,
+	entryFilePath?: string,
 ): Promise<ExecutionResult> => {
-	return codeExecutionService.executeCode(code, language);
+	return codeExecutionService.executeCode(code, language, allFiles, entryFilePath);
 };
 
 export const stopExecution = (): void => {

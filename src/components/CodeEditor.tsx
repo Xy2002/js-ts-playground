@@ -21,6 +21,7 @@ import {
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { usePlaygroundStore } from "@/store/usePlaygroundStore";
+import { monacoModelService } from "@/services/monacoModelService";
 
 interface CodeEditorProps {
 	value: string;
@@ -46,7 +47,8 @@ export default function CodeEditor({
 	onEditorMounted,
 }: CodeEditorProps) {
 	const { t } = useTranslation();
-	const { llmSettings, toggleLlmEnabled } = usePlaygroundStore();
+	const { llmSettings, toggleLlmEnabled, files, fileContents } =
+		usePlaygroundStore();
 	const editorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
 	const monacoRef = useRef<typeof monaco | null>(null);
 	const completionRegistrationRef = useRef<CompletionRegistration | null>(null);
@@ -186,6 +188,17 @@ export default function CodeEditor({
 		monacoRef.current = monaco;
 		setIsEditorReady(true);
 
+		// Initialize Monaco Model Service
+		monacoModelService.initialize(monaco);
+
+		// Configure TypeScript module resolution
+		monacoModelService.configureTypeScriptModuleResolution();
+
+		// Sync all files with Monaco models
+		// Note: Models are sufficient for TypeScript to resolve types,
+		// no need for virtual libs which would cause duplicate declarations
+		monacoModelService.syncModels(files, fileContents);
+
 		// 通知父组件编辑器已挂载
 		if (onEditorMounted) {
 			onEditorMounted(editor);
@@ -313,46 +326,6 @@ export default function CodeEditor({
 			accessibilitySupport: "auto",
 		});
 
-		// 设置TypeScript编译器选项
-		if (language === "typescript") {
-			monaco.languages.typescript.typescriptDefaults.setCompilerOptions({
-				target: monaco.languages.typescript.ScriptTarget.ES2020,
-				allowNonTsExtensions: true,
-				moduleResolution:
-					monaco.languages.typescript.ModuleResolutionKind.NodeJs,
-				module: monaco.languages.typescript.ModuleKind.ESNext,
-				noEmit: true,
-				esModuleInterop: true,
-				jsx: monaco.languages.typescript.JsxEmit.React,
-				reactNamespace: "React",
-				allowJs: true,
-				typeRoots: ["node_modules/@types"],
-				// 关键配置：让每个文件都被视为独立的模块
-				isolatedModules: true,
-			});
-
-			// 设置诊断选项，禁用重复声明检查
-			monaco.languages.typescript.typescriptDefaults.setDiagnosticsOptions({
-				noSemanticValidation: false,
-				noSyntaxValidation: false,
-				onlyVisible: false,
-				diagnosticCodesToIgnore: [
-					2451, // Cannot redeclare block-scoped variable
-					2300, // Duplicate identifier
-				],
-			});
-		}
-
-		// 设置JavaScript编译器选项
-		if (language === "javascript") {
-			monaco.languages.typescript.javascriptDefaults.setCompilerOptions({
-				target: monaco.languages.typescript.ScriptTarget.ES2020,
-				allowNonTsExtensions: true,
-				allowJs: true,
-				checkJs: false,
-			});
-		}
-
 		// Load custom type definitions from external file
 		fetch("/monaco-types.d.ts")
 			.then((response) => response.text())
@@ -445,6 +418,15 @@ export default function CodeEditor({
 		window.addEventListener("resize", handleResize);
 		return () => window.removeEventListener("resize", handleResize);
 	}, []);
+
+	// 监听文件系统变化，同步 Monaco Models
+	useEffect(() => {
+		if (monacoRef.current && isEditorReady) {
+			// Sync models when files or contents change
+			// Models provide sufficient type information for TypeScript resolution
+			monacoModelService.syncModels(files, fileContents);
+		}
+	}, [files, fileContents, isEditorReady]);
 
 	return (
 		<div className="h-full w-full rounded-lg overflow-hidden border border-border/50 bg-background">

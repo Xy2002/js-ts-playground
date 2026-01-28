@@ -90,6 +90,7 @@ async function transpileTypeScript(tsCode) {
 	try {
 		// Ensure SWC is initialized
 		if (!swcInitialized) {
+			console.log("SWC未初始化，尝试初始化...");
 			await initSWC();
 		}
 
@@ -99,39 +100,44 @@ async function transpileTypeScript(tsCode) {
 		}
 
 		// Use SWC to transpile TypeScript
-		const result = self.swcTransform(tsCode, {
-			jsc: {
-				parser: {
-					syntax: "typescript",
-					tsx: false,
-					decorators: false,
-					dynamicImport: false,
+		try {
+			const result = self.swcTransform(tsCode, {
+				jsc: {
+					parser: {
+						syntax: "typescript",
+						tsx: false,
+						decorators: false,
+						dynamicImport: true,
+					},
+					target: "es2020",
+					loose: false,
+					externalHelpers: false,
+					keepClassNames: false,
+					preserveAllComments: false,
 				},
-				target: "es2020",
-				loose: false,
-				externalHelpers: false,
-				keepClassNames: false,
-				preserveAllComments: false,
-			},
-			module: {
-				type: "es6",
-			},
-			minify: false,
-			isModule: false,
-		});
+				module: {
+					type: "es6",
+				},
+				minify: false,
+				isModule: true,
+			});
 
-		const transpileTime = performance.now() - startTime;
-		console.log("SWC转译完成，耗时:", transpileTime.toFixed(2), "ms");
+			const transpileTime = performance.now() - startTime;
+			console.log("SWC转译完成，耗时:", transpileTime.toFixed(2), "ms");
 
-		return result.code;
+			return result.code;
+		} catch (swcError) {
+			console.error("SWC转译出错，详细信息:", swcError);
+			console.error("SWC错误消息:", swcError?.message);
+			console.error("SWC错误堆栈:", swcError?.stack);
+			console.warn("回退到简单转译");
+			return fallbackTranspile(tsCode);
+		}
 	} catch (error) {
 		const errorTime = performance.now() - startTime;
-		console.warn(
-			"SWC转译失败，回退到简单转译，耗时:",
-			errorTime.toFixed(2),
-			"ms",
-			error.message,
-		);
+		console.error("TypeScript转译异常，耗时:", errorTime.toFixed(2), "ms");
+		console.error("异常详情:", error);
+		console.error("异常消息:", error?.message);
 		return fallbackTranspile(tsCode);
 	}
 }
@@ -143,32 +149,47 @@ function fallbackTranspile(tsCode) {
 
 	try {
 		// 简单的类型移除，只处理最常见的情况
-		// 简单的类型移除，只处理最常见的情况
-		const jsCode = tsCode
+		let jsCode = tsCode
+			// 移除 type 定义: type Foo = ...
+			.replace(/type\s+\w+\s*=\s*[^;]+;/g, "")
+			// 移除 interface 定义: interface Foo { ... }
+			.replace(/interface\s+\w+[\s\S]*?\{[\s\S]*?\}/g, "")
+			// 移除 enum 定义: enum Foo { ... }
+			.replace(/enum\s+\w+[\s\S]*?\{[\s\S]*?\}/g, "")
+			// 移除访问修饰符: public, private, protected, readonly
+			.replace(/\b(public|private|protected|readonly)\s+/g, "")
 			// 移除变量类型注解: let x: number = 1 -> let x = 1
-			.replace(/:\s*(string|number|boolean|any)(?=\s*[=;)])/g, "")
-			// 移除函数参数类型: (x: number) -> (x)
-			.replace(/(\w+):\s*(string|number|boolean|any)(?=\s*[,)])/g, "$1")
-			// 移除as断言: x as number -> x
-			.replace(/\s+as\s+(string|number|boolean|any)/g, "")
-			// 移除接口定义（简单版本）
-			.replace(/interface\s+\w+\s*\{[^}]*\}/g, "")
+			.replace(/:\s*[\w<>,\[\]\|&\s]+(?=\s*[=;)])/g, "")
+			// 移除函数返回类型: function foo(): Type -> function foo()
+			.replace(/\):\s*[\w<>,\[\]\|&\s]+\s*\{/g, ") {")
+			// 移除as断言: x as Type -> x  (支持复杂类型)
+			.replace(/\s+as\s+[\w<>,\[\]\|&\s]+/g, "")
+			// 移除 ! 非空断言: x! -> x
+			.replace(/(\w+)!/g, "$1")
 			// 清理空行
 			.replace(/\n\s*\n/g, "\n")
 			.trim();
+
 		const transpileTime = performance.now() - startTime;
 		console.log("回退转译完成，耗时:", transpileTime.toFixed(2), "ms");
+		console.log("转译后代码前100字符:", jsCode.substring(0, 100));
 
 		return jsCode;
 	} catch (error) {
-		console.error("回退转译也失败:", error.message);
+		console.error("回退转译也失败:", error?.message);
 		return tsCode; // 返回原始代码
 	}
 }
 
 // Web Worker for safe code execution
 self.onmessage = async (e) => {
-	const { code, language, executionId } = e.data;
+	const {
+		code,
+		language,
+		executionId,
+		allFiles: rawAllFiles,
+		entryFilePath,
+	} = e.data;
 
 	try {
 		console.log("Worker接收到代码:", {
@@ -178,22 +199,23 @@ self.onmessage = async (e) => {
 			hasInvalidChars: /[\u0080-\uFFFF]/.test(code || ""),
 		});
 
+		// Normalize allFiles keys to ensure path consistency
+		let allFiles = rawAllFiles;
+		if (rawAllFiles) {
+			allFiles = {};
+			for (const [filePath, fileInfo] of Object.entries(rawAllFiles)) {
+				// Remove leading slash to normalize paths
+				const normalizedPath = filePath.startsWith("/")
+					? filePath.substring(1)
+					: filePath;
+				allFiles[normalizedPath] = fileInfo;
+			}
+		}
+
 		// 根据语言类型处理代码
 		let executableCode = code;
 		const codeProcessStart = performance.now();
 
-		if (language === "typescript") {
-			console.log("检测到TypeScript代码，开始处理...");
-			executableCode = await transpileTypeScript(code);
-			console.log(
-				"TypeScript处理完成，总耗时:",
-				(performance.now() - codeProcessStart).toFixed(2),
-				"ms",
-			);
-			console.log("转译后代码前100字符:", executableCode?.substring(0, 100));
-		} else {
-			console.log("JavaScript代码，无需转译");
-		}
 		// 创建一个安全的执行环境
 		const logs = [];
 		const errors = [];
@@ -966,6 +988,365 @@ self.onmessage = async (e) => {
 			it,
 		};
 
+		// Module system implementation (now after all variables are defined)
+		const moduleCache = {};
+		const transpiledModules = {};
+
+		// Normalize path: remove leading slash to ensure consistency
+		function normalizePath(path) {
+			return path.startsWith("/") ? path.substring(1) : path;
+		}
+
+		// Resolve relative path
+		function resolvePath(from, to) {
+			// Normalize both paths first
+			from = normalizePath(from);
+			to = normalizePath(to);
+
+			// Handle relative imports
+			if (to.startsWith("./") || to.startsWith("../")) {
+				// Get directory of the 'from' file
+				const fromParts = from.split("/").slice(0, -1);
+				const toParts = to.split("/");
+
+				for (const part of toParts) {
+					if (part === ".") {
+						continue;
+					}
+					if (part === "..") {
+						fromParts.pop();
+					} else {
+						fromParts.push(part);
+					}
+				}
+
+				let resolved = fromParts.join("/");
+
+				// Try with different extensions if no extension provided
+				if (!resolved.match(/\.(ts|js|tsx|jsx)$/)) {
+					// Try .ts, .js, .tsx, .jsx
+					const extensions = [".ts", ".js", ".tsx", ".jsx"];
+					for (const ext of extensions) {
+						const pathWithExt = resolved + ext;
+						if (allFiles && allFiles[pathWithExt]) {
+							return pathWithExt;
+						}
+					}
+					// If still not found, try with /index
+					for (const ext of extensions) {
+						const indexPath = resolved + "/index" + ext;
+						if (allFiles && allFiles[indexPath]) {
+							return indexPath;
+						}
+					}
+				}
+
+				return resolved;
+			}
+
+			// Handle absolute imports (already normalized, no leading /)
+			// These are paths like "workspace/example.ts" or bare module names
+			let resolved = to;
+
+			// Try with different extensions if no extension provided
+			if (!resolved.match(/\.(ts|js|tsx|jsx)$/)) {
+				const extensions = [".ts", ".js", ".tsx", ".jsx"];
+				for (const ext of extensions) {
+					const pathWithExt = resolved + ext;
+					if (allFiles && allFiles[pathWithExt]) {
+						return pathWithExt;
+					}
+				}
+			}
+
+			return resolved;
+		}
+
+		// Transpile all files if multi-file mode
+		if (allFiles) {
+			console.log(
+				"Multi-file mode detected, transpiling",
+				Object.keys(allFiles).length,
+				"files",
+			);
+
+			for (const [filePath, fileInfo] of Object.entries(allFiles)) {
+				const fileContent = fileInfo.content;
+				const fileLanguage = fileInfo.language;
+
+				// Normalize file path to ensure consistency
+				const normalizedPath = normalizePath(filePath);
+
+				console.log(
+					"Transpiling file:",
+					normalizedPath,
+					"language:",
+					fileLanguage,
+				);
+
+				let transpiledContent = fileContent;
+
+				// Transpile TypeScript files
+				if (fileLanguage === "typescript") {
+					transpiledContent = await transpileTypeScript(fileContent);
+				}
+
+				// Wrap the code in a module function
+				// Replace import/export with custom module system
+				transpiledContent = wrapInModuleFunction(
+					transpiledContent,
+					normalizedPath,
+				);
+
+				transpiledModules[normalizedPath] = transpiledContent;
+
+				console.log("Transpiled file:", normalizedPath);
+			}
+
+			console.log("All files transpiled");
+		}
+
+		// Wrap code in a module function
+		function wrapInModuleFunction(code, filePath) {
+			// Transform ES6 imports/exports to require/exports calls
+			let transformedCode = code;
+
+			// ===== IMPORT TRANSFORMATIONS =====
+
+			// Transform: import { x, y } from './module'
+			// To: const { x, y } = __require('./module')
+			transformedCode = transformedCode.replace(
+				/import\s+\{([^}]+)\}\s+from\s+['"]([^'"]+)['"]/g,
+				"const {$1} = __require('$2')",
+			);
+
+			// Transform: import x from './module'
+			// To: const x = __require('./module').default || __require('./module')
+			transformedCode = transformedCode.replace(
+				/import\s+(\w+)\s+from\s+['"]([^'"]+)['"]/g,
+				"const $1 = __require('$2').default || __require('$2')",
+			);
+
+			// Transform: import * as x from './module'
+			// To: const x = __require('./module')
+			transformedCode = transformedCode.replace(
+				/import\s+\*\s+as\s+(\w+)\s+from\s+['"]([^'"]+)['"]/g,
+				"const $1 = __require('$2')",
+			);
+
+			// ===== EXPORT TRANSFORMATIONS =====
+
+			// Transform: export default xxx
+			// To: exports.default = xxx
+			transformedCode = transformedCode.replace(
+				/export\s+default\s+/g,
+				"exports.default = ",
+			);
+
+			// Transform: export function foo() {} or export async function foo() {}
+			// To: exports.foo = function() {} or exports.foo = async function() {}
+			transformedCode = transformedCode.replace(
+				/export\s+(async\s+)?function\s+(\w+)/g,
+				"exports.$2 = $1function $2",
+			);
+
+			// Transform: export class Foo {}
+			// To: exports.Foo = class Foo {}
+			transformedCode = transformedCode.replace(
+				/export\s+class\s+(\w+)/g,
+				"exports.$1 = class $1",
+			);
+
+			// Transform: export const foo = value; or export let foo = value;
+			// To: const foo = value; exports.foo = foo;
+			transformedCode = transformedCode.replace(
+				/export\s+(const|let|var)\s+(\w+)\s*=\s*([^;]+);/g,
+				"$1 $2 = $3; exports.$2 = $2;",
+			);
+
+			// Transform: export const foo; (declaration without initialization)
+			// To: const foo; exports.foo = foo;
+			transformedCode = transformedCode.replace(
+				/export\s+(const|let|var)\s+(\w+);/g,
+				"$1 $2; exports.$2 = $2;",
+			);
+
+			// Transform: export { x, y, z } or export { x as X }
+			// To: Object.assign(exports, { x, y, z })
+			transformedCode = transformedCode.replace(
+				/export\s*\{([^}]+)\}/g,
+				(_, exports_str) => {
+					// Parse the export list and handle 'as' aliases
+					const items = exports_str.split(",").map((item) => {
+						const trimmed = item.trim();
+						const parts = trimmed.split(/\s+as\s+/);
+						if (parts.length === 2) {
+							// Has alias: x as Y -> Y: x
+							return `${parts[1].trim()}: ${parts[0].trim()}`;
+						}
+						// No alias: x -> x
+						return trimmed;
+					});
+					return `Object.assign(exports, { ${items.join(", ")} })`;
+				},
+			);
+
+			// Wrap in module function that provides exports and __require
+			return `(function(exports, __require, __currentFilePath) {
+${transformedCode}
+return exports;
+})`;
+		}
+
+		// Module loader (require implementation)
+		function createRequire(currentFilePath) {
+			return function __require(modulePath) {
+				const resolvedPath = resolvePath(currentFilePath, modulePath);
+
+				console.log("Requiring module:", modulePath, "from:", currentFilePath);
+				console.log("Resolved path:", resolvedPath);
+
+				// Check cache
+				if (moduleCache[resolvedPath]) {
+					console.log("Returning cached module:", resolvedPath);
+					return moduleCache[resolvedPath];
+				}
+
+				// Check if module exists
+				if (!transpiledModules[resolvedPath]) {
+					const errorMsg = `Cannot find module '${modulePath}' (resolved as '${resolvedPath}') from '${currentFilePath}'`;
+					console.error(errorMsg);
+					console.error(
+						"Available modules:",
+						Object.keys(transpiledModules).join(", "),
+					);
+					throw new Error(errorMsg);
+				}
+
+				// Load module
+				const moduleFunction = transpiledModules[resolvedPath];
+				const exports = {};
+
+				console.log("Executing module:", resolvedPath);
+
+				try {
+					// Execute module function with proper context
+					const moduleRequire = createRequire(resolvedPath);
+					const executedModule = executeModuleCode(
+						moduleFunction,
+						exports,
+						moduleRequire,
+						resolvedPath,
+					);
+
+					// Cache the exports
+					moduleCache[resolvedPath] = executedModule || exports;
+
+					console.log("Module loaded successfully:", resolvedPath);
+
+					return moduleCache[resolvedPath];
+				} catch (error) {
+					console.error("Error loading module:", resolvedPath, error);
+					throw error;
+				}
+			};
+		}
+
+		// Execute module code
+		function executeModuleCode(
+			moduleFunction,
+			exports,
+			requireFn,
+			currentPath,
+		) {
+			try {
+				// Create a function from the module code string
+				const func = new Function(
+					"exports",
+					"__require",
+					"__currentFilePath",
+					"console",
+					"renderHeap",
+					"renderTree",
+					"Math",
+					"Date",
+					"JSON",
+					"Array",
+					"Object",
+					"String",
+					"Number",
+					"Boolean",
+					"RegExp",
+					"Error",
+					"TypeError",
+					"ReferenceError",
+					"SyntaxError",
+					"ListNode",
+					"TreeNode",
+					"arrayToListNode",
+					"listNodeToArray",
+					"expect",
+					"vi",
+					"describe",
+					"test",
+					"it",
+					"setTimeout",
+					"setInterval",
+					"clearTimeout",
+					"clearInterval",
+					`return ${moduleFunction}`,
+				);
+
+				// Execute the function to get the actual module function
+				const actualModuleFunction = func(
+					exports,
+					requireFn,
+					currentPath,
+					mockConsole,
+					renderHeap,
+					renderTree,
+					Math,
+					Date,
+					JSON,
+					Array,
+					Object,
+					String,
+					Number,
+					Boolean,
+					RegExp,
+					Error,
+					TypeError,
+					ReferenceError,
+					SyntaxError,
+					ListNode,
+					TreeNode,
+					arrayToListNode,
+					listNodeToArray,
+					expect,
+					vi,
+					describe,
+					test,
+					it,
+					safeGlobals.setTimeout,
+					safeGlobals.setInterval,
+					clearTimeout,
+					clearInterval,
+				);
+
+				// Execute the module function
+				return actualModuleFunction(exports, requireFn, currentPath);
+			} catch (error) {
+				console.error("Error executing module code:", currentPath, error);
+				throw error;
+			}
+		}
+
+		console.log(
+			"代码处理完成，总耗时:",
+			(performance.now() - codeProcessStart).toFixed(2),
+			"ms",
+		);
+
 		// 禁用危险的全局对象
 		const restrictedGlobals = {
 			fetch: undefined,
@@ -1025,16 +1406,51 @@ self.onmessage = async (e) => {
 		};
 
 		// 简化执行代码，依赖超时机制来处理死循环
-		const instrumentedCode = `try { ${executableCode} } catch (error) { throw error; }`;
+		let instrumentedCode;
+		let executeCodeFunc;
 
-		// 创建函数来执行代码
-		const executeCode = new Function(
-			...Object.keys(instrumentedGlobals),
-			instrumentedCode,
-		);
+		// Check if we're in multi-file mode
+		if (allFiles && entryFilePath) {
+			console.log("Multi-file execution mode");
+			console.log("Entry file:", entryFilePath);
+
+			// Normalize entry file path to match transpiled modules keys
+			const normalizedEntryPath = normalizePath(entryFilePath);
+			console.log("Normalized entry path:", normalizedEntryPath);
+
+			// In multi-file mode, we need to load the entry module using our module system
+			// We'll create a wrapper function that loads the entry file
+			executeCodeFunc = () => {
+				// Create the require function for the entry file
+				const entryRequire = createRequire(normalizedEntryPath);
+
+				// Load the entry file (this will trigger the module loading chain)
+				entryRequire(normalizedEntryPath);
+			};
+		} else {
+			// Single file mode - execute code directly
+			console.log("Single file mode - executing code directly");
+
+			// Process TypeScript if needed
+			if (language === "typescript") {
+				console.log("检测到TypeScript代码，开始处理...");
+				executableCode = await transpileTypeScript(code);
+				console.log("转译后代码前100字符:", executableCode?.substring(0, 100));
+			} else {
+				executableCode = code;
+			}
+
+			instrumentedCode = `try { ${executableCode} } catch (error) { throw error; }`;
+
+			// 创建函数来执行代码
+			executeCodeFunc = new Function(
+				...Object.keys(instrumentedGlobals),
+				instrumentedCode,
+			);
+		}
 
 		const startTime = performance.now();
-		console.log("开始执行代码，代码长度:", executableCode.length);
+		console.log("开始执行代码");
 
 		// 添加执行超时保护，但保留已收集的输出
 		let executionCompleted = false;
@@ -1096,7 +1512,13 @@ self.onmessage = async (e) => {
 
 		try {
 			// 执行代码
-			executeCode(...Object.values(instrumentedGlobals));
+			if (allFiles && entryFilePath) {
+				// Multi-file mode: call the wrapper function directly
+				executeCodeFunc();
+			} else {
+				// Single-file mode: call with instrumentedGlobals
+				executeCodeFunc(...Object.values(instrumentedGlobals));
+			}
 			executionCompleted = true;
 			clearTimeout(executionTimeout);
 
