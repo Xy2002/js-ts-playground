@@ -7,6 +7,7 @@ import {
 	Settings,
 	Square,
 	Trash2,
+	TreesIcon,
 } from "lucide-react";
 import type * as monaco from "monaco-editor";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -16,9 +17,11 @@ import {
 	Panel,
 	Separator as ResizableSeparator,
 } from "react-resizable-panels";
+import { BinaryTreeVisualizer } from "@/components/BinaryTreeVisualizer";
 import CodeEditor from "@/components/CodeEditor";
 import ComplexityVisualization from "@/components/ComplexityVisualization";
 import FileExplorer from "@/components/FileExplorer";
+import { FloatingPanel } from "@/components/FloatingPanel";
 import LanguageSwitch from "@/components/LanguageSwitch";
 import OutputDisplay from "@/components/OutputDisplay";
 import PredefinedFunctions from "@/components/PredefinedFunctions";
@@ -78,6 +81,7 @@ export default function Home() {
 	// 文件浏览器状态
 	const [isFileExplorerOpen, setIsFileExplorerOpen] = useState(true);
 	const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+	const [isBinaryTreePanelOpen, setIsBinaryTreePanelOpen] = useState(false);
 
 	// Problems 状态
 	const [markers, setMarkers] = useState<monaco.editor.IMarker[]>([]);
@@ -612,6 +616,15 @@ export default function Home() {
 								{t("common.settings")}
 							</span>
 						</Button>
+						<Button
+							variant="ghost"
+							size="sm"
+							onClick={() => setIsBinaryTreePanelOpen(true)}
+							className="text-muted-foreground hover:text-foreground hover:bg-muted"
+							title={t("binaryTree.toolTip")}
+						>
+							<TreesIcon className="w-4 h-4" />
+						</Button>
 						<ThemeSwitcher />
 						<LanguageSwitch />
 						<a
@@ -798,6 +811,17 @@ export default function Home() {
 						</Panel>
 					</Group>
 				</div>
+
+				<FloatingPanel
+					title={t("binaryTree.title")}
+					isOpen={isBinaryTreePanelOpen}
+					onClose={() => setIsBinaryTreePanelOpen(false)}
+					defaultPosition={{ x: window.innerWidth - 450, y: 80 }}
+					width={420}
+					height={450}
+				>
+					<BinaryTreeVisualizer />
+				</FloatingPanel>
 
 				<SettingsDialog
 					isOpen={isSettingsOpen}

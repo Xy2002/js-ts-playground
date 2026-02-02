@@ -200,5 +200,13 @@
 		"expect": {
 			"description": "断言函数，支持多种匹配器（toBe, toEqual, toContain等）"
 		}
+	},
+	"binaryTree": {
+		"title": "二叉树可视化",
+		"inputPlaceholder": "[1, 2, 3, null, 4]",
+		"visualize": "可视化",
+		"placeholder": "输入数组来可视化",
+		"invalidInput": "输入格式无效。示例：[1, 2, null, 3]",
+		"toolTip": "二叉树工具"
 	}
 }

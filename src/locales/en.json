@@ -143,5 +143,13 @@
 		"expect": {
 			"description": "Assertion function with matchers (toBe, toEqual, toContain, etc.)"
 		}
+	},
+	"binaryTree": {
+		"title": "Binary Tree Visualizer",
+		"inputPlaceholder": "[1, 2, 3, null, 4]",
+		"visualize": "Visualize",
+		"placeholder": "Enter an array to visualize",
+		"invalidInput": "Invalid input format. Example: [1, 2, null, 3]",
+		"toolTip": "Binary Tree Tool"
 	}
 }
