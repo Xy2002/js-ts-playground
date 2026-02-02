@@ -168,10 +168,11 @@ export class MonacoModelService {
 		}
 
 		// Add new lib and track it
-		const disposable = this.monaco.languages.typescript.typescriptDefaults.addExtraLib(
-			content,
-			filePath,
-		);
+		const disposable =
+			this.monaco.languages.typescript.typescriptDefaults.addExtraLib(
+				content,
+				filePath,
+			);
 
 		this.extraLibDisposables.set(filePath, disposable);
 		return disposable;

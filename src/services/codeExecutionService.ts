@@ -95,7 +95,10 @@ export class CodeExecutionService {
 	async executeCode(
 		code: string,
 		language: "javascript" | "typescript",
-		allFiles?: Record<string, { content: string; language: string; path: string }>,
+		allFiles?: Record<
+			string,
+			{ content: string; language: string; path: string }
+		>,
 		entryFilePath?: string,
 	): Promise<ExecutionResult> {
 		if (!this.worker) {
@@ -242,10 +245,18 @@ export const codeExecutionService = new CodeExecutionService();
 export const executeCode = (
 	code: string,
 	language: "javascript" | "typescript",
-	allFiles?: Record<string, { content: string; language: string; path: string }>,
+	allFiles?: Record<
+		string,
+		{ content: string; language: string; path: string }
+	>,
 	entryFilePath?: string,
 ): Promise<ExecutionResult> => {
-	return codeExecutionService.executeCode(code, language, allFiles, entryFilePath);
+	return codeExecutionService.executeCode(
+		code,
+		language,
+		allFiles,
+		entryFilePath,
+	);
 };
 
 export const stopExecution = (): void => {
