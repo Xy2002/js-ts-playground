@@ -208,5 +208,17 @@
 		"placeholder": "输入数组来可视化",
 		"invalidInput": "输入格式无效。示例：[1, 2, null, 3]",
 		"toolTip": "二叉树工具"
+	},
+	"diffEditor": {
+		"title": "差异编辑器",
+		"toolTip": "对比代码差异",
+		"original": "原始",
+		"modified": "修改后",
+		"language": "语言",
+		"compare": "对比",
+		"back": "返回",
+		"reset": "重置",
+		"pasteOriginal": "在此粘贴原始代码...",
+		"pasteModified": "在此粘贴修改后的代码..."
 	}
 }

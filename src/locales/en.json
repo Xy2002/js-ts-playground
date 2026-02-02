@@ -151,5 +151,17 @@
 		"placeholder": "Enter an array to visualize",
 		"invalidInput": "Invalid input format. Example: [1, 2, null, 3]",
 		"toolTip": "Binary Tree Tool"
+	},
+	"diffEditor": {
+		"title": "Diff Editor",
+		"toolTip": "Compare code differences",
+		"original": "Original",
+		"modified": "Modified",
+		"language": "Language",
+		"compare": "Compare",
+		"back": "Back",
+		"reset": "Reset",
+		"pasteOriginal": "Paste original code here...",
+		"pasteModified": "Paste modified code here..."
 	}
 }

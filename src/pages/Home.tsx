@@ -1,5 +1,6 @@
 import {
 	Code2,
+	FileDiff,
 	Github,
 	Play,
 	RefreshCw,
@@ -20,6 +21,7 @@ import {
 import { BinaryTreeVisualizer } from "@/components/BinaryTreeVisualizer";
 import CodeEditor from "@/components/CodeEditor";
 import ComplexityVisualization from "@/components/ComplexityVisualization";
+import { DiffEditorPanel } from "@/components/DiffEditorPanel";
 import FileExplorer from "@/components/FileExplorer";
 import { FloatingPanel } from "@/components/FloatingPanel";
 import LanguageSwitch from "@/components/LanguageSwitch";
@@ -82,6 +84,7 @@ export default function Home() {
 	const [isFileExplorerOpen, setIsFileExplorerOpen] = useState(true);
 	const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 	const [isBinaryTreePanelOpen, setIsBinaryTreePanelOpen] = useState(false);
+	const [isDiffEditorPanelOpen, setIsDiffEditorPanelOpen] = useState(false);
 
 	// Problems 状态
 	const [markers, setMarkers] = useState<monaco.editor.IMarker[]>([]);
@@ -625,6 +628,15 @@ export default function Home() {
 						>
 							<TreesIcon className="w-4 h-4" />
 						</Button>
+						<Button
+							variant="ghost"
+							size="sm"
+							onClick={() => setIsDiffEditorPanelOpen(true)}
+							className="text-muted-foreground hover:text-foreground hover:bg-muted"
+							title={t("diffEditor.toolTip")}
+						>
+							<FileDiff className="w-4 h-4" />
+						</Button>
 						<ThemeSwitcher />
 						<LanguageSwitch />
 						<a
@@ -821,6 +833,17 @@ export default function Home() {
 					height={450}
 				>
 					<BinaryTreeVisualizer />
+				</FloatingPanel>
+
+				<FloatingPanel
+					title={t("diffEditor.title")}
+					isOpen={isDiffEditorPanelOpen}
+					onClose={() => setIsDiffEditorPanelOpen(false)}
+					defaultPosition={{ x: 100, y: 80 }}
+					width={800}
+					height={500}
+				>
+					<DiffEditorPanel />
 				</FloatingPanel>
 
 				<SettingsDialog
