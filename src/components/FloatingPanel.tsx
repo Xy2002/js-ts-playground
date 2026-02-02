@@ -110,15 +110,13 @@ export function FloatingPanel({
 					</div>
 				</CardHeader>
 
-				{/* Content */}
-				{!isMinimized && (
-					<CardContent
-						className="p-0 overflow-auto"
-						style={{ height: height - 48 }}
-					>
-						{children}
-					</CardContent>
-				)}
+				{/* Content - use CSS hidden instead of conditional render to preserve child state */}
+				<CardContent
+					className={`p-0 overflow-auto ${isMinimized ? "hidden" : ""}`}
+					style={{ height: height - 48 }}
+				>
+					{children}
+				</CardContent>
 			</Card>
 		</div>
 	);
