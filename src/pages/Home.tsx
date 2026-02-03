@@ -7,9 +7,11 @@ import {
 	RotateCcw,
 	Settings,
 	Square,
+	StickyNote,
 	Trash2,
 	TreesIcon,
 } from "lucide-react";
+
 import type * as monaco from "monaco-editor";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -28,6 +30,7 @@ import LanguageSwitch from "@/components/LanguageSwitch";
 import OutputDisplay from "@/components/OutputDisplay";
 import PredefinedFunctions from "@/components/PredefinedFunctions";
 import ProblemsPanel from "@/components/ProblemsPanel";
+import { ScratchpadPanel } from "@/components/ScratchpadPanel";
 import { SettingsDialog } from "@/components/SettingsDialog";
 import TabManager from "@/components/TabManager";
 import TestVisualization from "@/components/TestVisualization";
@@ -85,6 +88,7 @@ export default function Home() {
 	const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 	const [isBinaryTreePanelOpen, setIsBinaryTreePanelOpen] = useState(false);
 	const [isDiffEditorPanelOpen, setIsDiffEditorPanelOpen] = useState(false);
+	const [isScratchpadOpen, setIsScratchpadOpen] = useState(false);
 
 	// Problems 状态
 	const [markers, setMarkers] = useState<monaco.editor.IMarker[]>([]);
@@ -637,6 +641,15 @@ export default function Home() {
 						>
 							<FileDiff className="w-4 h-4" />
 						</Button>
+						<Button
+							variant="ghost"
+							size="sm"
+							onClick={() => setIsScratchpadOpen(true)}
+							className="text-muted-foreground hover:text-foreground hover:bg-muted"
+							title={t("scratchpad.toolTip")}
+						>
+							<StickyNote className="w-4 h-4" />
+						</Button>
 						<ThemeSwitcher />
 						<LanguageSwitch />
 						<a
@@ -844,6 +857,17 @@ export default function Home() {
 					height={500}
 				>
 					<DiffEditorPanel />
+				</FloatingPanel>
+
+				<FloatingPanel
+					title={t("scratchpad.title")}
+					isOpen={isScratchpadOpen}
+					onClose={() => setIsScratchpadOpen(false)}
+					defaultPosition={{ x: window.innerWidth - 450, y: 550 }}
+					width={420}
+					height={300}
+				>
+					<ScratchpadPanel />
 				</FloatingPanel>
 
 				<SettingsDialog

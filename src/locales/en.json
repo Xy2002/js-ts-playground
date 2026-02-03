@@ -163,5 +163,9 @@
 		"reset": "Reset",
 		"pasteOriginal": "Paste original code here...",
 		"pasteModified": "Paste modified code here..."
+	},
+	"scratchpad": {
+		"title": "Scratchpad",
+		"toolTip": "Markdown Notes"
 	}
 }
