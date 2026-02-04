@@ -149,7 +149,7 @@ function fallbackTranspile(tsCode) {
 
 	try {
 		// 简单的类型移除，只处理最常见的情况
-		let jsCode = tsCode
+		const jsCode = tsCode
 			// 移除 type 定义: type Foo = ...
 			.replace(/type\s+\w+\s*=\s*[^;]+;/g, "")
 			// 移除 interface 定义: interface Foo { ... }
@@ -159,11 +159,11 @@ function fallbackTranspile(tsCode) {
 			// 移除访问修饰符: public, private, protected, readonly
 			.replace(/\b(public|private|protected|readonly)\s+/g, "")
 			// 移除变量类型注解: let x: number = 1 -> let x = 1
-			.replace(/:\s*[\w<>,\[\]\|&\s]+(?=\s*[=;)])/g, "")
+			.replace(/:\s*[\w<>,[\]|&\s]+(?=\s*[=;)])/g, "")
 			// 移除函数返回类型: function foo(): Type -> function foo()
-			.replace(/\):\s*[\w<>,\[\]\|&\s]+\s*\{/g, ") {")
+			.replace(/\):\s*[\w<>,[\]|&\s]+\s*\{/g, ") {")
 			// 移除as断言: x as Type -> x  (支持复杂类型)
-			.replace(/\s+as\s+[\w<>,\[\]\|&\s]+/g, "")
+			.replace(/\s+as\s+[\w<>,[\]|&\s]+/g, "")
 			// 移除 ! 非空断言: x! -> x
 			.replace(/(\w+)!/g, "$1")
 			// 清理空行
@@ -566,16 +566,77 @@ self.onmessage = async (e) => {
 			}
 		}
 
+		// normalizeTree helper to convert various tree structures to a standard format
+		function normalizeTree(
+			node,
+			visited = new Set(),
+			highlightedSet = new Set(),
+		) {
+			if (!node || typeof node !== "object") return null;
+			if (visited.has(node)) return null; // Avoid cycles
+
+			visited.add(node);
+
+			const isHighlighted = highlightedSet.has(node);
+			let value = "?";
+			const children = [];
+
+			// Try to detect value
+			if ("val" in node) value = node.val;
+			else if ("value" in node) value = node.value;
+
+			// Re-logic for binary tree specific:
+			if ("left" in node || "right" in node) {
+				// If strictly binary tree structure is detected, we prioritize it over generic children
+				const left = normalizeTree(node.left, visited, highlightedSet);
+				const right = normalizeTree(node.right, visited, highlightedSet);
+
+				// Only push children if at least one exists (non-leaf)
+				// Preserving nulls ensures proper layout (left vs right)
+				if (left !== null || right !== null) {
+					children.push(left);
+					children.push(right);
+				}
+			} else if (node.children && Array.isArray(node.children)) {
+				// Handle generic children array (e.g. standard TreeNode)
+				for (const child of node.children) {
+					const norm = normalizeTree(child, visited, highlightedSet);
+					if (norm) children.push(norm);
+				}
+			}
+
+			return {
+				value,
+				children,
+				isHighlighted,
+			};
+		}
+
 		// renderTree function to add tree to visualizations
-		function renderTree(root, description = "") {
-			if (!(root instanceof TreeNode)) {
-				console.error("renderTree: Argument must be a TreeNode instance");
+		function renderTree(root, description = "", highlightedNodes = []) {
+			if (!root || typeof root !== "object") {
+				console.error("renderTree: Argument must be an object");
+				return;
+			}
+
+			// Ensure highlightedNodes is an array to avoid "object is not iterable" error
+			const nodesToHighlight = Array.isArray(highlightedNodes)
+				? highlightedNodes
+				: highlightedNodes
+					? [highlightedNodes]
+					: [];
+
+			const highlightedSet = new Set(nodesToHighlight);
+			const normalizedData = normalizeTree(root, new Set(), highlightedSet);
+
+			if (!normalizedData) {
+				console.error("renderTree: Failed to parse tree structure");
 				return;
 			}
 
 			visualizations.push({
 				type: "tree",
-				data: root.toJSON(),
+				data: normalizedData,
 				timestamp: Date.now(),
 				label: description || `Tree Visualization ${visualizations.length + 1}`,
 			});
@@ -1020,7 +1081,7 @@ self.onmessage = async (e) => {
 					}
 				}
 
-				let resolved = fromParts.join("/");
+				const resolved = fromParts.join("/");
 
 				// Try with different extensions if no extension provided
 				if (!resolved.match(/\.(ts|js|tsx|jsx)$/)) {
@@ -1046,7 +1107,7 @@ self.onmessage = async (e) => {
 
 			// Handle absolute imports (already normalized, no leading /)
 			// These are paths like "workspace/example.ts" or bare module names
-			let resolved = to;
+			const resolved = to;
 
 			// Try with different extensions if no extension provided
 			if (!resolved.match(/\.(ts|js|tsx|jsx)$/)) {

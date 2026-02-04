@@ -14,6 +14,8 @@ interface VisualTreeNode {
 	x: number;
 	y: number;
 	level: number;
+	isHighlighted?: boolean;
+	isEmpty?: boolean;
 }
 
 export default function ClassTreeVisualization({
@@ -151,6 +153,9 @@ export default function ClassTreeVisualization({
 				x: 0,
 				y: 0,
 				level: 0,
+				isHighlighted: (data as { isHighlighted?: boolean } | null)
+					?.isHighlighted,
+				isEmpty: data === null,
 			};
 
 			if (
@@ -210,6 +215,7 @@ export default function ClassTreeVisualization({
 		const drawConnections = (node: VisualTreeNode) => {
 			if (node.children) {
 				node.children.forEach((child) => {
+					if (child.isEmpty) return; // Skip connection to empty node
 					ctx.beginPath();
 					ctx.moveTo(node.x, node.y);
 					ctx.lineTo(child.x, child.y);
@@ -225,22 +231,29 @@ export default function ClassTreeVisualization({
 		const nodeRadius = 25;
 
 		allNodes.forEach((node) => {
+			if (node.isEmpty) return; // Skip rendering empty node
+
 			// 绘制圆形背景
 			ctx.beginPath();
 			ctx.arc(node.x, node.y, nodeRadius, 0, 2 * Math.PI);
 
 			// 根节点使用不同的颜色
-			if (node.level === 0) {
-				ctx.fillStyle = "#3b82f6"; // 蓝色 - 根节点
-			} else if (node.children && node.children.length > 0) {
-				ctx.fillStyle = "#8b5cf6"; // 紫色 - 中间节点
+			if (node.isHighlighted) {
+				ctx.fillStyle = "#fbbf24"; // Amber-400
+				ctx.strokeStyle = "#b45309"; // Amber-700
 			} else {
-				ctx.fillStyle = "#22c55e"; // 绿色 - 叶子节点
+				ctx.fillStyle = "#3b82f6"; // 蓝色 - 普通节点
+				ctx.strokeStyle = "#1d4ed8";
+			}
+
+			if (!node.isHighlighted) {
+				// 保持一致的边框（如果上面没有特定设置）
+				// 上面已经设置了 strokeStyle
 			}
 
 			ctx.fill();
-			ctx.strokeStyle = "#1d4ed8";
-			ctx.lineWidth = 2;
+			// ctx.strokeStyle set above
+			ctx.lineWidth = node.isHighlighted ? 3 : 2;
 			ctx.stroke();
 
 			// 绘制值

@@ -278,16 +278,84 @@ self.onmessage = (e) => {
 			}
 		}
 
+		// normalizeTree helper to convert various tree structures to a standard format
+		function normalizeTree(
+			node: unknown,
+			visited: Set<unknown> = new Set(),
+			highlightedSet: Set<unknown> = new Set(),
+		): { value: unknown; children: unknown[]; isHighlighted: boolean } | null {
+			if (!node || typeof node !== "object") return null;
+			if (visited.has(node)) return null; // Avoid cycles
+
+			visited.add(node);
+
+			const isHighlighted = highlightedSet.has(node);
+			let value: unknown = "?";
+			const children: unknown[] = [];
+
+			// Try to detect value
+			if ("val" in node) value = (node as { val: unknown }).val;
+			else if ("value" in node) value = (node as { value: unknown }).value;
+
+			// Re-logic for binary tree specific:
+			if ("left" in node || "right" in node) {
+				// If strictly binary tree structure is detected, we prioritize it over generic children
+				children.length = 0;
+
+				const left = normalizeTree(
+					(node as { left: unknown }).left,
+					visited,
+					highlightedSet,
+				);
+				const right = normalizeTree(
+					(node as { right: unknown }).right,
+					visited,
+					highlightedSet,
+				);
+
+				// Only push children if at least one exists (non-leaf)
+				// Preserving nulls ensures proper layout (left vs right)
+				if (left !== null || right !== null) {
+					children.push(left);
+					children.push(right);
+				}
+			}
+
+			return {
+				value,
+				children,
+				isHighlighted,
+			};
+		}
+
 		// renderTree function to add tree to visualizations
-		function renderTree(root: TreeNode, description: string = ""): void {
-			if (!(root instanceof TreeNode)) {
-				console.error("renderTree: Argument must be a TreeNode instance");
+		function renderTree(
+			root: unknown,
+			description: string = "",
+			highlightedNodes: unknown[] = [],
+		): void {
+			if (!root || typeof root !== "object") {
+				console.error("renderTree: Argument must be an object");
+				return;
+			}
+
+			const nodesToHighlight = Array.isArray(highlightedNodes)
+				? highlightedNodes
+				: highlightedNodes
+					? [highlightedNodes]
+					: [];
+
+			const highlightedSet = new Set(nodesToHighlight);
+			const normalizedData = normalizeTree(root, new Set(), highlightedSet);
+
+			if (!normalizedData) {
+				console.error("renderTree: Failed to parse tree structure");
 				return;
 			}
 
 			visualizations.push({
 				type: "tree",
-				data: root.toJSON(),
+				data: normalizedData,
 				timestamp: Date.now(),
 				label: description || `Tree Visualization ${visualizations.length + 1}`,
 			});

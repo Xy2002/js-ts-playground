@@ -55,4 +55,8 @@ declare class TreeNode<T = unknown> {
 	toString(): string;
 }
 
-declare function renderTree(root: TreeNode<unknown>, description: string): void;
+declare function renderTree(
+	root: TreeNode<unknown> | unknown,
+	description?: string,
+	highlightedNodes?: unknown[],
+): void;

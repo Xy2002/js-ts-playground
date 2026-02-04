@@ -72,8 +72,12 @@ root.addChild(new TreeNode('child'));`,
 					name: "renderTree",
 					description: t("predefined.renderTree.description"),
 					signature:
-						"renderTree(root: TreeNode<any>, description: string): void",
-					example: `renderTree(root, "Binary Tree");`,
+						"renderTree(root: any, description?: string, highlightedNodes?: any[]): void",
+					example: `// Render generic tree/object
+renderTree(root, "Binary Tree");
+
+// Highlight specific values or nodes
+renderTree(root, "Highlighted", [node1, node2]);`,
 				},
 			],
 		},
