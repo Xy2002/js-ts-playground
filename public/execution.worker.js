@@ -1205,17 +1205,17 @@ self.onmessage = async (e) => {
 			);
 
 			// Transform: export function foo() {} or export async function foo() {}
-			// To: exports.foo = function() {} or exports.foo = async function() {}
+			// To: exports.foo = foo; function foo() {} (utilizing hoisting)
 			transformedCode = transformedCode.replace(
 				/export\s+(async\s+)?function\s+(\w+)/g,
-				"exports.$2 = $1function $2",
+				"exports.$2 = $2; $1function $2",
 			);
 
 			// Transform: export class Foo {}
-			// To: exports.Foo = class Foo {}
+			// To: const Foo = exports.Foo = class Foo {} (classes aren't hoisted, needs const)
 			transformedCode = transformedCode.replace(
 				/export\s+class\s+(\w+)/g,
-				"exports.$1 = class $1",
+				"const $1 = exports.$1 = class $1",
 			);
 
 			// Transform: export const foo = value; or export let foo = value;
