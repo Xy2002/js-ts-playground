@@ -87,14 +87,14 @@ export default function TabManager({
 
 	if (openTabs.length === 0) {
 		return (
-			<div className="h-10 border-b flex items-center px-4">
-				<span className="text-sm text-muted-foreground">没有打开的文件</span>
+			<div className="h-9 border-b border-border flex items-center px-4">
+				<span className="text-xs text-muted-foreground">没有打开的文件</span>
 			</div>
 		);
 	}
 
 	return (
-		<div className="h-10 border-b flex items-center relative">
+		<div className="h-9 border-b border-border flex items-center relative">
 			{/* 左滚动按钮 */}
 			{canScrollLeft && (
 				<Button

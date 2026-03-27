@@ -39,7 +39,7 @@ import TestVisualization from "@/components/TestVisualization";
 import { ThemeSwitcher } from "@/components/ThemeSwitcher";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { MotionDiv, PageTransition } from "@/components/ui/motion";
+import { PageTransition } from "@/components/ui/motion";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { executeCode, stopExecution } from "@/services/codeExecutionService";
@@ -508,59 +508,38 @@ export default function Home() {
 	return (
 		<PageTransition>
 			<div className="h-screen flex flex-col bg-background">
-				{/* Vercel-style Header */}
-				<header className="glass border-b px-4 py-3 flex items-center justify-between sticky top-0 z-50">
-					<div className="flex items-center gap-4">
-						<MotionDiv
-							className="flex items-center gap-2"
-							initial={{ opacity: 0, x: -10 }}
-							animate={{ opacity: 1, x: 0 }}
-							transition={{ duration: 0.2 }}
-						>
-							<div className="relative">
-								<Code2 className="w-5 h-5 sm:w-6 sm:h-6 text-foreground" />
-								<div className="absolute -top-1 -right-1 w-2 h-2 bg-primary rounded-full animate-pulse" />
-							</div>
-							<div className="flex flex-col">
-								<h1 className="text-base sm:text-lg font-semibold tracking-tight hidden sm:block">
-									{t("header.appName")}
-								</h1>
-								<h1 className="text-base font-semibold tracking-tight sm:hidden">
-									{t("header.appNameShort")}
-								</h1>
-							</div>
-						</MotionDiv>
+				{/* Vercel-style Header - minimal, no glass */}
+				<header className="border-b border-border bg-background px-4 py-2 flex items-center justify-between sticky top-0 z-50">
+					<div className="flex items-center gap-3">
+						<div className="flex items-center gap-2">
+							<Code2 className="w-5 h-5 text-foreground" />
+							<h1 className="text-sm font-semibold tracking-tight hidden sm:block">
+								{t("header.appName")}
+							</h1>
+							<h1 className="text-sm font-semibold tracking-tight sm:hidden">
+								{t("header.appNameShort")}
+							</h1>
+						</div>
 
-						{/* Language Badge */}
 						<Badge
 							variant="secondary"
-							className="text-xs font-mono font-medium"
+							className="text-[10px] font-mono font-medium px-1.5 py-0"
 						>
-							<span className="hidden sm:inline">
-								{getCurrentLanguage() === "typescript"
-									? t("language.typescript")
-									: t("language.javascript")}
-							</span>
-							<span className="sm:hidden">
-								{getCurrentLanguage() === "typescript"
-									? t("language.ts")
-									: t("language.js")}
-							</span>
+							{getCurrentLanguage() === "typescript"
+								? t("language.ts")
+								: t("language.js")}
 						</Badge>
 					</div>
 
 					{/* Action Buttons */}
-					<div className="flex items-center gap-1 sm:gap-2">
+					<div className="flex items-center gap-0.5">
 						<Button
 							variant="ghost"
 							size="sm"
 							onClick={handleClearOutput}
-							className="text-muted-foreground hover:text-foreground hover:bg-muted"
+							className="text-muted-foreground"
 						>
-							<RotateCcw className="w-4 h-4" />
-							<span className="hidden sm:inline ml-1.5">
-								{t("common.clear")}
-							</span>
+							<RotateCcw className="w-3.5 h-3.5" />
 						</Button>
 
 						{/* Clear All State Button */}
@@ -573,7 +552,7 @@ export default function Home() {
 								onMouseLeave={handleLongPressClearEnd}
 								onTouchStart={handleLongPressClearStart}
 								onTouchEnd={handleLongPressClearEnd}
-								className="relative overflow-hidden text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+								className="relative overflow-hidden text-muted-foreground hover:text-destructive"
 								title={t("header.clearAllTooltip")}
 							>
 								{isLongPressingClear && (
@@ -586,11 +565,8 @@ export default function Home() {
 								)}
 								<div className="relative z-10 flex items-center">
 									<Trash2
-										className={`w-4 h-4 ${isLongPressingClear ? "animate-pulse" : ""}`}
+										className={`w-3.5 h-3.5 ${isLongPressingClear ? "animate-pulse" : ""}`}
 									/>
-									<span className="hidden sm:inline ml-1.5">
-										{t("header.clearAll")}
-									</span>
 								</div>
 							</Button>
 						</div>
@@ -605,7 +581,7 @@ export default function Home() {
 								onMouseLeave={handleLongPressEnd}
 								onTouchStart={handleLongPressStart}
 								onTouchEnd={handleLongPressEnd}
-								className="relative overflow-hidden text-muted-foreground hover:text-warning hover:bg-warning/10"
+								className="relative overflow-hidden text-muted-foreground hover:text-warning"
 							>
 								{isLongPressing && (
 									<div className="absolute inset-0 flex items-center px-2">
@@ -614,11 +590,8 @@ export default function Home() {
 								)}
 								<div className="relative z-10 flex items-center">
 									<RefreshCw
-										className={`w-4 h-4 ${isLongPressing ? "animate-spin" : ""}`}
+										className={`w-3.5 h-3.5 ${isLongPressing ? "animate-spin" : ""}`}
 									/>
-									<span className="hidden sm:inline ml-1.5">
-										{t("common.reset")}
-									</span>
 								</div>
 							</Button>
 						</div>
@@ -629,63 +602,57 @@ export default function Home() {
 								variant="destructive"
 								size="sm"
 								onClick={handleStopExecution}
-								className="min-w-[80px] sm:min-w-[90px]"
 							>
-								<Square className="w-4 h-4" />
-								<span className="hidden sm:inline ml-1.5">
-									{t("common.stop")}
-								</span>
+								<Square className="w-3.5 h-3.5" />
 							</Button>
 						) : (
 							<Button
 								size="sm"
 								onClick={handleRunCode}
-								className="min-w-[80px] sm:min-w-[90px]"
 							>
-								<Play className="w-4 h-4" />
-								<span className="hidden sm:inline ml-1.5">
+								<Play className="w-3.5 h-3.5" />
+								<span className="hidden sm:inline ml-1 text-xs">
 									{t("common.run")}
 								</span>
 							</Button>
 						)}
 
+						<div className="w-px h-4 bg-border/50 mx-1" />
+
 						<Button
 							variant="ghost"
 							size="sm"
 							onClick={() => setIsSettingsOpen(true)}
-							className="text-muted-foreground hover:text-foreground hover:bg-muted"
+							className="text-muted-foreground"
 						>
-							<Settings className="w-4 h-4" />
-							<span className="hidden sm:inline ml-1.5">
-								{t("common.settings")}
-							</span>
+							<Settings className="w-3.5 h-3.5" />
 						</Button>
 						<Button
 							variant="ghost"
 							size="sm"
 							onClick={() => setIsBinaryTreePanelOpen(true)}
-							className="text-muted-foreground hover:text-foreground hover:bg-muted"
+							className="text-muted-foreground"
 							title={t("binaryTree.toolTip")}
 						>
-							<TreesIcon className="w-4 h-4" />
+							<TreesIcon className="w-3.5 h-3.5" />
 						</Button>
 						<Button
 							variant="ghost"
 							size="sm"
 							onClick={() => setIsDiffEditorPanelOpen(true)}
-							className="text-muted-foreground hover:text-foreground hover:bg-muted"
+							className="text-muted-foreground"
 							title={t("diffEditor.toolTip")}
 						>
-							<FileDiff className="w-4 h-4" />
+							<FileDiff className="w-3.5 h-3.5" />
 						</Button>
 						<Button
 							variant="ghost"
 							size="sm"
 							onClick={() => setIsScratchpadOpen(true)}
-							className="text-muted-foreground hover:text-foreground hover:bg-muted"
+							className="text-muted-foreground"
 							title={t("scratchpad.toolTip")}
 						>
-							<StickyNote className="w-4 h-4" />
+							<StickyNote className="w-3.5 h-3.5" />
 						</Button>
 						<ThemeSwitcher />
 						<LanguageSwitch />
@@ -693,10 +660,10 @@ export default function Home() {
 							href="https://github.com/Xy2002/js-ts-playground"
 							target="_blank"
 							rel="noopener noreferrer"
-							className="text-muted-foreground hover:text-foreground hover:bg-muted rounded-md p-2 transition-colors"
+							className="text-muted-foreground hover:text-foreground rounded-sm p-1.5 transition-colors"
 							title="GitHub"
 						>
-							<Github className="w-4 h-4" />
+							<Github className="w-3.5 h-3.5" />
 						</a>
 					</div>
 				</header>
@@ -718,7 +685,7 @@ export default function Home() {
 							/>
 						</Panel>
 
-						<ResizableSeparator className="bg-border hover:bg-primary/50 transition-colors" />
+						<ResizableSeparator className="bg-border hover:bg-foreground/20 transition-colors" />
 
 						{/* Editor and Output Area */}
 						<Panel defaultSize="80%" minSize="30%">
@@ -730,12 +697,7 @@ export default function Home() {
 										<TabManager />
 
 										{/* Code Editor */}
-										<div className="flex-1 flex flex-col min-h-0 border-b">
-											<div className="bg-muted/50 px-4 py-2 border-b">
-												<h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-													{t("codeEditor.title")}
-												</h2>
-											</div>
+										<div className="flex-1 flex flex-col min-h-0">
 											<div className="flex-1 min-h-0">
 												{openTabs.length > 0 ? (
 													<CodeEditor
@@ -758,12 +720,9 @@ export default function Home() {
 												) : (
 													<div className="h-full flex items-center justify-center bg-muted/30">
 														<div className="text-center text-muted-foreground">
-															<Code2 className="w-12 h-12 mx-auto mb-4 opacity-30" />
-															<p className="text-sm font-medium mb-1">
-																{t("codeEditor.noOpenFiles")}
-															</p>
+															<Code2 className="w-10 h-10 mx-auto mb-3 opacity-20" />
 															<p className="text-xs">
-																{t("codeEditor.noOpenFilesDesc")}
+																{t("codeEditor.noOpenFiles")}
 															</p>
 														</div>
 													</div>
@@ -773,18 +732,18 @@ export default function Home() {
 									</div>
 								</Panel>
 
-								<ResizableSeparator className="bg-border hover:bg-primary/50 transition-colors" />
+								<ResizableSeparator className="bg-border hover:bg-foreground/20 transition-colors" />
 
 								{/* Output Panel */}
 								<Panel defaultSize="40%" minSize="20%" maxSize="90%">
-									<div className="h-full flex flex-col bg-muted/30">
+									<div className="h-full flex flex-col">
 										<div className="flex-1 min-h-0">
 											<Tabs
 												defaultValue="output"
 												className="h-full flex flex-col"
 											>
-												<div className="bg-muted/50 px-4 py-2 border-b">
-													<TabsList className="w-full justify-start">
+												<div className="px-4 py-1.5 border-b border-border">
+													<TabsList className="w-full justify-start bg-transparent h-auto p-0 gap-0">
 														<TabsTrigger value="output" className="gap-2">
 															{t("output.title")}
 														</TabsTrigger>

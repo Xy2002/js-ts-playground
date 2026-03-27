@@ -44,12 +44,6 @@ export const staggerContainer: Variants = {
 };
 
 // Common animation props
-const defaultTransition = {
-	type: "spring" as const,
-	damping: 25,
-	stiffness: 200,
-};
-
 const easeOutTransition = {
 	duration: 0.2,
 	ease: [0.16, 1, 0.3, 1] as const,
@@ -75,7 +69,7 @@ export const MotionDiv = forwardRef<HTMLDivElement, HTMLMotionProps<"div">>(
 MotionDiv.displayName = "MotionDiv";
 
 /**
- * MotionCard - Card component with refined hover animation
+ * MotionCard - Card component with minimal hover animation
  */
 export const MotionCard = forwardRef<HTMLDivElement, HTMLMotionProps<"div">>(
 	(props, ref) => {
@@ -84,10 +78,9 @@ export const MotionCard = forwardRef<HTMLDivElement, HTMLMotionProps<"div">>(
 				ref={ref}
 				initial="hidden"
 				animate="visible"
-				whileHover={{ y: -1 }}
+				whileHover={{ y: 0 }}
 				variants={scaleInVariants}
-				transition={defaultTransition}
-				className={`card-hover ${props.className || ""}`}
+				transition={easeOutTransition}
 				{...props}
 			/>
 		);
@@ -106,8 +99,8 @@ export const MotionButton = forwardRef<
 		<motion.button
 			ref={ref}
 			whileTap={{ scale: 0.98 }}
-			whileHover={{ scale: 1.02 }}
-			transition={defaultTransition}
+			whileHover={{ scale: 1 }}
+			transition={easeOutTransition}
 			className={`press-scale ${props.className || ""}`}
 			{...props}
 		/>

@@ -25,55 +25,58 @@
 	font-variant-ligatures: common-ligatures;
 }
 
-/* Vercel-inspired Design Tokens */
+/* Vercel Geist Design Tokens */
 @layer base {
 	:root {
-		/* Neutral palette with sophisticated blacks and whites */
+		/* Vercel gray scale */
 		--background: 0 0% 100%;
-		--foreground: 0 0% 3.9%;
+		--foreground: 0 0% 9%;
 		--card: 0 0% 100%;
-		--card-foreground: 0 0% 3.9%;
+		--card-foreground: 0 0% 9%;
 		--popover: 0 0% 100%;
-		--popover-foreground: 0 0% 3.9%;
+		--popover-foreground: 0 0% 9%;
 
-		/* Primary - near-black for strong contrast */
-		--primary: 0 0% 5%;
+		/* Primary - pure black */
+		--primary: 0 0% 0%;
 		--primary-foreground: 0 0% 100%;
 
-		/* Secondary - refined grays */
-		--secondary: 0 0% 96%;
+		/* Secondary - surface tones */
+		--secondary: 0 0% 96.1%;
 		--secondary-foreground: 0 0% 9%;
 
 		/* Muted - subtle backgrounds */
-		--muted: 0 0% 96%;
-		--muted-foreground: 0 0% 45%;
+		--muted: 0 0% 96.1%;
+		--muted-foreground: 0 0% 45.1%;
 
-		/* Accent - light highlights */
-		--accent: 0 0% 96%;
+		/* Accent - hover/active */
+		--accent: 0 0% 96.1%;
 		--accent-foreground: 0 0% 9%;
 
-		/* Destructive - refined red */
-		--destructive: 0 72% 51%;
-		--destructive-foreground: 0 0% 98%;
+		/* Destructive */
+		--destructive: 0 84% 60%;
+		--destructive-foreground: 0 0% 100%;
 
-		/* Warning - warm amber */
+		/* Warning */
 		--warning: 38 92% 50%;
-		--warning-foreground: 0 0% 98%;
+		--warning-foreground: 0 0% 100%;
 
-		/* Borders - subtle gray */
-		--border: 0 0% 90%;
-		--input: 0 0% 90%;
-		--ring: 0 0% 5%;
+		/* Borders - subtle but visible */
+		--border: 0 0% 87%;
+		--input: 0 0% 87%;
+		--ring: 0 0% 0%;
 
-		/* Chart colors - muted palette */
+		/* Chart colors */
 		--chart-1: 0 0% 40%;
 		--chart-2: 0 0% 60%;
 		--chart-3: 0 0% 30%;
 		--chart-4: 0 0% 50%;
 		--chart-5: 0 0% 70%;
 
-		/* Border radius - consistent, refined */
-		--radius: 0.375rem;
+		/* Vercel accent blue */
+		--vercel-blue: 213 100% 50%;
+
+		/* Border radius - sharp, 4px */
+		--radius: 0.25rem;
 
 		/* Animation timing */
 		--ease-out: cubic-bezier(0.16, 1, 0.3, 1);
@@ -81,34 +84,34 @@
 	}
 
 	.dark {
-		--background: 0 0% 5%;
+		--background: 0 0% 0%;
 		--foreground: 0 0% 98%;
-		--card: 0 0% 6%;
+		--card: 0 0% 3.9%;
 		--card-foreground: 0 0% 98%;
-		--popover: 0 0% 6%;
+		--popover: 0 0% 3.9%;
 		--popover-foreground: 0 0% 98%;
 
 		--primary: 0 0% 100%;
-		--primary-foreground: 0 0% 9%;
+		--primary-foreground: 0 0% 0%;
 
-		--secondary: 0 0% 14%;
+		--secondary: 0 0% 14.9%;
 		--secondary-foreground: 0 0% 98%;
 
-		--muted: 0 0% 14%;
-		--muted-foreground: 0 0% 60%;
+		--muted: 0 0% 14.9%;
+		--muted-foreground: 0 0% 63.9%;
 
-		--accent: 0 0% 14%;
+		--accent: 0 0% 14.9%;
 		--accent-foreground: 0 0% 98%;
 
-		--destructive: 0 72% 51%;
-		--destructive-foreground: 0 0% 98%;
+		--destructive: 0 62% 50%;
+		--destructive-foreground: 0 0% 100%;
 
 		--warning: 38 92% 50%;
-		--warning-foreground: 0 0% 9%;
+		--warning-foreground: 0 0% 0%;
 
 		--border: 0 0% 18%;
 		--input: 0 0% 18%;
-		--ring: 0 0% 80%;
+		--ring: 0 0% 83.1%;
 
 		--chart-1: 0 0% 70%;
 		--chart-2: 0 0% 50%;
@@ -184,63 +187,40 @@
 
 /* Vercel-style component utilities */
 @layer components {
-	/* Subtle gradient overlays */
-	.vercel-gradient {
-		background: linear-gradient(
-			180deg,
-			hsl(var(--background)) 0%,
-			hsl(var(--muted)) 100%
-		);
-	}
-
-	/* Glass morphism effect */
+	/* Glass morphism - lightweight */
 	.glass {
-		background: hsl(var(--background) / 0.8);
-		backdrop-filter: blur(12px);
-		-webkit-backdrop-filter: blur(12px);
+		background: hsl(var(--background) / 0.85);
+		backdrop-filter: blur(16px);
+		-webkit-backdrop-filter: blur(16px);
 	}
 
-	/* Subtle border glow on hover */
+	/* Subtle border glow on hover - minimal */
 	.border-glow {
 		transition:
-			border-color 0.2s var(--ease-out),
-			box-shadow 0.2s var(--ease-out);
+			border-color 0.15s var(--ease-out),
+			box-shadow 0.15s var(--ease-out);
 	}
 
 	.border-glow:hover {
-		border-color: hsl(var(--primary) / 0.3);
-		box-shadow: 0 0 0 3px hsl(var(--primary) / 0.05);
+		border-color: hsl(var(--border));
 	}
 
-	/* Text gradient for headings */
-	.text-gradient {
-		background: linear-gradient(
-			135deg,
-			hsl(var(--foreground)) 0%,
-			hsl(var(--muted-foreground)) 100%
-		);
-		-webkit-background-clip: text;
-		-webkit-text-fill-color: transparent;
-		background-clip: text;
-	}
-
-	/* Refined card hover */
+	/* Refined card hover - very subtle */
 	.card-hover {
 		transition:
-			transform 0.2s var(--ease-out),
-			box-shadow 0.2s var(--ease-out);
+			transform 0.15s var(--ease-out),
+			box-shadow 0.15s var(--ease-out);
 	}
 
 	.card-hover:hover {
-		transform: translateY(-1px);
-		box-shadow: 0 4px 12px hsl(var(--foreground) / 0.08);
+		box-shadow: 0 1px 3px hsl(var(--foreground) / 0.04);
 	}
 
 	/* Subtle fade in animation */
 	@keyframes fade-in {
 		from {
 			opacity: 0;
-			transform: translateY(4px);
+			transform: translateY(2px);
 		}
 		to {
 			opacity: 1;
@@ -249,7 +229,7 @@
 	}
 
 	.fade-in {
-		animation: fade-in 0.3s var(--ease-out);
+		animation: fade-in 0.2s var(--ease-out);
 	}
 
 	/* Subtle scale on press */

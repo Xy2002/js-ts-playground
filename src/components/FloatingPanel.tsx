@@ -74,46 +74,46 @@ export function FloatingPanel({
 	return (
 		<div
 			ref={panelRef}
-			className="fixed z-50 shadow-2xl"
+			className="fixed z-50"
 			style={{
 				left: position.x,
 				top: position.y,
 				width: width,
 			}}
 		>
-			<Card className="overflow-hidden border border-border/50 bg-background/95 backdrop-blur-xl shadow-lg">
+			<Card className="overflow-hidden border-border bg-background shadow-lg dark:shadow-lg dark:shadow-black/20">
 				{/* Header - Draggable area */}
 				<CardHeader
-					className={`flex flex-row items-center justify-between p-3 cursor-move select-none border-b ${
+					className={`flex flex-row items-center justify-between p-2.5 cursor-move select-none border-b border-border ${
 						isDragging ? "cursor-grabbing" : ""
 					}`}
 					onMouseDown={handleMouseDown}
 				>
-					<span className="text-sm font-medium truncate">{title}</span>
-					<div className="flex items-center gap-1">
+					<span className="text-xs font-medium truncate text-muted-foreground">{title}</span>
+					<div className="flex items-center gap-0.5">
 						<Button
 							variant="ghost"
 							size="sm"
 							onClick={toggleMinimize}
-							className="h-6 w-6 p-0 hover:bg-muted"
+							className="h-5 w-5 p-0"
 						>
-							<Minus className="h-3 w-3" />
+							<Minus className="h-2.5 w-2.5" />
 						</Button>
 						<Button
 							variant="ghost"
 							size="sm"
 							onClick={onClose}
-							className="h-6 w-6 p-0 hover:bg-destructive/20 hover:text-destructive"
+							className="h-5 w-5 p-0 hover:text-destructive"
 						>
-							<X className="h-3 w-3" />
+							<X className="h-2.5 w-2.5" />
 						</Button>
 					</div>
 				</CardHeader>
 
-				{/* Content - use CSS hidden instead of conditional render to preserve child state */}
+				{/* Content */}
 				<CardContent
 					className={`p-0 overflow-auto ${isMinimized ? "hidden" : ""}`}
-					style={{ height: height - 48 }}
+					style={{ height: height - 40 }}
 				>
 					{children}
 				</CardContent>

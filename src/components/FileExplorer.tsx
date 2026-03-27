@@ -3,9 +3,7 @@ import type React from "react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
 import { usePlaygroundStore } from "@/store/usePlaygroundStore";
 import FileContextMenu from "./FileContextMenu";
 import FileSearchBox from "./FileSearchBox";
@@ -63,8 +61,8 @@ export default function FileExplorer({ isOpen, onToggle }: FileExplorerProps) {
 
 	if (!isOpen) {
 		return (
-			<div className="w-12 border-r flex flex-col">
-				<div className="p-3 border-b">
+			<div className="w-10 bg-muted/30 flex flex-col">
+				<div className="p-2 flex items-center justify-center">
 					<Button
 						variant="ghost"
 						size="sm"
@@ -72,7 +70,7 @@ export default function FileExplorer({ isOpen, onToggle }: FileExplorerProps) {
 						className="w-6 h-6 p-0"
 						title={t("fileExplorer.expand")}
 					>
-						<ChevronRight className="w-4 h-4" />
+						<ChevronRight className="w-3.5 h-3.5" />
 					</Button>
 				</div>
 			</div>
@@ -80,32 +78,28 @@ export default function FileExplorer({ isOpen, onToggle }: FileExplorerProps) {
 	}
 
 	return (
-		<Card className="flex flex-col relative rounded-none h-full">
+		<div className="flex flex-col relative h-full bg-muted/30 border-r border-border">
 			{/* Header */}
-			<CardHeader className="px-3 py-2">
-				<div className="flex items-center justify-between">
-					<div className="flex items-center space-x-2">
-						<FolderOpen className="w-4 h-4" />
-						<span className="text-sm font-medium">
-							{t("fileExplorer.title")}
-						</span>
-					</div>
-					<Button
-						variant="ghost"
-						size="sm"
-						onClick={onToggle}
-						className="w-6 h-6 p-0"
-						title={t("fileExplorer.collapse")}
-					>
-						<ChevronLeft className="w-4 h-4" />
-					</Button>
+			<div className="px-3 py-2 flex items-center justify-between">
+				<div className="flex items-center gap-2">
+					<FolderOpen className="w-3.5 h-3.5 text-muted-foreground" />
+					<span className="text-xs font-medium text-muted-foreground">
+						{t("fileExplorer.title")}
+					</span>
 				</div>
-			</CardHeader>
-
-			<Separator />
+				<Button
+					variant="ghost"
+					size="sm"
+					onClick={onToggle}
+					className="w-6 h-6 p-0"
+					title={t("fileExplorer.collapse")}
+				>
+					<ChevronLeft className="w-3.5 h-3.5" />
+				</Button>
+			</div>
 
 			{/* Search Box */}
-			<div className="p-3">
+			<div className="px-2 pb-2">
 				<FileSearchBox
 					value={searchQuery}
 					onChange={setSearchQuery}
@@ -113,10 +107,8 @@ export default function FileExplorer({ isOpen, onToggle }: FileExplorerProps) {
 				/>
 			</div>
 
-			<Separator />
-
 			{/* File Tree */}
-			<CardContent className="flex-1 p-0">
+			<div className="flex-1 min-h-0">
 				<ScrollArea className="h-full">
 					<FileTree
 						files={files}
@@ -129,7 +121,7 @@ export default function FileExplorer({ isOpen, onToggle }: FileExplorerProps) {
 						onContextMenu={handleContextMenu}
 					/>
 				</ScrollArea>
-			</CardContent>
+			</div>
 
 			{/* Context Menu */}
 			<FileContextMenu
@@ -139,6 +131,6 @@ export default function FileExplorer({ isOpen, onToggle }: FileExplorerProps) {
 				targetType={contextMenu.itemType}
 				onClose={handleCloseContextMenu}
 			/>
-		</Card>
+		</div>
 	);
 }
