@@ -40,6 +40,8 @@ export interface TraceStep {
 	returnValue?: string;
 	depth: number;
 	line: number;
+	startCol: number;
+	endCol: number;
 	timestamp: number;
 }
 

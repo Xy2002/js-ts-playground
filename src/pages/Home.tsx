@@ -103,18 +103,26 @@ export default function Home() {
 	const editorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
 
 	// Trace 高亮状态
-	const [highlightLine, setHighlightLine] = useState<number | null>(null);
+	const [highlightRange, setHighlightRange] = useState<{
+		line: number;
+		startCol: number;
+		endCol: number;
+	} | null>(null);
 
 	// 同步 trace 步骤到编辑器高亮
 	useEffect(() => {
 		const trace = executionResult?.trace;
 		if (!trace || trace.steps.length === 0) {
-			setHighlightLine(null);
+			setHighlightRange(null);
 			return;
 		}
 		const step = trace.steps[traceStepIndex];
 		if (step) {
-			setHighlightLine(step.line);
+			setHighlightRange({
+				line: step.line,
+				startCol: step.startCol,
+				endCol: step.endCol,
+			});
 		}
 	}, [traceStepIndex, executionResult?.trace]);
 
@@ -147,7 +155,7 @@ export default function Home() {
 		clearOutput();
 		setTraceStepIndex(0);
 		setTraceIsPlaying(false);
-		setHighlightLine(null);
+		setHighlightRange(null);
 		try {
 			const codeToRun = getCurrentCode();
 			const languageToUse = getCurrentLanguage();
@@ -745,7 +753,7 @@ export default function Home() {
 														onEditorMounted={(editor) => {
 															editorRef.current = editor;
 														}}
-														highlightLine={highlightLine}
+														highlightRange={highlightRange}
 													/>
 												) : (
 													<div className="h-full flex items-center justify-center bg-muted/30">

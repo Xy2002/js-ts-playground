@@ -23,6 +23,12 @@ import {
 import { usePlaygroundStore } from "@/store/usePlaygroundStore";
 import { monacoModelService } from "@/services/monacoModelService";
 
+interface HighlightRange {
+	line: number;
+	startCol: number;
+	endCol: number;
+}
+
 interface CodeEditorProps {
 	value: string;
 	onChange: (value: string | undefined) => void;
@@ -33,7 +39,7 @@ interface CodeEditorProps {
 	filePath: string;
 	onMarkersChange?: (markers: monaco.editor.IMarker[]) => void;
 	onEditorMounted?: (editor: monaco.editor.IStandaloneCodeEditor) => void;
-	highlightLine?: number | null;
+	highlightRange?: HighlightRange | null;
 }
 
 export default function CodeEditor({
@@ -46,7 +52,7 @@ export default function CodeEditor({
 	filePath,
 	onMarkersChange,
 	onEditorMounted,
-	highlightLine,
+	highlightRange,
 }: CodeEditorProps) {
 	const { t } = useTranslation();
 	const { llmSettings, toggleLlmEnabled, files, fileContents } =
@@ -54,7 +60,8 @@ export default function CodeEditor({
 	const editorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
 	const monacoRef = useRef<typeof monaco | null>(null);
 	const completionRegistrationRef = useRef<CompletionRegistration | null>(null);
-	const decorationCollectionRef = useRef<monaco.editor.IEditorDecorationsCollection | null>(null);
+	const decorationCollectionRef =
+		useRef<monaco.editor.IEditorDecorationsCollection | null>(null);
 	const [isEditorReady, setIsEditorReady] = useState(false);
 
 	// 计算Inactive的原因
@@ -98,13 +105,13 @@ export default function CodeEditor({
 		};
 	}, []);
 
-	// Trace line highlighting
+	// Trace range highlighting (call-site based)
 	useEffect(() => {
 		const editor = editorRef.current;
 		const monacoInstance = monacoRef.current;
 		if (!editor || !monacoInstance || !isEditorReady) return;
 
-		if (highlightLine === null || highlightLine === undefined) {
+		if (!highlightRange) {
 			if (decorationCollectionRef.current) {
 				decorationCollectionRef.current.clear();
 			}
@@ -115,13 +122,15 @@ export default function CodeEditor({
 			decorationCollectionRef.current = editor.createDecorationsCollection([]);
 		}
 
+		const { line, startCol, endCol } = highlightRange;
+
 		decorationCollectionRef.current.set([
 			{
-				range: new monacoInstance.Range(highlightLine, 1, highlightLine, 1),
+				range: new monacoInstance.Range(line, startCol, line, endCol),
 				options: {
-					isWholeLine: true,
-					className: "trace-highlight-line",
-					linesDecorationsClassName: "trace-highlight-line-decoration",
+					isWholeLine: false,
+					className: "trace-highlight-range",
+					linesDecorationsClassName: "trace-highlight-range-decoration",
 					overviewRuler: {
 						color: "rgba(245, 158, 11, 0.6)",
 						position: monacoInstance.editor.OverviewRulerLane.Full,
@@ -130,8 +139,8 @@ export default function CodeEditor({
 			},
 		]);
 
-		editor.revealLineInCenter(highlightLine);
-	}, [highlightLine, isEditorReady]);
+		editor.revealLineInCenter(line);
+	}, [highlightRange, isEditorReady]);
 
 	// Dynamic registration logic based on settings
 	useEffect(() => {

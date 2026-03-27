@@ -1026,6 +1026,45 @@ self.onmessage = async (e) => {
 			return result;
 		}
 
+		// Call-site tracing helper: wraps a function call with enter/exit recording
+		function __traceCall(line, startCol, endCol, funcName, args, callFn) {
+			if (__traceContext.steps.length < __traceContext.maxSteps) {
+				__traceContext.steps.push({
+					stepIndex: __traceContext.steps.length,
+					functionName: funcName,
+					action: "enter",
+					args: __traceArgs(args),
+					depth: __traceContext.state.depth,
+					line: line,
+					startCol: startCol,
+					endCol: endCol,
+					timestamp: performance.now() - __traceContext.state.startTime,
+				});
+			}
+			__traceContext.state.depth++;
+			var __traceResult;
+			try {
+				__traceResult = callFn();
+			} finally {
+				__traceContext.state.depth--;
+				if (__traceContext.steps.length < __traceContext.maxSteps) {
+					__traceContext.steps.push({
+						stepIndex: __traceContext.steps.length,
+						functionName: funcName,
+						action: "exit",
+						args: __traceArgs(args),
+						returnValue: safeStringify(__traceResult),
+						depth: __traceContext.state.depth,
+						line: line,
+						startCol: startCol,
+						endCol: endCol,
+						timestamp: performance.now() - __traceContext.state.startTime,
+					});
+				}
+			}
+			return __traceResult;
+		}
+
 		// 检测递归函数声明（function name(...) { ... }）
 		function detectRecursiveFunctions(code) {
 			const recursiveFunctions = [];
@@ -1063,7 +1102,8 @@ self.onmessage = async (e) => {
 						startLine: funcDeclLine,
 						funcDeclStart: funcStart,
 						funcNameStart: funcStart + match[0].indexOf(funcName),
-						funcNameEnd: funcStart + match[0].indexOf(funcName) + funcName.length,
+						funcNameEnd:
+							funcStart + match[0].indexOf(funcName) + funcName.length,
 						bodyStart,
 						bodyEnd,
 					});
@@ -1074,71 +1114,142 @@ self.onmessage = async (e) => {
 			return recursiveFunctions;
 		}
 
-		// 对检测到的递归函数进行插桩
+		// 对检测到的递归函数进行调用点插桩（call-site instrumentation）
 		function instrumentRecursiveFunctions(code) {
 			const recursiveFuncs = detectRecursiveFunctions(code);
 			if (recursiveFuncs.length === 0) return { code, hasRecursion: false };
 
+			// Pre-compute call site line/col info on the ORIGINAL code (before any modifications)
+			const precomputedCalls = {};
+			for (const func of recursiveFuncs) {
+				const callRegex = new RegExp(`\\b${func.name}\\s*\\(`, "g");
+				const calls = [];
+				let match;
+				// biome-ignore lint/suspicious/noAssignInExpressions: regex exec loop pattern
+			while ((match = callRegex.exec(code)) !== null) {
+					const nameStart = match.index;
+					const parenStart = code.indexOf("(", nameStart + func.name.length);
+					if (parenStart === -1) continue;
+
+					// Skip the function declaration itself (e.g. "function fibonacci(")
+					const before = code
+						.substring(Math.max(0, nameStart - 10), nameStart)
+						.trim();
+					if (before.endsWith("function")) continue;
+
+					// Compute line/col on original code
+					const beforeCall = code.substring(0, nameStart);
+					const line = beforeCall.split("\n").length;
+					const lastNewline = beforeCall.lastIndexOf("\n");
+					const startCol = nameStart - lastNewline;
+
+					// Find matching close paren
+					let depth = 0;
+					let endPos = parenStart;
+					for (let j = parenStart; j < code.length; j++) {
+						if (code[j] === "(") depth++;
+						else if (code[j] === ")") {
+							depth--;
+							if (depth === 0) {
+								endPos = j + 1;
+								break;
+							}
+						}
+					}
+					const endCol = endPos - lastNewline;
+					const argsStr = code.substring(parenStart + 1, endPos - 1);
+
+					calls.push({ line, startCol, endCol, argsStr });
+				}
+				precomputedCalls[func.name] = calls;
+			}
+
 			let result = code;
 
-			// 从后向前处理，避免位置偏移
+			// Phase 1: 从后向前重命名原函数 + 插入别名绑定
 			for (let i = recursiveFuncs.length - 1; i >= 0; i--) {
 				const func = recursiveFuncs[i];
 				const originalName = func.name;
 				const backupName = `__orig_${originalName}`;
 
-				// 步骤1：重命名原函数 function fibonacci -> function __orig_fibonacci
+				// 重命名原函数: function fibonacci -> function __orig_fibonacci
 				result =
 					result.substring(0, func.funcNameStart) +
 					backupName +
 					result.substring(func.funcNameEnd);
 
-				// 步骤2：在重命名的函数声明前插入包装函数
-				const wrapperCode =
-					`var ${originalName} = function ${originalName}() {\n` +
-					`  if (__traceContext.steps.length < __traceContext.maxSteps) {\n` +
-					`    __traceContext.steps.push({\n` +
-					`      stepIndex: __traceContext.steps.length,\n` +
-					`      functionName: "${originalName}",\n` +
-					`      action: "enter",\n` +
-					`      args: __traceArgs(arguments),\n` +
-					`      depth: __traceContext.state.depth,\n` +
-					`      line: ${func.startLine},\n` +
-					`      timestamp: performance.now() - __traceContext.state.startTime\n` +
-					`    });\n` +
-					`  }\n` +
-					`  __traceContext.state.depth++;\n` +
-					`  var __traceResult;\n` +
-					`  try {\n` +
-					`    __traceResult = ${backupName}.apply(this, arguments);\n` +
-					`  } finally {\n` +
-					`    __traceContext.state.depth--;\n` +
-					`    if (__traceContext.steps.length < __traceContext.maxSteps) {\n` +
-					`      __traceContext.steps.push({\n` +
-					`        stepIndex: __traceContext.steps.length,\n` +
-					`        functionName: "${originalName}",\n` +
-					`        action: "exit",\n` +
-					`        args: __traceArgs(arguments),\n` +
-					`        returnValue: __safeStringify(__traceResult),\n` +
-					`        depth: __traceContext.state.depth,\n` +
-					`        line: ${func.startLine},\n` +
-					`        timestamp: performance.now() - __traceContext.state.startTime\n` +
-					`      });\n` +
-					`    }\n` +
-					`  }\n` +
-					`  return __traceResult;\n` +
-					`};\n`;
+				// 在函数声明前插入别名绑定
+				const aliasCode = `var ${originalName} = function() { return ${backupName}.apply(this, arguments); };\n`;
+				result =
+					result.substring(0, func.funcDeclStart) +
+					aliasCode +
+					result.substring(func.funcDeclStart);
+			}
 
-				// 在 function __orig_xxx 之前插入包装函数
-				const origFuncKeywordPos = result.indexOf(
-					`function ${backupName}`,
-					func.funcDeclStart - 50 > 0 ? func.funcDeclStart - 50 : 0,
-				);
-				if (origFuncKeywordPos !== -1) {
+			// Phase 2: 找到并替换所有调用点（从后向前避免位置偏移）
+			for (let i = 0; i < recursiveFuncs.length; i++) {
+				const func = recursiveFuncs[i];
+				const originalName = func.name;
+				const backupName = `__orig_${originalName}`;
+				const precomputed = precomputedCalls[originalName];
+
+				// 在当前 result 中找到所有 originalName( 调用点
+				const callRegex = new RegExp(`\\b${originalName}\\s*\\(`, "g");
+				const callSites = [];
+				let callMatch;
+				let callIndex = 0;
+				// biome-ignore lint/suspicious/noAssignInExpressions: regex exec loop pattern
+			while ((callMatch = callRegex.exec(result)) !== null) {
+					const pos = callMatch.index;
+					const nameStart = pos;
+					const parenStart = result.indexOf("(", pos + originalName.length);
+
+					if (parenStart === -1) continue;
+
+					// 找到匹配的闭括号（处理嵌套括号）
+					let depth = 0;
+					let endPos = parenStart;
+					for (let j = parenStart; j < result.length; j++) {
+						if (result[j] === "(") depth++;
+						else if (result[j] === ")") {
+							depth--;
+							if (depth === 0) {
+								endPos = j + 1;
+								break;
+							}
+						}
+					}
+
+					// 提取参数部分
+					const argsStr = result.substring(parenStart + 1, endPos - 1);
+
+					// Use pre-computed line/col from original code
+					const lineInfo = precomputed[callIndex] || {
+						line: 0,
+						startCol: 0,
+						endCol: 0,
+					};
+
+					callSites.push({
+						nameStart,
+						parenStart,
+						endPos,
+						line: lineInfo.line,
+						startCol: lineInfo.startCol,
+						endCol: lineInfo.endCol,
+						argsStr,
+					});
+					callIndex++;
+				}
+
+				// 从后向前替换调用点
+				for (let j = callSites.length - 1; j >= 0; j--) {
+					const site = callSites[j];
+					const replacement = `(function(__tc_a){return __traceCall(${site.line},${site.startCol},${site.endCol},"${originalName}",__tc_a,function(){return ${backupName}.apply(null,__tc_a)})})([${site.argsStr}])`;
 					result =
-						result.substring(0, origFuncKeywordPos) +
-						wrapperCode +
-						result.substring(origFuncKeywordPos);
+						result.substring(0, site.nameStart) +
+						replacement +
+						result.substring(site.endPos);
 				}
 			}
 
@@ -1153,6 +1264,7 @@ self.onmessage = async (e) => {
 			__traceContext,
 			__safeStringify: safeStringify,
 			__traceArgs,
+			__traceCall,
 			Math,
 			Date,
 			JSON,
@@ -1237,7 +1349,7 @@ self.onmessage = async (e) => {
 					}
 					// If still not found, try with /index
 					for (const ext of extensions) {
-						const indexPath = resolved + "/index" + ext;
+						const indexPath = `${resolved}/index${ext}`;
 						if (allFiles && allFiles[indexPath]) {
 							return indexPath;
 						}
@@ -1264,6 +1376,8 @@ self.onmessage = async (e) => {
 
 			return resolved;
 		}
+
+		let hasRecursion = false;
 
 		// Transpile all files if multi-file mode
 		if (allFiles) {
@@ -1294,6 +1408,16 @@ self.onmessage = async (e) => {
 					transpiledContent = await transpileTypeScript(fileContent);
 				}
 
+				// Instrument recursive functions BEFORE wrapping (so line numbers are correct)
+				try {
+					const { code: instrumented, hasRecursion: found } =
+						instrumentRecursiveFunctions(transpiledContent);
+					if (found) hasRecursion = true;
+					transpiledContent = instrumented;
+				} catch (instrError) {
+					console.error("递归插桩失败，使用原始代码:", instrError.message);
+				}
+
 				// Wrap the code in a module function
 				// Replace import/export with custom module system
 				transpiledContent = wrapInModuleFunction(
@@ -1310,7 +1434,7 @@ self.onmessage = async (e) => {
 		}
 
 		// Wrap code in a module function
-		function wrapInModuleFunction(code, filePath) {
+		function wrapInModuleFunction(code, _filePath) {
 			// Transform ES6 imports/exports to require/exports calls
 			let transformedCode = code;
 
@@ -1394,8 +1518,8 @@ self.onmessage = async (e) => {
 				},
 			);
 
-		// Wrap in module function that provides exports, __require, and trace context
-			return `(function(exports, __require, __currentFilePath, __traceContext, __safeStringify, __traceArgs) {
+			// Wrap in module function that provides exports, __require, and trace context
+			return `(function(exports, __require, __currentFilePath, __traceContext, __safeStringify, __traceArgs, __traceCall) {
 ${transformedCode}
 return exports;
 })`;
@@ -1440,7 +1564,7 @@ return exports;
 						exports,
 						moduleRequire,
 						resolvedPath,
-						);
+					);
 
 					// Cache the exports
 					moduleCache[resolvedPath] = executedModule || exports;
@@ -1500,6 +1624,7 @@ return exports;
 					"__traceContext",
 					"__safeStringify",
 					"__traceArgs",
+					"__traceCall",
 					`return ${moduleFunction}`,
 				);
 
@@ -1540,10 +1665,19 @@ return exports;
 					__traceContext,
 					safeStringify,
 					__traceArgs,
+					__traceCall,
 				);
 
 				// Execute the module function
-				return actualModuleFunction(exports, requireFn, currentPath, __traceContext, safeStringify, __traceArgs);
+				return actualModuleFunction(
+					exports,
+					requireFn,
+					currentPath,
+					__traceContext,
+					safeStringify,
+					__traceArgs,
+					__traceCall,
+				);
 			} catch (error) {
 				console.error("Error executing module code:", currentPath, error);
 				throw error;
@@ -1595,6 +1729,7 @@ return exports;
 			__traceContext,
 			__safeStringify: safeStringify,
 			__traceArgs,
+			__traceCall,
 			// 重写console以在每次调用时更新检测时间
 			console: {
 				...mockConsole,
@@ -1617,17 +1752,8 @@ return exports;
 			},
 		};
 
-		let hasRecursion = false;
-
-		// 对多文件模式中的每个文件进行插桩
-		if (allFiles) {
-			for (const [filePath, content] of Object.entries(transpiledModules)) {
-				const { code: instrumented, hasRecursion: found } =
-					instrumentRecursiveFunctions(content);
-				if (found) hasRecursion = true;
-				transpiledModules[filePath] = instrumented;
-			}
-		}
+		// Note: instrumentation now runs BEFORE wrapInModuleFunction in the transpile loop above
+		// so line numbers are correct without offset
 
 		// 简化执行代码，依赖超时机制来处理死循环
 		let instrumentedCode;
@@ -1666,10 +1792,8 @@ return exports;
 
 			// 对单文件代码进行递归插桩
 			try {
-				const {
-					code: singleInstrumented,
-					hasRecursion: singleFound,
-				} = instrumentRecursiveFunctions(executableCode);
+				const { code: singleInstrumented, hasRecursion: singleFound } =
+					instrumentRecursiveFunctions(executableCode);
 				if (singleFound) hasRecursion = true;
 				executableCode = singleInstrumented;
 			} catch (instrError) {

@@ -14,7 +14,10 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import { useTranslation } from "react-i18next";
-import type { RecursiveTrace, TraceStep } from "@/services/codeExecutionService";
+import type {
+	RecursiveTrace,
+	TraceStep,
+} from "@/services/codeExecutionService";
 
 interface RecursiveTraceVisualizationProps {
 	trace: RecursiveTrace;
@@ -84,12 +87,9 @@ export default function RecursiveTraceVisualization({
 	}, [steps, currentStepIndex]);
 
 	// Get args string for display
-	const getArgsDisplay = useCallback(
-		(step: TraceStep): string => {
-			return step.args.map((arg, i) => `arg${i}: ${arg}`).join(", ");
-		},
-		[],
-	);
+	const getArgsDisplay = useCallback((step: TraceStep): string => {
+		return step.args.map((arg, i) => `arg${i}: ${arg}`).join(", ");
+	}, []);
 
 	const handlePrev = useCallback(() => {
 		onStepChange(Math.max(0, currentStepIndex - 1));
@@ -237,9 +237,7 @@ export default function RecursiveTraceVisualization({
 					<ScrollArea className="flex-1">
 						<div ref={scrollRef} className="p-2">
 							{callStack.length === 0 ? (
-								<div className="text-xs text-muted-foreground p-2">
-									-
-								</div>
+								<div className="text-xs text-muted-foreground p-2">-</div>
 							) : (
 								callStack.map((entry, index) => (
 									<div
@@ -250,9 +248,7 @@ export default function RecursiveTraceVisualization({
 										{index === callStack.length - 1 ? (
 											<span className="text-amber-500">&#9654;</span>
 										) : (
-											<span className="text-muted-foreground/40">
-												&#9654;
-											</span>
+											<span className="text-muted-foreground/40">&#9654;</span>
 										)}
 										<span
 											className={
@@ -289,14 +285,10 @@ export default function RecursiveTraceVisualization({
 								</span>
 							</div>
 							<div>
-								<span className="text-muted-foreground">
-									Action:
-								</span>{" "}
+								<span className="text-muted-foreground">Action:</span>{" "}
 								<Badge
 									variant={
-										currentStep.action === "enter"
-											? "default"
-											: "secondary"
+										currentStep.action === "enter" ? "default" : "secondary"
 									}
 									className="text-[10px] px-1.5 py-0"
 								>
@@ -331,15 +323,11 @@ export default function RecursiveTraceVisualization({
 								<span>{currentStep.depth}</span>
 							</div>
 							<div>
-								<span className="text-muted-foreground">
-									Line:
-								</span>{" "}
+								<span className="text-muted-foreground">Line:</span>{" "}
 								<span>{currentStep.line}</span>
 							</div>
 							<div>
-								<span className="text-muted-foreground">
-									Time:
-								</span>{" "}
+								<span className="text-muted-foreground">Time:</span>{" "}
 								<span>{currentStep.timestamp.toFixed(2)}ms</span>
 							</div>
 						</div>
