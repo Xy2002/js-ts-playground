@@ -311,7 +311,10 @@ export default function CodeEditor({
 			}
 
 			// Store refs for cleanup on unmount
-			markerPollTimersRef.current = { pollTimer: null, activePollInterval: null };
+			markerPollTimersRef.current = {
+				pollTimer: null,
+				activePollInterval: null,
+			};
 
 			// 高频轮询：用户正在输入，每 100ms 检查一次
 			activePollInterval = setInterval(() => {

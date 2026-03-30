@@ -606,10 +606,7 @@ export default function Home() {
 								<Square className="w-3.5 h-3.5" />
 							</Button>
 						) : (
-							<Button
-								size="sm"
-								onClick={handleRunCode}
-							>
+							<Button size="sm" onClick={handleRunCode}>
 								<Play className="w-3.5 h-3.5" />
 								<span className="hidden sm:inline ml-1 text-xs">
 									{t("common.run")}

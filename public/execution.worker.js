@@ -1126,7 +1126,7 @@ self.onmessage = async (e) => {
 				const calls = [];
 				let match;
 				// biome-ignore lint/suspicious/noAssignInExpressions: regex exec loop pattern
-			while ((match = callRegex.exec(code)) !== null) {
+				while ((match = callRegex.exec(code)) !== null) {
 					const nameStart = match.index;
 					const parenStart = code.indexOf("(", nameStart + func.name.length);
 					if (parenStart === -1) continue;
@@ -1199,7 +1199,7 @@ self.onmessage = async (e) => {
 				let callMatch;
 				let callIndex = 0;
 				// biome-ignore lint/suspicious/noAssignInExpressions: regex exec loop pattern
-			while ((callMatch = callRegex.exec(result)) !== null) {
+				while ((callMatch = callRegex.exec(result)) !== null) {
 					const pos = callMatch.index;
 					const nameStart = pos;
 					const parenStart = result.indexOf("(", pos + originalName.length);

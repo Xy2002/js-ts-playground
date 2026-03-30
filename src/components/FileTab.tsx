@@ -78,7 +78,10 @@ export default function FileTab({
 
 			{isDirty && (
 				<div className="flex-shrink-0 ml-1 mr-0.5">
-					<div className="w-1.5 h-1.5 bg-warning rounded-full" title="文件已修改" />
+					<div
+						className="w-1.5 h-1.5 bg-warning rounded-full"
+						title="文件已修改"
+					/>
 				</div>
 			)}
 

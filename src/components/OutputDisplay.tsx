@@ -74,13 +74,11 @@ export default function OutputDisplay({
 		return allOutput;
 	};
 
-	const renderOutputLine = (
-		item: {
-			type: "log" | "error";
-			content: string;
-			id: string;
-		},
-	) => {
+	const renderOutputLine = (item: {
+		type: "log" | "error";
+		content: string;
+		id: string;
+	}) => {
 		const isError = item.type === "error";
 
 		return (
@@ -204,15 +202,14 @@ export default function OutputDisplay({
 
 								{result && (
 									<>
-										{result.logs.length === 0 &&
-											result.errors.length === 0 && (
-												<div className="px-3 py-2 text-xs text-muted-foreground">
-													No output
-												</div>
-											)}
+										{result.logs.length === 0 && result.errors.length === 0 && (
+											<div className="px-3 py-2 text-xs text-muted-foreground">
+												No output
+											</div>
+										)}
 
-										{formatOutput(result.logs, result.errors).map(
-											(item) => renderOutputLine(item),
+										{formatOutput(result.logs, result.errors).map((item) =>
+											renderOutputLine(item),
 										)}
 
 										{!result.success && (

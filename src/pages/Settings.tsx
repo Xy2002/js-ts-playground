@@ -149,11 +149,23 @@ export default function Settings() {
 							</CardHeader>
 							<CardContent>
 								<div className="grid grid-cols-3 gap-2">
-									{([
-										{ value: "light" as const, icon: Sun, label: t("settings.applicationTheme.light") },
-										{ value: "dark" as const, icon: Moon, label: t("settings.applicationTheme.dark") },
-										{ value: "system" as const, icon: Monitor, label: t("settings.applicationTheme.system") },
-									]).map(({ value, icon: Icon, label }) => (
+									{[
+										{
+											value: "light" as const,
+											icon: Sun,
+											label: t("settings.applicationTheme.light"),
+										},
+										{
+											value: "dark" as const,
+											icon: Moon,
+											label: t("settings.applicationTheme.dark"),
+										},
+										{
+											value: "system" as const,
+											icon: Monitor,
+											label: t("settings.applicationTheme.system"),
+										},
+									].map(({ value, icon: Icon, label }) => (
 										<button
 											type="button"
 											key={value}

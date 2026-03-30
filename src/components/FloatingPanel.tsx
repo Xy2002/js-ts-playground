@@ -89,7 +89,9 @@ export function FloatingPanel({
 					}`}
 					onMouseDown={handleMouseDown}
 				>
-					<span className="text-xs font-medium truncate text-muted-foreground">{title}</span>
+					<span className="text-xs font-medium truncate text-muted-foreground">
+						{title}
+					</span>
 					<div className="flex items-center gap-0.5">
 						<Button
 							variant="ghost"
