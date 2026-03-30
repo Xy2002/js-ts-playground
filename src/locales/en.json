@@ -182,5 +182,15 @@
 		"truncated": "Trace was truncated at {{max}} steps",
 		"noTrace": "No recursive functions detected.",
 		"speed": "Speed"
+	},
+	"swcLoading": {
+		"title": "Loading Compiler",
+		"ready": "Compiler ready",
+		"buttonTooltip": "Please wait for the compiler to load",
+		"stepLoadModule": "Loading module",
+		"stepDownloadWasm": "Fetching WASM",
+		"stepOf": "Step {{step}}/{{total}}:",
+		"errorTitle": "Compiler failed to load",
+		"retry": "Retry"
 	}
 }

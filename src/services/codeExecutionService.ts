@@ -62,6 +62,20 @@ export interface ExecutionResult {
 	trace?: RecursiveTrace;
 }
 
+export interface SWCLoadProgress {
+	state: "loading" | "ready" | "error";
+	step: number;
+	totalSteps: number;
+	stepLabel: string;
+	loaded: number;
+	total: number | null;
+	percent: number | null;
+	error: string | null;
+	initTime: number | null;
+}
+
+type ProgressCallback = (progress: SWCLoadProgress) => void;
+
 export class CodeExecutionService {
 	private worker: Worker | null = null;
 	private isExecuting = false;
@@ -70,46 +84,158 @@ export class CodeExecutionService {
 	private swcInitTime: number | null = null;
 	private currentExecutionId: string | null = null;
 
+	private swcProgress: {
+		step: number;
+		totalSteps: number;
+		stepLabel: string;
+		loaded: number;
+		total: number | null;
+		percent: number | null;
+	} | null = null;
+	private swcLoadError: string | null = null;
+	private swcProgressCallbacks: Set<ProgressCallback> = new Set();
+
 	constructor() {
 		this.initWorker();
 	}
 
 	private initWorker() {
 		try {
+			// Reset SWC state for new worker
+			this.swcInitialized = false;
+			this.swcInitializing = true;
+			this.swcProgress = null;
+			this.swcLoadError = null;
+
 			// Create Web Worker from external file
 			this.worker = new Worker("/execution.worker.js");
 
-			// 监听SWC初始化状态事件
+			// 监听SWC初始化状态事件和进度事件
 			this.worker.addEventListener("message", (event) => {
-				const { type, success, initTime, error } = event.data;
+				const { type } = event.data;
 
-				if (type === "swc_init_complete") {
+				if (type === "swc_init_progress") {
+					this.swcProgress = {
+						step: event.data.step,
+						totalSteps: event.data.totalSteps,
+						stepLabel: event.data.stepLabel || "",
+						loaded: event.data.loaded,
+						total: event.data.total,
+						percent: event.data.percent,
+					};
+					this.notifyProgress();
+				} else if (type === "swc_init_step") {
+					this.swcProgress = {
+						step: event.data.step,
+						totalSteps: event.data.totalSteps,
+						stepLabel: event.data.stepLabel || "",
+						loaded: 0,
+						total: null,
+						percent: null,
+					};
+					this.notifyProgress();
+				} else if (type === "swc_init_complete") {
 					this.swcInitializing = false;
-					this.swcInitialized = success;
-					this.swcInitTime = initTime;
+					this.swcInitialized = event.data.success;
+					this.swcInitTime = event.data.initTime;
 
-					if (success) {
+					if (event.data.success) {
+						this.swcProgress = null;
+						this.swcLoadError = null;
 						console.log(
 							"🎉 主线程收到SWC初始化完成通知，耗时:",
-							initTime,
+							event.data.initTime,
 							"ms",
 						);
 					} else {
+						this.swcLoadError = event.data.error;
 						console.warn(
-							"⚠️ 主线程收到SWC初始化失败通知，耗时:",
-							initTime,
-							"ms，错误:",
-							error,
+							"⚠️ 主线程收到SWC初始化失败通知:",
+							event.data.error,
 						);
 					}
+					this.notifyProgress();
 				}
 			});
 
-			// 标记SWC开始初始化
-			this.swcInitializing = true;
 			console.log("🚀 Web Worker已创建，SWC预加载已开始...");
 		} catch (error) {
 			console.error("Failed to create worker:", error);
+		}
+	}
+
+	private notifyProgress() {
+		const progress = this.getSWCLoadProgress();
+		for (const cb of this.swcProgressCallbacks) {
+			cb(progress);
+		}
+	}
+
+	getSWCLoadProgress(): SWCLoadProgress {
+		if (this.swcInitialized) {
+			return {
+				state: "ready",
+				step: 2,
+				totalSteps: 2,
+				stepLabel: "",
+				loaded: 0,
+				total: null,
+				percent: 100,
+				error: null,
+				initTime: this.swcInitTime,
+			};
+		}
+		if (this.swcLoadError) {
+			return {
+				state: "error",
+				step: 0,
+				totalSteps: 2,
+				stepLabel: "",
+				loaded: 0,
+				total: null,
+				percent: null,
+				error: this.swcLoadError,
+				initTime: null,
+			};
+		}
+		if (this.swcProgress) {
+			return {
+				state: "loading",
+				...this.swcProgress,
+				error: null,
+				initTime: null,
+			};
+		}
+		// Default: initializing but no progress messages yet
+		return {
+			state: "loading",
+			step: 1,
+			totalSteps: 2,
+			stepLabel: "Downloading SWC",
+			loaded: 0,
+			total: null,
+			percent: null,
+			error: null,
+			initTime: null,
+		};
+	}
+
+	onProgress(callback: ProgressCallback): () => void {
+		this.swcProgressCallbacks.add(callback);
+		// Immediately call with current state
+		callback(this.getSWCLoadProgress());
+		return () => {
+			this.swcProgressCallbacks.delete(callback);
+		};
+	}
+
+	retrySWCInit(): void {
+		if (this.worker) {
+			this.swcLoadError = null;
+			this.swcInitializing = true;
+			this.swcProgress = null;
+			this.worker.postMessage({ type: "swc_init_retry" });
+			this.notifyProgress();
 		}
 	}
 
@@ -170,9 +296,12 @@ export class CodeExecutionService {
 					return;
 				}
 
-				// 处理SWC初始化消息
-				if (event.data.type === "swc_init_complete") {
-					// 这些消息由initWorker处理，这里忽略
+				// 处理SWC初始化消息（由initWorker处理）
+				if (
+					event.data.type === "swc_init_complete" ||
+					event.data.type === "swc_init_progress" ||
+					event.data.type === "swc_init_step"
+				) {
 					return;
 				}
 

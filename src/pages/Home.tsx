@@ -34,6 +34,7 @@ import ProblemsPanel from "@/components/ProblemsPanel";
 import RecursiveTraceVisualization from "@/components/RecursiveTraceVisualization";
 import { ScratchpadPanel } from "@/components/ScratchpadPanel";
 import { SettingsDialog } from "@/components/SettingsDialog";
+import { SwcLoadingToast } from "@/components/SwcLoadingToast";
 import TabManager from "@/components/TabManager";
 import TestVisualization from "@/components/TestVisualization";
 import { ThemeSwitcher } from "@/components/ThemeSwitcher";
@@ -41,8 +42,13 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { PageTransition } from "@/components/ui/motion";
 import { Progress } from "@/components/ui/progress";
+import { toast } from "@/components/ui/sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { executeCode, stopExecution } from "@/services/codeExecutionService";
+import {
+	codeExecutionService,
+	type SWCLoadProgress,
+} from "@/services/codeExecutionService";
 import { analyzeComplexity } from "@/services/complexityAnalysisService";
 import { usePlaygroundStore } from "@/store/usePlaygroundStore";
 
@@ -109,6 +115,69 @@ export default function Home() {
 		endCol: number;
 	} | null>(null);
 
+	// SWC 加载状态
+	const [swcProgress, setSwcProgress] = useState<SWCLoadProgress | null>(null);
+	const swcToastIdRef = useRef<string | number | null>(null);
+
+	useEffect(() => {
+		const unsubscribe = codeExecutionService.onProgress(setSwcProgress);
+		return unsubscribe;
+	}, []);
+
+	// 管理 SWC 加载 toast 生命周期
+	useEffect(() => {
+		if (!swcProgress) return;
+
+		const renderToast = () => (
+			<SwcLoadingToast
+				progress={swcProgress}
+				onRetry={() => {
+					codeExecutionService.retrySWCInit();
+				}}
+			/>
+		);
+
+		if (swcProgress.state === "loading") {
+			if (!swcToastIdRef.current) {
+				swcToastIdRef.current = toast.custom(renderToast, {
+					duration: Number.POSITIVE_INFINITY,
+					position: "bottom-right",
+				});
+			} else {
+				toast.custom(renderToast, {
+					id: swcToastIdRef.current,
+					duration: Number.POSITIVE_INFINITY,
+					position: "bottom-right",
+				});
+			}
+		} else if (swcProgress.state === "ready") {
+			if (swcToastIdRef.current) {
+				toast.custom(renderToast, {
+					id: swcToastIdRef.current,
+					duration: 2000,
+					position: "bottom-right",
+				});
+				swcToastIdRef.current = null;
+			}
+		} else if (swcProgress.state === "error") {
+			if (!swcToastIdRef.current) {
+				swcToastIdRef.current = toast.custom(renderToast, {
+					duration: Number.POSITIVE_INFINITY,
+					position: "bottom-right",
+				});
+			} else {
+				toast.custom(renderToast, {
+					id: swcToastIdRef.current,
+					duration: Number.POSITIVE_INFINITY,
+					position: "bottom-right",
+				});
+			}
+		}
+	}, [swcProgress, t]);
+
+	const isSwcLoading = swcProgress?.state === "loading";
+	const isSwcError = swcProgress?.state === "error";
+
 	// 同步 trace 步骤到编辑器高亮
 	useEffect(() => {
 		const trace = executionResult?.trace;
@@ -150,7 +219,7 @@ export default function Home() {
 	}, [activeFileId, files, language]);
 
 	const handleRunCode = useCallback(async () => {
-		if (isExecuting) return;
+		if (isExecuting || isSwcLoading || isSwcError) return;
 		setExecuting(true);
 		clearOutput();
 		setTraceStepIndex(0);
@@ -219,6 +288,8 @@ export default function Home() {
 		}
 	}, [
 		isExecuting,
+		isSwcLoading,
+		isSwcError,
 		clearOutput,
 		getCurrentCode,
 		getCurrentLanguage,
@@ -604,6 +675,17 @@ export default function Home() {
 								onClick={handleStopExecution}
 							>
 								<Square className="w-3.5 h-3.5" />
+							</Button>
+						) : isSwcLoading || isSwcError ? (
+							<Button
+								size="sm"
+								disabled
+								title={t("swcLoading.buttonTooltip")}
+							>
+								<Play className="w-3.5 h-3.5 animate-pulse" />
+								<span className="hidden sm:inline ml-1 text-xs">
+									{t("swcLoading.loading")}
+								</span>
 							</Button>
 						) : (
 							<Button size="sm" onClick={handleRunCode}>

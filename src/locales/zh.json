@@ -239,5 +239,15 @@
 		"truncated": "追踪在 {{max}} 步时被截断",
 		"noTrace": "未检测到递归函数。",
 		"speed": "速度"
+	},
+	"swcLoading": {
+		"title": "正在加载编译器",
+		"ready": "编译器已就绪",
+		"buttonTooltip": "请等待编译器加载完成",
+		"stepLoadModule": "加载模块",
+		"stepDownloadWasm": "获取 WASM",
+		"stepOf": "步骤 {{step}}/{{total}}：",
+		"errorTitle": "编译器加载失败",
+		"retry": "重试"
 	}
 }

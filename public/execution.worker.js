@@ -25,13 +25,22 @@ async function initSWC() {
 	try {
 		console.log("🚀 开始从CDN初始化SWC WebAssembly模块...");
 
-		// Load SWC from CDN (works reliably in Web Workers)
 		const swcUrl = "https://unpkg.com/@swc/wasm-web@1.3.95/wasm-web.js";
-		console.log("📦 正在加载SWC模块:", swcUrl);
+		const wasmUrl =
+			"https://cdn.jsdelivr.net/npm/@swc/wasm-web@1.3.95/wasm-web_bg.wasm";
 
-		// Import SWC module from CDN
+		// Step 1: Import SWC JS module (small file)
+		console.log("📦 正在加载SWC JS模块:", swcUrl);
+
+		self.postMessage({
+			type: "swc_init_step",
+			step: 1,
+			totalSteps: 2,
+			stepLabel: "Loading SWC",
+		});
+
 		const { default: init, transformSync } = await import(swcUrl);
-		console.log("✅ SWC模块加载成功，开始初始化WebAssembly...");
+		console.log("✅ SWC JS模块加载成功");
 
 		// Load Chai for assertions
 		try {
@@ -43,8 +52,75 @@ async function initSWC() {
 			console.error("❌ Chai加载失败，将使用内置回退实现:", e);
 		}
 
-		// Initialize SWC WebAssembly
-		await init();
+		// Step 2: Download WASM binary with progress tracking
+		self.postMessage({
+			type: "swc_init_step",
+			step: 2,
+			totalSteps: 2,
+			stepLabel: "Downloading WASM",
+		});
+
+		console.log("📦 正在下载WASM二进制文件:", wasmUrl);
+
+		const wasmResponse = await fetch(wasmUrl);
+		if (!wasmResponse.ok) {
+			throw new Error(
+				`Failed to fetch WASM: HTTP ${wasmResponse.status}`,
+			);
+		}
+
+		let loadedBytes = 0;
+		const chunks = [];
+
+		if (wasmResponse.body) {
+			const reader = wasmResponse.body.getReader();
+			while (true) {
+				const { done, value } = await reader.read();
+				if (done) break;
+				chunks.push(value);
+				loadedBytes += value.length;
+
+				self.postMessage({
+					type: "swc_init_progress",
+					step: 2,
+					totalSteps: 2,
+					loaded: loadedBytes,
+					total: null,
+					percent: null,
+				});
+			}
+		} else {
+			// Fallback: no streaming support
+			const buffer = await wasmResponse.arrayBuffer();
+			loadedBytes = buffer.byteLength;
+			chunks.push(new Uint8Array(buffer));
+			self.postMessage({
+				type: "swc_init_progress",
+				step: 2,
+				totalSteps: 2,
+				loaded: loadedBytes,
+				total: null,
+				percent: null,
+			});
+		}
+
+		console.log(
+			"✅ WASM下载完成，大小:",
+			(loadedBytes / 1024).toFixed(1),
+			"KB",
+		);
+
+		// Combine chunks into a single ArrayBuffer and pass to init()
+		const wasmBytes = new Uint8Array(loadedBytes);
+		let offset = 0;
+		for (const chunk of chunks) {
+			wasmBytes.set(chunk, offset);
+			offset += chunk.length;
+		}
+
+		console.log("🔧 开始初始化WebAssembly...");
+		await init(wasmBytes.buffer);
+
 		self.swcTransform = transformSync;
 		swcInitialized = true;
 		swcInitializing = false;
@@ -2025,3 +2101,16 @@ initSWC()
 	.catch((error) => {
 		console.warn("SWC预加载失败，将在需要时重试:", error.message);
 	});
+
+// Handle retry messages from main thread
+self.addEventListener("message", (e) => {
+	if (e.data && e.data.type === "swc_init_retry") {
+		console.log("收到SWC重新初始化请求");
+		swcInitialized = false;
+		swcInitializing = false;
+		swcInitStartTime = null;
+		initSWC().catch((error) => {
+			console.warn("SWC重新初始化失败:", error.message);
+		});
+	}
+});
