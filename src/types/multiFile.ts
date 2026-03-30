@@ -124,7 +124,7 @@ export const MULTI_FILE_STORAGE_KEYS = {
 
 // 默认代码内容
 export const DEFAULT_CODE_TEMPLATES = {
-	javascript: `// Welcome to JS/TS Playground!
+	javascript: `// Welcome to AlgoPad!
 // Write your JavaScript code here and click "Run" to execute
 
 console.log('Hello, JavaScript!');
@@ -137,7 +137,7 @@ function fibonacci(n) {
 
 console.log('Fibonacci(10):', fibonacci(10));
 `,
-	typescript: `// Welcome to JS/TS Playground!
+	typescript: `// Welcome to AlgoPad!
 // Write your TypeScript code here and click "Run" to execute
 
 console.log('Hello, TypeScript!');

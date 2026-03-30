@@ -159,7 +159,7 @@ const defaultLlmSettings: LlmSettings = {
 };
 
 const defaultCode = {
-	javascript: `// Welcome to JS/TS Playground!
+	javascript: `// Welcome to AlgoPad!
 // Write your JavaScript code here and click "Run" to execute
 
 console.log('Hello, JavaScript!');
@@ -234,7 +234,7 @@ try {
   console.error('Error in cycle detection:', error.message);
 }
 `,
-	typescript: `// Welcome to JS/TS Playground!
+	typescript: `// Welcome to AlgoPad!
 // Write your TypeScript code here and click "Run" to execute
 
 console.log('Hello, TypeScript!');

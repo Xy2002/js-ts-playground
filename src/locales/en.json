@@ -16,9 +16,9 @@
 		"reset": "Reset"
 	},
 	"header": {
-		"appName": "JS/TS Playground",
-		"appNameShort": "Playground",
-		"backToPlayground": "Back to Playground",
+		"appName": "AlgoPad",
+		"appNameShort": "AlgoPad",
+		"backToPlayground": "Back to AlgoPad",
 		"clearAll": "Clear All",
 		"clearAllTooltip": "Long press for 3 seconds to clear all state (including code, settings and files)",
 		"reset": "Reset"

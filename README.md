@@ -1,4 +1,4 @@
-# JavaScript/TypeScript Playground
+# AlgoPad
 
 A feature-rich online code execution environment for algorithm learning and code experimentation with AI-powered code completion.
 

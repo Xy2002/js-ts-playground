@@ -657,7 +657,7 @@ export default function Home() {
 						<ThemeSwitcher />
 						<LanguageSwitch />
 						<a
-							href="https://github.com/Xy2002/js-ts-playground"
+							href="https://github.com/Xy2002/algopad"
 							target="_blank"
 							rel="noopener noreferrer"
 							className="text-muted-foreground hover:text-foreground rounded-sm p-1.5 transition-colors"
