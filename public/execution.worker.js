@@ -1189,30 +1189,37 @@ self.onmessage = async (e) => {
 		}
 
 		// 对检测到的递归函数进行调用点插桩（call-site instrumentation）
-		function instrumentRecursiveFunctions(code) {
+		// originalCodeForPositions: for TS files, pass the original source code so that
+		// line/col positions are computed against what the user sees in the editor,
+		// not the transpiled JS output.
+		function instrumentRecursiveFunctions(code, originalCodeForPositions) {
 			const recursiveFuncs = detectRecursiveFunctions(code);
 			if (recursiveFuncs.length === 0) return { code, hasRecursion: false };
 
-			// Pre-compute call site line/col info on the ORIGINAL code (before any modifications)
+			// Use original code for position computation when available (TS files),
+			// so that highlight positions match what's displayed in the Monaco editor.
+			const posCode = originalCodeForPositions || code;
+
+			// Pre-compute call site line/col info (against the editor-visible source)
 			const precomputedCalls = {};
 			for (const func of recursiveFuncs) {
 				const callRegex = new RegExp(`\\b${func.name}\\s*\\(`, "g");
 				const calls = [];
 				let match;
 				// biome-ignore lint/suspicious/noAssignInExpressions: regex exec loop pattern
-				while ((match = callRegex.exec(code)) !== null) {
+				while ((match = callRegex.exec(posCode)) !== null) {
 					const nameStart = match.index;
-					const parenStart = code.indexOf("(", nameStart + func.name.length);
+					const parenStart = posCode.indexOf("(", nameStart + func.name.length);
 					if (parenStart === -1) continue;
 
 					// Skip the function declaration itself (e.g. "function fibonacci(")
-					const before = code
+					const before = posCode
 						.substring(Math.max(0, nameStart - 10), nameStart)
 						.trim();
 					if (before.endsWith("function")) continue;
 
 					// Compute line/col on original code
-					const beforeCall = code.substring(0, nameStart);
+					const beforeCall = posCode.substring(0, nameStart);
 					const line = beforeCall.split("\n").length;
 					const lastNewline = beforeCall.lastIndexOf("\n");
 					const startCol = nameStart - lastNewline;
@@ -1220,9 +1227,9 @@ self.onmessage = async (e) => {
 					// Find matching close paren
 					let depth = 0;
 					let endPos = parenStart;
-					for (let j = parenStart; j < code.length; j++) {
-						if (code[j] === "(") depth++;
-						else if (code[j] === ")") {
+					for (let j = parenStart; j < posCode.length; j++) {
+						if (posCode[j] === "(") depth++;
+						else if (posCode[j] === ")") {
 							depth--;
 							if (depth === 0) {
 								endPos = j + 1;
@@ -1231,7 +1238,7 @@ self.onmessage = async (e) => {
 						}
 					}
 					const endCol = endPos - lastNewline;
-					const argsStr = code.substring(parenStart + 1, endPos - 1);
+					const argsStr = posCode.substring(parenStart + 1, endPos - 1);
 
 					calls.push({ line, startCol, endCol, argsStr });
 				}
@@ -1476,16 +1483,23 @@ self.onmessage = async (e) => {
 				);
 
 				let transpiledContent = fileContent;
+				// Keep original content for correct highlight positions in TS files
+				let originalFileContent = null;
 
 				// Transpile TypeScript files
 				if (fileLanguage === "typescript") {
 					transpiledContent = await transpileTypeScript(fileContent);
+					originalFileContent = fileContent;
 				}
 
 				// Instrument recursive functions BEFORE wrapping (so line numbers are correct)
+				// Pass original TS code so highlight positions match the editor
 				try {
 					const { code: instrumented, hasRecursion: found } =
-						instrumentRecursiveFunctions(transpiledContent);
+						instrumentRecursiveFunctions(
+							transpiledContent,
+							originalFileContent,
+						);
 					if (found) hasRecursion = true;
 					transpiledContent = instrumented;
 				} catch (instrError) {
@@ -1856,18 +1870,22 @@ return exports;
 			console.log("Single file mode - executing code directly");
 
 			// Process TypeScript if needed
+			// Keep originalCode for correct highlight positions in TS files
+			let originalCode = code;
 			if (language === "typescript") {
 				console.log("检测到TypeScript代码，开始处理...");
 				executableCode = await transpileTypeScript(code);
 				console.log("转译后代码前100字符:", executableCode?.substring(0, 100));
 			} else {
 				executableCode = code;
+				originalCode = null; // JS files: positions computed on same code
 			}
 
 			// 对单文件代码进行递归插桩
+			// Pass original TS code so highlight positions match the editor
 			try {
 				const { code: singleInstrumented, hasRecursion: singleFound } =
-					instrumentRecursiveFunctions(executableCode);
+					instrumentRecursiveFunctions(executableCode, originalCode);
 				if (singleFound) hasRecursion = true;
 				executableCode = singleInstrumented;
 			} catch (instrError) {
