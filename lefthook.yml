@@ -7,7 +7,8 @@ pre-commit:
 
     format:
       glob: "*"
-      run: pnpm format
+      run: pnpm format {staged_files} --no-errors-on-unmatched
+      stage_fixed: true
 
     check:
       glob: "*"
