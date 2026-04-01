@@ -1,7 +1,4 @@
-import type {
-	ExecutionResult,
-	SWCLoadProgress,
-} from "@/workers/types";
+import type { ExecutionResult, SWCLoadProgress } from "@/workers/types";
 
 // Re-export types from the worker module for backward compatibility
 export type {

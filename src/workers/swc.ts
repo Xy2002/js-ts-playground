@@ -2,31 +2,31 @@
 
 // SWC WASM initialization from local npm package, TypeScript transpilation, and fallback.
 
-import init, { transformSync } from "@swc/wasm-web"
-import * as chai from "chai"
+import init, { transformSync } from "@swc/wasm-web";
+import * as chai from "chai";
 
-type SwcTransformFn = (code: string, options: unknown) => { code: string }
+type SwcTransformFn = (code: string, options: unknown) => { code: string };
 
-let swcInitialized = false
-let swcInitializing = false
-let swcTransform: SwcTransformFn | null = null
-let swcInitStartTime: number | null = null
+let swcInitialized = false;
+let swcInitializing = false;
+let swcTransform: SwcTransformFn | null = null;
+let swcInitStartTime: number | null = null;
 
 // Initialize SWC WebAssembly module from local npm package.
 // Posts progress events to the main thread via self.postMessage.
 export async function initSWC(): Promise<void> {
-	if (swcInitialized) return
+	if (swcInitialized) return;
 
 	if (swcInitializing) {
 		// Wait for the in-flight initialization to finish
 		while (swcInitializing && !swcInitialized) {
-			await new Promise((resolve) => setTimeout(resolve, 50))
+			await new Promise((resolve) => setTimeout(resolve, 50));
 		}
-		return
+		return;
 	}
 
-	swcInitializing = true
-	swcInitStartTime = performance.now()
+	swcInitializing = true;
+	swcInitStartTime = performance.now();
 
 	try {
 		// Step 1: Load WASM binary from local public directory
@@ -35,24 +35,24 @@ export async function initSWC(): Promise<void> {
 			step: 1,
 			totalSteps: 1,
 			stepLabel: "Loading SWC WASM",
-		})
+		});
 
-		const wasmUrl = new URL("/swc/wasm-web_bg.wasm", self.location.origin)
-		const wasmResponse = await fetch(wasmUrl.href)
+		const wasmUrl = new URL("/swc/wasm-web_bg.wasm", self.location.origin);
+		const wasmResponse = await fetch(wasmUrl.href);
 		if (!wasmResponse.ok) {
-			throw new Error(`Failed to fetch WASM: HTTP ${wasmResponse.status}`)
+			throw new Error(`Failed to fetch WASM: HTTP ${wasmResponse.status}`);
 		}
 
-		let loadedBytes = 0
-		const chunks: Uint8Array[] = []
+		let loadedBytes = 0;
+		const chunks: Uint8Array[] = [];
 
 		if (wasmResponse.body) {
-			const reader = wasmResponse.body.getReader()
+			const reader = wasmResponse.body.getReader();
 			while (true) {
-				const { done, value } = await reader.read()
-				if (done) break
-				chunks.push(value)
-				loadedBytes += value.length
+				const { done, value } = await reader.read();
+				if (done) break;
+				chunks.push(value);
+				loadedBytes += value.length;
 
 				self.postMessage({
 					type: "swc_init_progress",
@@ -61,12 +61,12 @@ export async function initSWC(): Promise<void> {
 					loaded: loadedBytes,
 					total: null,
 					percent: null,
-				})
+				});
 			}
 		} else {
-			const buffer = await wasmResponse.arrayBuffer()
-			loadedBytes = buffer.byteLength
-			chunks.push(new Uint8Array(buffer))
+			const buffer = await wasmResponse.arrayBuffer();
+			loadedBytes = buffer.byteLength;
+			chunks.push(new Uint8Array(buffer));
 			self.postMessage({
 				type: "swc_init_progress",
 				step: 1,
@@ -74,72 +74,72 @@ export async function initSWC(): Promise<void> {
 				loaded: loadedBytes,
 				total: null,
 				percent: null,
-			})
+			});
 		}
 
 		// Combine chunks and initialize WASM
-		const wasmBytes = new Uint8Array(loadedBytes)
-		let offset = 0
+		const wasmBytes = new Uint8Array(loadedBytes);
+		let offset = 0;
 		for (const chunk of chunks) {
-			wasmBytes.set(chunk, offset)
-			offset += chunk.length
+			wasmBytes.set(chunk, offset);
+			offset += chunk.length;
 		}
 
-		await init(wasmBytes.buffer)
+		await init(wasmBytes.buffer);
 
-		swcTransform = transformSync as SwcTransformFn
-		swcInitialized = true
-		swcInitializing = false
+		swcTransform = transformSync as SwcTransformFn;
+		swcInitialized = true;
+		swcInitializing = false;
 
-		const initTime = performance.now() - swcInitStartTime
+		const initTime = performance.now() - swcInitStartTime;
 
 		self.postMessage({
 			type: "swc_init_complete",
 			success: true,
 			initTime: Math.round(initTime * 100) / 100,
-		})
+		});
 	} catch (error) {
-		swcInitializing = false
+		swcInitializing = false;
 		const initTime = swcInitStartTime
 			? performance.now() - swcInitStartTime
-			: 0
-		swcInitialized = false
-		swcTransform = null
+			: 0;
+		swcInitialized = false;
+		swcTransform = null;
 
 		self.postMessage({
 			type: "swc_init_complete",
 			success: false,
 			error: (error as Error).message,
 			initTime: Math.round(initTime * 100) / 100,
-		})
+		});
 	}
 }
 
 export function isSwcReady(): boolean {
-	return swcInitialized
+	return swcInitialized;
 }
 
 /** Get the Chai module (loaded from npm package). */
 export function getChai() {
-	return chai
+	return chai;
 }
 
 /** Reset SWC state (used for retry from main thread). */
 export function resetSwcState(): void {
-	swcInitialized = false
-	swcInitializing = false
-	swcInitStartTime = null
+	swcInitialized = false;
+	swcInitializing = false;
+	swcInitStartTime = null;
 }
 
 // Fast TypeScript transpilation using SWC, with regex fallback.
 export async function transpileTypeScript(tsCode: string): Promise<string> {
 	try {
 		if (!swcInitialized) {
-			await initSWC()
+			await initSWC();
 		}
 
 		if (!swcInitialized || !swcTransform) {
-			return fallbackTranspile(tsCode)
+			return fallbackTranspile(tsCode);
 		}
 
 		try {
@@ -162,14 +162,14 @@ export async function transpileTypeScript(tsCode: string): Promise<string> {
 				},
 				minify: false,
 				isModule: true,
-			})
+			});
 
-			return result.code
+			return result.code;
 		} catch (_swcError) {
-			return fallbackTranspile(tsCode)
+			return fallbackTranspile(tsCode);
 		}
 	} catch (_error) {
-		return fallbackTranspile(tsCode)
+		return fallbackTranspile(tsCode);
 	}
 }
 
@@ -195,10 +195,10 @@ export function fallbackTranspile(tsCode: string): string {
 			.replace(/(\w+)!/g, "$1")
 			// Collapse blank lines
 			.replace(/\n\s*\n/g, "\n")
-			.trim()
+			.trim();
 
-		return jsCode
+		return jsCode;
 	} catch (_error) {
-		return tsCode
+		return tsCode;
 	}
 }

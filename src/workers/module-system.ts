@@ -1,18 +1,18 @@
 // Multi-file module system: path resolution, import/export transforms,
 // module wrapping, and a CommonJS-like require() loader.
 
-import type { ExecutionContext, PostMessageFn } from "./types"
-import { transpileTypeScript } from "./swc"
-import { instrumentRecursiveFunctions } from "./recursive-trace"
-import type { safeStringify } from "./serialization"
-import type { ListNode } from "./data-structures"
-import type { TreeNode } from "./data-structures"
-import type { MockConsole } from "./console"
+import type { ExecutionContext, PostMessageFn } from "./types";
+import { transpileTypeScript } from "./swc";
+import { instrumentRecursiveFunctions } from "./recursive-trace";
+import type { safeStringify } from "./serialization";
+import type { ListNode } from "./data-structures";
+import type { TreeNode } from "./data-structures";
+import type { MockConsole } from "./console";
 
 // ---- Path helpers ----
 
 export function normalizePath(path: string): string {
-	return path.startsWith("/") ? path.substring(1) : path
+	return path.startsWith("/") ? path.substring(1) : path;
 }
 
 export function resolvePath(
@@ -20,49 +20,49 @@ export function resolvePath(
 	to: string,
 	allFiles: Record<string, unknown>,
 ): string {
-	from = normalizePath(from)
-	to = normalizePath(to)
+	from = normalizePath(from);
+	to = normalizePath(to);
 
 	if (to.startsWith("./") || to.startsWith("../")) {
-		const fromParts = from.split("/").slice(0, -1)
-		const toParts = to.split("/")
+		const fromParts = from.split("/").slice(0, -1);
+		const toParts = to.split("/");
 
 		for (const part of toParts) {
-			if (part === ".") continue
-			if (part === "..") fromParts.pop()
-			else fromParts.push(part)
+			if (part === ".") continue;
+			if (part === "..") fromParts.pop();
+			else fromParts.push(part);
 		}
 
-		const resolved = fromParts.join("/")
-		return tryExtensions(resolved, allFiles)
+		const resolved = fromParts.join("/");
+		return tryExtensions(resolved, allFiles);
 	}
 
-	return tryExtensions(to, allFiles)
+	return tryExtensions(to, allFiles);
 }
 
 function tryExtensions(
 	resolved: string,
 	allFiles: Record<string, unknown>,
 ): string {
-	if (resolved.match(/\.(ts|js|tsx|jsx)$/)) return resolved
+	if (resolved.match(/\.(ts|js|tsx|jsx)$/)) return resolved;
 
-	const extensions = [".ts", ".js", ".tsx", ".jsx"]
+	const extensions = [".ts", ".js", ".tsx", ".jsx"];
 	for (const ext of extensions) {
-		const pathWithExt = resolved + ext
-		if (allFiles[pathWithExt]) return pathWithExt
+		const pathWithExt = resolved + ext;
+		if (allFiles[pathWithExt]) return pathWithExt;
 	}
 	// Try /index
 	for (const ext of extensions) {
-		const indexPath = `${resolved}/index${ext}`
-		if (allFiles[indexPath]) return indexPath
+		const indexPath = `${resolved}/index${ext}`;
+		if (allFiles[indexPath]) return indexPath;
 	}
-	return resolved
+	return resolved;
 }
 
 // ---- Import/Export transforms ----
 
 export function wrapInModuleFunction(code: string): string {
-	let transformedCode = code
+	let transformedCode = code;
 
 	// ===== IMPORT TRANSFORMATIONS =====
 
@@ -70,19 +70,19 @@ export function wrapInModuleFunction(code: string): string {
 	transformedCode = transformedCode.replace(
 		/import\s+\{([^}]+)\}\s+from\s+['"]([^'"]+)['"]/g,
 		"const {$1} = __require('$2')",
-	)
+	);
 
 	// import x from './module' -> const x = __require('./module').default || __require('./module')
 	transformedCode = transformedCode.replace(
 		/import\s+(\w+)\s+from\s+['"]([^'"]+)['"]/g,
 		"const $1 = __require('$2').default || __require('$2')",
-	)
+	);
 
 	// import * as x from './module' -> const x = __require('./module')
 	transformedCode = transformedCode.replace(
 		/import\s+\*\s+as\s+(\w+)\s+from\s+['"]([^'"]+)['"]/g,
 		"const $1 = __require('$2')",
-	)
+	);
 
 	// ===== EXPORT TRANSFORMATIONS =====
 
@@ -90,69 +90,69 @@ export function wrapInModuleFunction(code: string): string {
 	transformedCode = transformedCode.replace(
 		/export\s+default\s+/g,
 		"exports.default = ",
-	)
+	);
 
 	// export function foo() {} -> exports.foo = foo; function foo() {}
 	transformedCode = transformedCode.replace(
 		/export\s+(async\s+)?function\s+(\w+)/g,
 		"exports.$2 = $2; $1function $2",
-	)
+	);
 
 	// export class Foo {} -> const Foo = exports.Foo = class Foo {}
 	transformedCode = transformedCode.replace(
 		/export\s+class\s+(\w+)/g,
 		"const $1 = exports.$1 = class $1",
-	)
+	);
 
 	// export const foo = value; -> const foo = value; exports.foo = foo;
 	transformedCode = transformedCode.replace(
 		/export\s+(const|let|var)\s+(\w+)\s*=\s*([^;]+);/g,
 		"$1 $2 = $3; exports.$2 = $2;",
-	)
+	);
 
 	// export const foo; -> const foo; exports.foo = foo;
 	transformedCode = transformedCode.replace(
 		/export\s+(const|let|var)\s+(\w+);/g,
 		"$1 $2; exports.$2 = $2;",
-	)
+	);
 
 	// export { x, y } or export { x as X }
 	transformedCode = transformedCode.replace(
 		/export\s*\{([^}]+)\}/g,
 		(_, exports_str: string) => {
 			const items = exports_str.split(",").map((item: string) => {
-				const trimmed = item.trim()
-				const parts = trimmed.split(/\s+as\s+/)
+				const trimmed = item.trim();
+				const parts = trimmed.split(/\s+as\s+/);
 				if (parts.length === 2) {
-					return `${parts[1].trim()}: ${parts[0].trim()}`
+					return `${parts[1].trim()}: ${parts[0].trim()}`;
 				}
-				return trimmed
-			})
-			return `Object.assign(exports, { ${items.join(", ")} })`
+				return trimmed;
+			});
+			return `Object.assign(exports, { ${items.join(", ")} })`;
 		},
-	)
+	);
 
 	// Wrap in module function
 	return `(function(exports, __require, __currentFilePath, __traceContext, __safeStringify, __traceArgs, __traceCall) {
 ${transformedCode}
 return exports;
-})`
+})`;
 }
 
 // ---- Module system factory ----
 
 /** Dependencies injected from the execution worker entry point. */
 export interface ModuleSystemDeps {
-	ctx: ExecutionContext
-	allFiles: Record<string, { content: string; language: string; path: string }>
-	mockConsole: MockConsole
-	safeStringify: typeof safeStringify
-	safeGlobals: Record<string, unknown>
-	ListNode: typeof ListNode
-	TreeNode: typeof TreeNode
-	arrayToListNode: (arr: number[]) => ListNode | null
-	listNodeToArray: (head: ListNode | null) => number[]
-	postMessage: PostMessageFn
+	ctx: ExecutionContext;
+	allFiles: Record<string, { content: string; language: string; path: string }>;
+	mockConsole: MockConsole;
+	safeStringify: typeof safeStringify;
+	safeGlobals: Record<string, unknown>;
+	ListNode: typeof ListNode;
+	TreeNode: typeof TreeNode;
+	arrayToListNode: (arr: number[]) => ListNode | null;
+	listNodeToArray: (head: ListNode | null) => number[];
+	postMessage: PostMessageFn;
 }
 
 export function createModuleSystem(deps: ModuleSystemDeps) {
@@ -167,11 +167,11 @@ export function createModuleSystem(deps: ModuleSystemDeps) {
 		arrayToListNode: arrToList,
 		listNodeToArray: listToArr,
 		postMessage: _postMessage,
-	} = deps
+	} = deps;
 
-	const moduleCache: Record<string, unknown> = {}
-	const transpiledModules: Record<string, string> = {}
-	let hasRecursion = false
+	const moduleCache: Record<string, unknown> = {};
+	const transpiledModules: Record<string, string> = {};
+	let hasRecursion = false;
 
 	// ---- Transpile all files ----
 
@@ -180,33 +180,33 @@ export function createModuleSystem(deps: ModuleSystemDeps) {
 			"Multi-file mode detected, transpiling",
 			Object.keys(allFiles).length,
 			"files",
-		)
+		);
 
 		for (const [filePath, fileInfo] of Object.entries(allFiles)) {
-			const normalizedPath = normalizePath(filePath)
-			let transpiledContent = fileInfo.content
-			let originalFileContent: string | null = null
+			const normalizedPath = normalizePath(filePath);
+			let transpiledContent = fileInfo.content;
+			let originalFileContent: string | null = null;
 
 			if (fileInfo.language === "typescript") {
-				transpiledContent = await transpileTypeScript(fileInfo.content)
-				originalFileContent = fileInfo.content
+				transpiledContent = await transpileTypeScript(fileInfo.content);
+				originalFileContent = fileInfo.content;
 			}
 
 			// Instrument recursive functions
 			try {
 				const { code: instrumented, hasRecursion: found } =
-					instrumentRecursiveFunctions(transpiledContent, originalFileContent)
-				if (found) hasRecursion = true
-				transpiledContent = instrumented
+					instrumentRecursiveFunctions(transpiledContent, originalFileContent);
+				if (found) hasRecursion = true;
+				transpiledContent = instrumented;
 			} catch (_instrError) {
 				// Use original code if instrumentation fails
 			}
 
-			transpiledContent = wrapInModuleFunction(transpiledContent)
-			transpiledModules[normalizedPath] = transpiledContent
+			transpiledContent = wrapInModuleFunction(transpiledContent);
+			transpiledModules[normalizedPath] = transpiledContent;
 		}
 
-		return hasRecursion
+		return hasRecursion;
 	}
 
 	// ---- Module execution via new Function() ----
@@ -266,7 +266,7 @@ export function createModuleSystem(deps: ModuleSystemDeps) {
 			"__traceArgs",
 			"__traceCall",
 			`return ${moduleFunction}`,
-		)
+		);
 
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		const actualModuleFunction = func(
@@ -306,7 +306,7 @@ export function createModuleSystem(deps: ModuleSystemDeps) {
 			stringify,
 			traceArgsFn,
 			traceCallFn,
-		)
+		);
 
 		return actualModuleFunction(
 			exports,
@@ -316,7 +316,7 @@ export function createModuleSystem(deps: ModuleSystemDeps) {
 			stringify,
 			traceArgsFn,
 			traceCallFn,
-		)
+		);
 	}
 
 	// ---- require() implementation ----
@@ -336,18 +336,18 @@ export function createModuleSystem(deps: ModuleSystemDeps) {
 		renderTreeFn: any,
 	) {
 		return function __require(modulePath: string) {
-			const resolvedPath = resolvePath(currentFilePath, modulePath, allFiles)
+			const resolvedPath = resolvePath(currentFilePath, modulePath, allFiles);
 
-			if (moduleCache[resolvedPath]) return moduleCache[resolvedPath]
+			if (moduleCache[resolvedPath]) return moduleCache[resolvedPath];
 
 			if (!transpiledModules[resolvedPath]) {
 				throw new Error(
 					`Cannot find module '${modulePath}' (resolved as '${resolvedPath}') from '${currentFilePath}'`,
-				)
+				);
 			}
 
-			const moduleFunction = transpiledModules[resolvedPath]
-			const exports: Record<string, unknown> = {}
+			const moduleFunction = transpiledModules[resolvedPath];
+			const exports: Record<string, unknown> = {};
 			const moduleRequire = createRequire(
 				resolvedPath,
 				traceCtx,
@@ -360,7 +360,7 @@ export function createModuleSystem(deps: ModuleSystemDeps) {
 				itFn,
 				renderHeapFn,
 				renderTreeFn,
-			)
+			);
 
 			const executedModule = executeModuleCode(
 				moduleFunction,
@@ -377,11 +377,11 @@ export function createModuleSystem(deps: ModuleSystemDeps) {
 				itFn,
 				renderHeapFn,
 				renderTreeFn,
-			)
+			);
 
-			moduleCache[resolvedPath] = executedModule || exports
-			return moduleCache[resolvedPath]
-		}
+			moduleCache[resolvedPath] = executedModule || exports;
+			return moduleCache[resolvedPath];
+		};
 	}
 
 	return {
@@ -391,5 +391,5 @@ export function createModuleSystem(deps: ModuleSystemDeps) {
 		createRequire,
 		executeModuleCode,
 		getHasRecursion: () => hasRecursion,
-	}
+	};
 }

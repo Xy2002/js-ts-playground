@@ -20,9 +20,7 @@ export class TreeNode {
 	}
 
 	addChild(child: TreeNode | unknown) {
-		this.children.push(
-			child instanceof TreeNode ? child : new TreeNode(child),
-		);
+		this.children.push(child instanceof TreeNode ? child : new TreeNode(child));
 	}
 
 	removeChild(child: TreeNode) {
@@ -167,10 +165,7 @@ export function createVisualizationHelpers(deps: {
 }) {
 	let lastHeapData: number[] | null = null;
 
-	function renderHeap(
-		heap: number[] | { heap: number[] },
-		label?: string,
-	) {
+	function renderHeap(heap: number[] | { heap: number[] }, label?: string) {
 		try {
 			let heapData: number[];
 			if (Array.isArray(heap)) {

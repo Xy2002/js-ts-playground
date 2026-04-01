@@ -84,7 +84,10 @@ export interface ExecutionRequest {
 	code: string;
 	language: "javascript" | "typescript";
 	executionId: string;
-	allFiles?: Record<string, { content: string; language: string; path: string }>;
+	allFiles?: Record<
+		string,
+		{ content: string; language: string; path: string }
+	>;
 	entryFilePath?: string;
 }
 

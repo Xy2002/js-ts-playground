@@ -5,42 +5,42 @@ import type {
 	InstrumentResult,
 	TraceContext,
 	RecursiveTrace,
-} from "./types"
+} from "./types";
 
-export const MAX_TRACE_STEPS = 10000
+export const MAX_TRACE_STEPS = 10000;
 
 /**
  * Detect function declarations that call themselves recursively.
  */
 export function detectRecursiveFunctions(code: string): RecursiveFuncInfo[] {
-	const recursiveFunctions: RecursiveFuncInfo[] = []
-	const funcRegex = /function\s+(\w+)\s*\([^)]*\)\s*\{/g
+	const recursiveFunctions: RecursiveFuncInfo[] = [];
+	const funcRegex = /function\s+(\w+)\s*\([^)]*\)\s*\{/g;
 
-	let match = funcRegex.exec(code)
+	let match = funcRegex.exec(code);
 	while (match !== null) {
-		const funcName = match[1]
-		const funcStart = match.index
-		const funcDeclLine = code.substring(0, funcStart).split("\n").length
+		const funcName = match[1];
+		const funcStart = match.index;
+		const funcDeclLine = code.substring(0, funcStart).split("\n").length;
 
 		// Find matching closing brace by tracking brace depth
-		let braceCount = 1
-		const bodyStart = funcStart + match[0].length
-		let bodyEnd = bodyStart
+		let braceCount = 1;
+		const bodyStart = funcStart + match[0].length;
+		let bodyEnd = bodyStart;
 		for (let i = bodyStart; i < code.length; i++) {
-			if (code[i] === "{") braceCount++
+			if (code[i] === "{") braceCount++;
 			else if (code[i] === "}") {
-				braceCount--
+				braceCount--;
 				if (braceCount === 0) {
-					bodyEnd = i
-					break
+					bodyEnd = i;
+					break;
 				}
 			}
 		}
 
-		const body = code.substring(bodyStart, bodyEnd)
+		const body = code.substring(bodyStart, bodyEnd);
 		// Check if the function calls itself inside its body
-		const callRegex = new RegExp(`\\b${funcName}\\s*\\(`, "g")
-		const calls = body.match(callRegex)
+		const callRegex = new RegExp(`\\b${funcName}\\s*\\(`, "g");
+		const calls = body.match(callRegex);
 
 		if (calls && calls.length > 0) {
 			recursiveFunctions.push({
@@ -48,23 +48,22 @@ export function detectRecursiveFunctions(code: string): RecursiveFuncInfo[] {
 				startLine: funcDeclLine,
 				funcDeclStart: funcStart,
 				funcNameStart: funcStart + match[0].indexOf(funcName),
-				funcNameEnd:
-					funcStart + match[0].indexOf(funcName) + funcName.length,
+				funcNameEnd: funcStart + match[0].indexOf(funcName) + funcName.length,
 				bodyStart,
 				bodyEnd,
-			})
+			});
 		}
-		match = funcRegex.exec(code)
+		match = funcRegex.exec(code);
 	}
 
-	return recursiveFunctions
+	return recursiveFunctions;
 }
 
 interface PrecomputedCall {
-	line: number
-	startCol: number
-	endCol: number
-	argsStr: string
+	line: number;
+	startCol: number;
+	endCol: number;
+	argsStr: string;
 }
 
 /**
@@ -78,133 +77,133 @@ export function instrumentRecursiveFunctions(
 	code: string,
 	originalCodeForPositions?: string | null,
 ): InstrumentResult {
-	const recursiveFuncs = detectRecursiveFunctions(code)
-	if (recursiveFuncs.length === 0) return { code, hasRecursion: false }
+	const recursiveFuncs = detectRecursiveFunctions(code);
+	if (recursiveFuncs.length === 0) return { code, hasRecursion: false };
 
 	// Use original code for position computation when available (TS files),
 	// so that highlight positions match what's displayed in the Monaco editor.
-	const posCode = originalCodeForPositions || code
+	const posCode = originalCodeForPositions || code;
 
 	// Pre-compute call-site line/col info (against the editor-visible source)
-	const precomputedCalls: Record<string, PrecomputedCall[]> = {}
+	const precomputedCalls: Record<string, PrecomputedCall[]> = {};
 	for (const func of recursiveFuncs) {
-		const callRegex = new RegExp(`\\b${func.name}\\s*\\(`, "g")
-		const calls: PrecomputedCall[] = []
-		let match: RegExpExecArray | null
+		const callRegex = new RegExp(`\\b${func.name}\\s*\\(`, "g");
+		const calls: PrecomputedCall[] = [];
+		let match: RegExpExecArray | null;
 		// biome-ignore lint/suspicious/noAssignInExpressions: regex exec loop pattern
 		while ((match = callRegex.exec(posCode)) !== null) {
-			const nameStart = match.index
-			const parenStart = posCode.indexOf("(", nameStart + func.name.length)
-			if (parenStart === -1) continue
+			const nameStart = match.index;
+			const parenStart = posCode.indexOf("(", nameStart + func.name.length);
+			if (parenStart === -1) continue;
 
 			// Skip the function declaration itself (e.g. "function fibonacci(")
 			const before = posCode
 				.substring(Math.max(0, nameStart - 10), nameStart)
-				.trim()
-			if (before.endsWith("function")) continue
+				.trim();
+			if (before.endsWith("function")) continue;
 
 			// Compute line/col on original code
-			const beforeCall = posCode.substring(0, nameStart)
-			const line = beforeCall.split("\n").length
-			const lastNewline = beforeCall.lastIndexOf("\n")
-			const startCol = nameStart - lastNewline
+			const beforeCall = posCode.substring(0, nameStart);
+			const line = beforeCall.split("\n").length;
+			const lastNewline = beforeCall.lastIndexOf("\n");
+			const startCol = nameStart - lastNewline;
 
 			// Find matching close paren
-			let depth = 0
-			let endPos = parenStart
+			let depth = 0;
+			let endPos = parenStart;
 			for (let j = parenStart; j < posCode.length; j++) {
-				if (posCode[j] === "(") depth++
+				if (posCode[j] === "(") depth++;
 				else if (posCode[j] === ")") {
-					depth--
+					depth--;
 					if (depth === 0) {
-						endPos = j + 1
-						break
+						endPos = j + 1;
+						break;
 					}
 				}
 			}
-			const endCol = endPos - lastNewline
-			const argsStr = posCode.substring(parenStart + 1, endPos - 1)
+			const endCol = endPos - lastNewline;
+			const argsStr = posCode.substring(parenStart + 1, endPos - 1);
 
-			calls.push({ line, startCol, endCol, argsStr })
+			calls.push({ line, startCol, endCol, argsStr });
 		}
-		precomputedCalls[func.name] = calls
+		precomputedCalls[func.name] = calls;
 	}
 
-	let result = code
+	let result = code;
 
 	// Phase 1: Rename functions (fibonacci -> __orig_fibonacci) and insert alias
 	// bindings, processed from back to front to avoid position shifts.
 	for (let i = recursiveFuncs.length - 1; i >= 0; i--) {
-		const func = recursiveFuncs[i]
-		const originalName = func.name
-		const backupName = `__orig_${originalName}`
+		const func = recursiveFuncs[i];
+		const originalName = func.name;
+		const backupName = `__orig_${originalName}`;
 
 		// Rename original function: function fibonacci -> function __orig_fibonacci
 		result =
 			result.substring(0, func.funcNameStart) +
 			backupName +
-			result.substring(func.funcNameEnd)
+			result.substring(func.funcNameEnd);
 
 		// Insert alias binding before the function declaration
-		const aliasCode = `var ${originalName} = function() { return ${backupName}.apply(this, arguments); };\n`
+		const aliasCode = `var ${originalName} = function() { return ${backupName}.apply(this, arguments); };\n`;
 		result =
 			result.substring(0, func.funcDeclStart) +
 			aliasCode +
-			result.substring(func.funcDeclStart)
+			result.substring(func.funcDeclStart);
 	}
 
 	// Phase 2: Replace all call sites with __traceCall wrappers (from back to
 	// front within each function to avoid position shifts).
 	for (let i = 0; i < recursiveFuncs.length; i++) {
-		const func = recursiveFuncs[i]
-		const originalName = func.name
-		const backupName = `__orig_${originalName}`
-		const precomputed = precomputedCalls[originalName]
+		const func = recursiveFuncs[i];
+		const originalName = func.name;
+		const backupName = `__orig_${originalName}`;
+		const precomputed = precomputedCalls[originalName];
 
 		// Find all originalName( call sites in the current result
-		const callRegex = new RegExp(`\\b${originalName}\\s*\\(`, "g")
+		const callRegex = new RegExp(`\\b${originalName}\\s*\\(`, "g");
 		const callSites: {
-			nameStart: number
-			parenStart: number
-			endPos: number
-			line: number
-			startCol: number
-			endCol: number
-			argsStr: string
-		}[] = []
-		let callMatch: RegExpExecArray | null
-		let callIndex = 0
+			nameStart: number;
+			parenStart: number;
+			endPos: number;
+			line: number;
+			startCol: number;
+			endCol: number;
+			argsStr: string;
+		}[] = [];
+		let callMatch: RegExpExecArray | null;
+		let callIndex = 0;
 		// biome-ignore lint/suspicious/noAssignInExpressions: regex exec loop pattern
 		while ((callMatch = callRegex.exec(result)) !== null) {
-			const pos = callMatch.index
-			const nameStart = pos
-			const parenStart = result.indexOf("(", pos + originalName.length)
+			const pos = callMatch.index;
+			const nameStart = pos;
+			const parenStart = result.indexOf("(", pos + originalName.length);
 
-			if (parenStart === -1) continue
+			if (parenStart === -1) continue;
 
 			// Find matching close paren (handle nested parens)
-			let depth = 0
-			let endPos = parenStart
+			let depth = 0;
+			let endPos = parenStart;
 			for (let j = parenStart; j < result.length; j++) {
-				if (result[j] === "(") depth++
+				if (result[j] === "(") depth++;
 				else if (result[j] === ")") {
-					depth--
+					depth--;
 					if (depth === 0) {
-						endPos = j + 1
-						break
+						endPos = j + 1;
+						break;
 					}
 				}
 			}
 
 			// Extract arguments portion
-			const argsStr = result.substring(parenStart + 1, endPos - 1)
+			const argsStr = result.substring(parenStart + 1, endPos - 1);
 
 			// Use pre-computed line/col from original code
 			const lineInfo = precomputed[callIndex] || {
 				line: 0,
 				startCol: 0,
 				endCol: 0,
-			}
+			};
 
 			callSites.push({
 				nameStart,
@@ -214,26 +213,30 @@ export function instrumentRecursiveFunctions(
 				startCol: lineInfo.startCol,
 				endCol: lineInfo.endCol,
 				argsStr,
-			})
-			callIndex++
+			});
+			callIndex++;
 		}
 
 		// Replace call sites from back to front
 		for (let j = callSites.length - 1; j >= 0; j--) {
-			const site = callSites[j]
-			const replacement = `(function(__tc_a){return __traceCall(${site.line},${site.startCol},${site.endCol},"${originalName}",__tc_a,function(){return ${backupName}.apply(null,__tc_a)})})([${site.argsStr}])`
+			const site = callSites[j];
+			const replacement = `(function(__tc_a){return __traceCall(${site.line},${site.startCol},${site.endCol},"${originalName}",__tc_a,function(){return ${backupName}.apply(null,__tc_a)})})([${site.argsStr}])`;
 			result =
 				result.substring(0, site.nameStart) +
 				replacement +
-				result.substring(site.endPos)
+				result.substring(site.endPos);
 		}
 	}
 
-	return { code: result, hasRecursion: true }
+	return { code: result, hasRecursion: true };
 }
 
 interface TraceContextDeps {
-	safeStringify: (obj: unknown, maxDepth?: number, visited?: WeakSet<object>) => string
+	safeStringify: (
+		obj: unknown,
+		maxDepth?: number,
+		visited?: WeakSet<object>,
+	) => string;
 }
 
 /**
@@ -242,24 +245,24 @@ interface TraceContextDeps {
  * both in the worker (with the real implementation) and in tests (with a stub).
  */
 export function createTraceContext(deps: TraceContextDeps) {
-	const { safeStringify } = deps
+	const { safeStringify } = deps;
 
 	const traceContext: TraceContext = {
 		steps: [],
 		state: { depth: 0, startTime: 0 },
 		maxSteps: MAX_TRACE_STEPS,
-	}
+	};
 
 	function traceArgs(args: IArguments | unknown[]): string[] {
-		const result: string[] = []
+		const result: string[] = [];
 		for (let i = 0; i < args.length; i++) {
 			try {
-				result.push(safeStringify(args[i]))
+				result.push(safeStringify(args[i]));
 			} catch (_e) {
-				result.push("[Error serializing]")
+				result.push("[Error serializing]");
 			}
 		}
-		return result
+		return result;
 	}
 
 	function traceCall<T>(
@@ -281,14 +284,14 @@ export function createTraceContext(deps: TraceContextDeps) {
 				startCol,
 				endCol,
 				timestamp: performance.now() - traceContext.state.startTime,
-			})
+			});
 		}
-		traceContext.state.depth++
-		let traceResult: T
+		traceContext.state.depth++;
+		let traceResult: T;
 		try {
-			traceResult = callFn()
+			traceResult = callFn();
 		} finally {
-			traceContext.state.depth--
+			traceContext.state.depth--;
 			if (traceContext.steps.length < traceContext.maxSteps) {
 				traceContext.steps.push({
 					stepIndex: traceContext.steps.length,
@@ -301,21 +304,21 @@ export function createTraceContext(deps: TraceContextDeps) {
 					startCol,
 					endCol,
 					timestamp: performance.now() - traceContext.state.startTime,
-				})
+				});
 			}
 		}
-		return traceResult
+		return traceResult;
 	}
 
 	function buildTraceResult(hasRecursion: boolean): RecursiveTrace | undefined {
-		if (!hasRecursion || traceContext.steps.length === 0) return undefined
+		if (!hasRecursion || traceContext.steps.length === 0) return undefined;
 
-		let maxDepth = 0
-		const enterSteps = new Set<string>()
+		let maxDepth = 0;
+		const enterSteps = new Set<string>();
 		for (const step of traceContext.steps) {
 			if (step.action === "enter") {
-				if (step.depth > maxDepth) maxDepth = step.depth
-				enterSteps.add(`${step.functionName}:${step.args.join(",")}`)
+				if (step.depth > maxDepth) maxDepth = step.depth;
+				enterSteps.add(`${step.functionName}:${step.args.join(",")}`);
 			}
 		}
 
@@ -324,8 +327,8 @@ export function createTraceContext(deps: TraceContextDeps) {
 			maxDepth,
 			totalCalls: enterSteps.size,
 			truncated: traceContext.steps.length >= traceContext.maxSteps,
-		}
+		};
 	}
 
-	return { traceContext, traceArgs, traceCall, buildTraceResult }
+	return { traceContext, traceArgs, traceCall, buildTraceResult };
 }

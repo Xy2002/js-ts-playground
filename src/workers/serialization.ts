@@ -40,7 +40,8 @@ export function safeStringify(
 
 	try {
 		const entries = Object.entries(obj as Record<string, unknown>).map(
-			([key, value]) => `"${key}": ${safeStringify(value, maxDepth - 1, visited)}`,
+			([key, value]) =>
+				`"${key}": ${safeStringify(value, maxDepth - 1, visited)}`,
 		);
 		const result = `{${entries.join(", ")}}`;
 		visited.delete(obj as object);
@@ -56,7 +57,10 @@ interface ListNodeLike {
 	next: ListNodeLike | null;
 }
 
-export function formatLinkedList(head: ListNodeLike | null, maxNodes = 20): string {
+export function formatLinkedList(
+	head: ListNodeLike | null,
+	maxNodes = 20,
+): string {
 	if (!head) return "null";
 
 	const visited = new Set<ListNodeLike>();
