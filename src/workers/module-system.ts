@@ -66,22 +66,24 @@ export function wrapInModuleFunction(code: string): string {
 
 	// ===== IMPORT TRANSFORMATIONS =====
 
-	// import { x, y } from './module' -> const { x, y } = __require('./module')
+	// import { x, y } from './module' -> var { x, y } = __require('./module')
+	// Use var (not const) to avoid conflicts when imported names shadow
+	// local function/variable declarations in the same scope.
 	transformedCode = transformedCode.replace(
 		/import\s+\{([^}]+)\}\s+from\s+['"]([^'"]+)['"]/g,
-		"const {$1} = __require('$2')",
+		"var {$1} = __require('$2')",
 	);
 
-	// import x from './module' -> const x = __require('./module').default || __require('./module')
+	// import x from './module' -> var x = __require('./module').default || __require('./module')
 	transformedCode = transformedCode.replace(
 		/import\s+(\w+)\s+from\s+['"]([^'"]+)['"]/g,
-		"const $1 = __require('$2').default || __require('$2')",
+		"var $1 = __require('$2').default || __require('$2')",
 	);
 
-	// import * as x from './module' -> const x = __require('./module')
+	// import * as x from './module' -> var x = __require('./module')
 	transformedCode = transformedCode.replace(
 		/import\s+\*\s+as\s+(\w+)\s+from\s+['"]([^'"]+)['"]/g,
-		"const $1 = __require('$2')",
+		"var $1 = __require('$2')",
 	);
 
 	// ===== EXPORT TRANSFORMATIONS =====
