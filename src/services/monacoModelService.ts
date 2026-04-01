@@ -231,6 +231,7 @@ export class MonacoModelService {
 			diagnosticCodesToIgnore: [
 				2451, // Cannot redeclare block-scoped variable
 				2300, // Duplicate identifier
+				2393, // Duplicate function implementation
 				2307, // Cannot find module (we'll handle this differently)
 			],
 		});
@@ -269,9 +270,15 @@ export class MonacoModelService {
 				currentPaths.add(pathWithExt);
 				currentPaths.add(pathWithoutExtFull);
 
+				// Append `export {}` so TypeScript treats each file as a module
+				// rather than a script. This prevents cross-file duplicate
+				// declaration errors (e.g. error 2393) when multiple files
+				// define functions with the same name.
+				const moduleContent = `${content}\nexport {}`;
+
 				// Add with and without extension (addExtraLib handles deduplication)
-				this.addExtraLib(content, pathWithExt);
-				this.addExtraLib(content, pathWithoutExtFull);
+				this.addExtraLib(moduleContent, pathWithExt);
+				this.addExtraLib(moduleContent, pathWithoutExtFull);
 			}
 		}
 
