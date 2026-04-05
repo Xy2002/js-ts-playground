@@ -142,7 +142,7 @@ export async function evaluateInline(
 		}
 
 		// expression: wrap in IIFE to capture result without double-evaluation
-		transformed += `__ir[${lineNum}]=(function(){try{return(${original})===undefined?"undefined":__safeStringify(${original})}catch(__e){return"\\u26a0 "+__e.message}})()\n`;
+		transformed += `__ir[${lineNum}]=(function(){try{var __r=(${original});return __r===undefined?"undefined":__safeStringify(__r)}catch(__e){return"\\u26a0 "+__e.message}})()\n`;
 	}
 
 	transformed += "return __ir;\n";
