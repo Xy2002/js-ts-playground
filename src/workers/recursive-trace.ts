@@ -59,6 +59,39 @@ export function detectRecursiveFunctions(code: string): RecursiveFuncInfo[] {
 	return recursiveFunctions;
 }
 
+/**
+ * Detect function parameters and local variable declarations within a
+ * recursive function body. Returns an array of variable names.
+ */
+function detectLocalVariables(code: string, func: RecursiveFuncInfo): string[] {
+	const vars: string[] = [];
+
+	// Extract function parameters
+	const funcHeader = code.substring(func.funcDeclStart, func.bodyStart);
+	const paramMatch = funcHeader.match(/\(([^)]*)\)/);
+	if (paramMatch) {
+		const params = paramMatch[1]
+			.split(",")
+			.map((p) => p.trim())
+			.filter((p) => p.length > 0)
+			.map((p) => p.split(/\s/)[0]);
+		vars.push(...params);
+	}
+
+	// Extract local variable declarations from function body
+	const body = code.substring(func.bodyStart, func.bodyEnd);
+	const varRegex = /\b(?:let|const|var)\s+(\w+)/g;
+	let match: RegExpExecArray | null;
+	// biome-ignore lint/suspicious/noAssignInExpressions: regex exec loop pattern
+	while ((match = varRegex.exec(body)) !== null) {
+		if (!vars.includes(match[1]) && !match[1].startsWith("__")) {
+			vars.push(match[1]);
+		}
+	}
+
+	return vars;
+}
+
 interface PrecomputedCall {
 	line: number;
 	startCol: number;
@@ -127,6 +160,12 @@ export function instrumentRecursiveFunctions(
 			calls.push({ line, startCol, endCol, argsStr });
 		}
 		precomputedCalls[func.name] = calls;
+	}
+
+	// Detect local variables for each recursive function
+	const funcVariables: Record<string, string[]> = {};
+	for (const func of recursiveFuncs) {
+		funcVariables[func.name] = detectLocalVariables(code, func);
 	}
 
 	let result = code;
@@ -220,7 +259,11 @@ export function instrumentRecursiveFunctions(
 		// Replace call sites from back to front
 		for (let j = callSites.length - 1; j >= 0; j--) {
 			const site = callSites[j];
-			const replacement = `(function(__tc_a){return __traceCall(${site.line},${site.startCol},${site.endCol},"${originalName}",__tc_a,function(){return ${backupName}.apply(null,__tc_a)})})([${site.argsStr}])`;
+			const varNames = funcVariables[originalName] || [];
+			const tryCatchStmts = varNames
+				.map((v) => `try{__vo.${v}=${v}}catch(__e){}`)
+				.join("");
+			const replacement = `(function(__tc_a){var __vo={};${tryCatchStmts}return __traceCall(${site.line},${site.startCol},${site.endCol},"${originalName}",__tc_a,function(){return ${backupName}.apply(null,__tc_a)},__vo)})([${site.argsStr}])`;
 			result =
 				result.substring(0, site.nameStart) +
 				replacement +
@@ -272,7 +315,20 @@ export function createTraceContext(deps: TraceContextDeps) {
 		funcName: string,
 		args: IArguments | unknown[],
 		callFn: () => T,
+		vars?: Record<string, unknown>,
 	): T {
+		// Serialize variable snapshot
+		const variables: Record<string, string> = {};
+		if (vars) {
+			for (const [name, value] of Object.entries(vars)) {
+				try {
+					variables[name] = safeStringify(value);
+				} catch (_e) {
+					variables[name] = "[Error serializing]";
+				}
+			}
+		}
+
 		if (traceContext.steps.length < traceContext.maxSteps) {
 			traceContext.steps.push({
 				stepIndex: traceContext.steps.length,
@@ -284,6 +340,7 @@ export function createTraceContext(deps: TraceContextDeps) {
 				startCol,
 				endCol,
 				timestamp: performance.now() - traceContext.state.startTime,
+				variables,
 			});
 		}
 		traceContext.state.depth++;
@@ -304,6 +361,7 @@ export function createTraceContext(deps: TraceContextDeps) {
 					startCol,
 					endCol,
 					timestamp: performance.now() - traceContext.state.startTime,
+					variables,
 				});
 			}
 		}
