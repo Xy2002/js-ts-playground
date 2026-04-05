@@ -268,6 +268,25 @@ export function instrumentRecursiveFunctions(
 				result.substring(0, site.nameStart) +
 				replacement +
 				result.substring(site.endPos);
+
+			// Insert post-call variable update after the enclosing statement.
+			// After the assignment `let x = <traceCall>(...)` completes, `x` is
+			// no longer in TDZ so we can capture its actual value. The update
+			// IIFE merges into the last trace step's variables.
+			if (varNames.length > 0) {
+				const afterReplacement = site.nameStart + replacement.length;
+				const semicolonPos = result.indexOf(";", afterReplacement);
+				if (semicolonPos !== -1) {
+					const updateTryCatch = varNames
+						.map((v) => `try{__vu.${v}=${v}}catch(__e){}`)
+						.join("");
+					const updateCode = `(function(){var __vu={};${updateTryCatch}var __s=__traceContext.steps[__traceContext.steps.length-1];if(__s){for(var __n in __vu){try{__s.variables[__n]=__safeStringify(__vu[__n])}catch(__e){}}}})();`;
+					result =
+						result.substring(0, semicolonPos + 1) +
+						updateCode +
+						result.substring(semicolonPos + 1);
+				}
+			}
 		}
 	}
 
