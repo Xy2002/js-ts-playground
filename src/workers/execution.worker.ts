@@ -24,6 +24,7 @@ import type {
 	TestExecutionResults,
 	TestSuite,
 } from "./types";
+import { evaluateInline } from "./inline-eval";
 
 // ---- Worker global references ----
 
@@ -54,13 +55,35 @@ workerSelf.addEventListener("message", (e: MessageEvent) => {
 // ---- Main execution handler ----
 
 workerSelf.onmessage = async (e: MessageEvent) => {
+	const data = e.data;
+
+	// Route by message type
+	if (data.type === "inline-eval") {
+		const { code, language, executionId } = data;
+		try {
+			const results = await evaluateInline(code, language);
+			postMessageFn({
+				type: "inline-eval-result",
+				executionId,
+				results,
+			});
+		} catch (error) {
+			postMessageFn({
+				type: "inline-eval-result",
+				executionId,
+				results: [],
+			});
+		}
+		return;
+	}
+
 	const {
 		code,
 		language,
 		executionId,
 		allFiles: rawAllFiles,
 		entryFilePath,
-	} = e.data as ExecutionRequest;
+	} = data as ExecutionRequest;
 
 	try {
 		// Normalize allFiles keys
