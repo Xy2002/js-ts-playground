@@ -67,6 +67,12 @@ export interface ExecutionResult {
 	executionId?: string;
 }
 
+export interface InlineEvalResult {
+	line: number;
+	value: string;
+	error?: string;
+}
+
 export interface SWCLoadProgress {
 	state: "loading" | "ready" | "error";
 	step: number;
