@@ -292,87 +292,91 @@ export default function RecursiveTraceVisualization({
 				</Card>
 
 				{/* Right panel: Step Detail + Variable State */}
-				<div className="w-72 flex flex-col gap-3 min-h-0">
-					{/* Step Detail */}
-					<Card className="shrink-0 flex flex-col p-0 overflow-hidden">
-						<div className="px-3 py-2 border-b text-xs font-medium text-muted-foreground">
-							{t("trace.step")} #{currentStepIndex + 1}
-						</div>
-						{currentStep && (
-							<div className="p-3 space-y-2 text-xs">
-								<div>
-									<span className="text-muted-foreground">
-										{t("trace.title")}:
-									</span>{" "}
-									<span className="font-mono font-medium">
-										{currentStep.functionName}
-									</span>
+				<div className="w-72 min-h-0">
+					<ScrollArea className="h-full">
+						<div className="flex flex-col gap-3">
+							{/* Step Detail */}
+							<Card className="flex flex-col p-0 overflow-hidden">
+								<div className="px-3 py-2 border-b text-xs font-medium text-muted-foreground">
+									{t("trace.step")} #{currentStepIndex + 1}
 								</div>
-								<div>
-									<span className="text-muted-foreground">Action:</span>{" "}
-									<Badge
-										variant={
-											currentStep.action === "enter" ? "default" : "secondary"
-										}
-										className="text-[10px] px-1.5 py-0"
-									>
-										{currentStep.action === "enter"
-											? t("trace.enter")
-											: t("trace.exit")}
-									</Badge>
-								</div>
-								<div>
-									<span className="text-muted-foreground">
-										{t("trace.arguments")}:
-									</span>
-									<div className="font-mono mt-0.5 bg-muted/50 rounded px-2 py-1 break-all">
-										{getArgsDisplay(currentStep)}
-									</div>
-								</div>
-								{currentStep.action === "exit" &&
-									currentStep.returnValue !== undefined && (
+								{currentStep && (
+									<div className="p-3 space-y-2 text-xs">
 										<div>
 											<span className="text-muted-foreground">
-												{t("trace.returnValue")}:
+												{t("trace.title")}:
+											</span>{" "}
+											<span className="font-mono font-medium">
+												{currentStep.functionName}
+											</span>
+										</div>
+										<div>
+											<span className="text-muted-foreground">Action:</span>{" "}
+											<Badge
+												variant={
+													currentStep.action === "enter"
+														? "default"
+														: "secondary"
+												}
+												className="text-[10px] px-1.5 py-0"
+											>
+												{currentStep.action === "enter"
+													? t("trace.enter")
+													: t("trace.exit")}
+											</Badge>
+										</div>
+										<div>
+											<span className="text-muted-foreground">
+												{t("trace.arguments")}:
 											</span>
 											<div className="font-mono mt-0.5 bg-muted/50 rounded px-2 py-1 break-all">
-												{currentStep.returnValue}
+												{getArgsDisplay(currentStep)}
 											</div>
 										</div>
-									)}
-								<div>
-									<span className="text-muted-foreground">
-										{t("trace.depth")}:
-									</span>{" "}
-									<span>{currentStep.depth}</span>
-								</div>
-								<div>
-									<span className="text-muted-foreground">Line:</span>{" "}
-									<span>{currentStep.line}</span>
-								</div>
-								<div>
-									<span className="text-muted-foreground">Time:</span>{" "}
-									<span>{currentStep.timestamp.toFixed(2)}ms</span>
-								</div>
-							</div>
-						)}
-					</Card>
+										{currentStep.action === "exit" &&
+											currentStep.returnValue !== undefined && (
+												<div>
+													<span className="text-muted-foreground">
+														{t("trace.returnValue")}:
+													</span>
+													<div className="font-mono mt-0.5 bg-muted/50 rounded px-2 py-1 break-all">
+														{currentStep.returnValue}
+													</div>
+												</div>
+											)}
+										<div>
+											<span className="text-muted-foreground">
+												{t("trace.depth")}:
+											</span>{" "}
+											<span>{currentStep.depth}</span>
+										</div>
+										<div>
+											<span className="text-muted-foreground">Line:</span>{" "}
+											<span>{currentStep.line}</span>
+										</div>
+										<div>
+											<span className="text-muted-foreground">Time:</span>{" "}
+											<span>{currentStep.timestamp.toFixed(2)}ms</span>
+										</div>
+									</div>
+								)}
+							</Card>
 
-					{/* Variable State */}
-					<Card className="flex-1 flex flex-col p-0 overflow-hidden min-h-0">
-						<div className="px-3 py-2 border-b text-xs font-medium text-muted-foreground">
-							{t("trace.variables")}
+							{/* Variable State */}
+							<Card className="flex flex-col p-0 overflow-hidden">
+								<div className="px-3 py-2 border-b text-xs font-medium text-muted-foreground">
+									{t("trace.variables")}
+								</div>
+								<div className="p-2 font-mono text-xs">
+									<VariableTree
+										variables={currentStep?.variables}
+										changedVars={changedVars}
+										noVariablesText={t("trace.noVariables")}
+									/>
+								</div>
+							</Card>
 						</div>
-						<ScrollArea className="flex-1">
-							<div className="p-2 font-mono text-xs">
-								<VariableTree
-									variables={currentStep?.variables}
-									changedVars={changedVars}
-									noVariablesText={t("trace.noVariables")}
-								/>
-							</div>
-						</ScrollArea>
-					</Card>
+					</ScrollArea>
 				</div>
 			</div>
 		</div>

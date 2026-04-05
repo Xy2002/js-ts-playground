@@ -364,7 +364,7 @@ export default function CodeEditor({
 			fontFamily: 'Monaco, "Courier New", monospace',
 			lineNumbers: isMobile ? "off" : "on",
 			roundedSelection: false,
-			scrollBeyondLastLine: false,
+			scrollBeyondLastLine: true,
 			readOnly,
 			minimap: { enabled: !isMobile },
 			wordWrap: "on",
