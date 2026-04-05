@@ -1,10 +1,10 @@
 // Recursive function detection, instrumentation, and trace recording.
 
 import type {
-	RecursiveFuncInfo,
 	InstrumentResult,
-	TraceContext,
+	RecursiveFuncInfo,
 	RecursiveTrace,
+	TraceContext,
 } from "./types";
 
 export const MAX_TRACE_STEPS = 10000;

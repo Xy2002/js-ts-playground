@@ -1,24 +1,24 @@
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Slider } from "@/components/ui/slider";
 import {
 	Activity,
 	ChevronLeft,
 	ChevronRight,
 	FastForward,
-	SkipBack,
 	Pause,
 	Play,
+	SkipBack,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import { useTranslation } from "react-i18next";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Slider } from "@/components/ui/slider";
+import VariableTree from "@/components/VariableTree";
 import type {
 	RecursiveTrace,
 	TraceStep,
 } from "@/services/codeExecutionService";
-import VariableTree from "@/components/VariableTree";
 
 interface RecursiveTraceVisualizationProps {
 	trace: RecursiveTrace;
