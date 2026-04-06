@@ -91,7 +91,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
 	return (
 		<div
 			ref={menuRef}
-			className="fixed z-50 bg-white dark:bg-[#27272a] border border-gray-200 dark:border-[#3f3f46] rounded-lg shadow-lg py-1 min-w-[160px]"
+			className="fixed z-50 bg-popover text-popover-foreground border border-border rounded-lg shadow-lg py-1 min-w-[160px]"
 			style={{
 				left: position.x,
 				top: position.y,
@@ -102,7 +102,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
 					return (
 						<div
 							key={`separator-${item.id || index}`}
-							className="border-t border-gray-200 dark:border-[#3f3f46] my-1"
+							className="border-t border-border my-1"
 						/>
 					);
 				}
@@ -116,7 +116,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
               ${
 								item.disabled
 									? "text-muted-foreground cursor-not-allowed"
-									: "text-foreground hover:bg-accent dark:hover:bg-[#3f3f46]"
+									: "hover:bg-accent hover:text-accent-foreground"
 							}
             `}
 						onClick={() => handleItemClick(item)}
