@@ -698,6 +698,7 @@ export default function Home() {
 							variant="ghost"
 							size="sm"
 							onClick={handleClearOutput}
+							title={t("header.clearOutputTooltip")}
 							className="text-muted-foreground"
 						>
 							<RotateCcw className="w-3.5 h-3.5" />
@@ -743,6 +744,7 @@ export default function Home() {
 								onTouchStart={handleLongPressStart}
 								onTouchEnd={handleLongPressEnd}
 								className="relative overflow-hidden text-muted-foreground hover:text-warning"
+								title={t("header.resetTooltip")}
 							>
 								{isLongPressing && (
 									<div className="absolute inset-0 flex items-center px-2">
@@ -763,6 +765,7 @@ export default function Home() {
 								variant="destructive"
 								size="sm"
 								onClick={handleStopExecution}
+								title={t("common.stop")}
 							>
 								<Square className="w-3.5 h-3.5" />
 							</Button>
@@ -774,7 +777,7 @@ export default function Home() {
 								</span>
 							</Button>
 						) : (
-							<Button size="sm" onClick={handleRunCode}>
+							<Button size="sm" onClick={handleRunCode} title={t("common.run")}>
 								<Play className="w-3.5 h-3.5" />
 								<span className="hidden sm:inline ml-1 text-xs">
 									{t("common.run")}
@@ -789,6 +792,7 @@ export default function Home() {
 							size="sm"
 							onClick={() => setIsSettingsOpen(true)}
 							className="text-muted-foreground"
+							title={t("header.settingsTooltip")}
 						>
 							<Settings className="w-3.5 h-3.5" />
 						</Button>

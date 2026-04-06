@@ -21,6 +21,9 @@
 		"backToPlayground": "Back to AlgoPad",
 		"clearAll": "Clear All",
 		"clearAllTooltip": "Long press for 3 seconds to clear all state (including code, settings and files)",
+		"clearOutputTooltip": "Clear output",
+		"resetTooltip": "Long press for 3 seconds to reset",
+		"settingsTooltip": "Settings",
 		"reset": "Reset"
 	},
 	"language": {
