@@ -67,9 +67,6 @@ export class GeneralTreeNode {
 	}
 }
 
-// Temporary alias for backward compatibility during migration
-export const TreeNode = GeneralTreeNode;
-
 export class BinaryTreeNode {
 	val: number;
 	left: BinaryTreeNode | null;

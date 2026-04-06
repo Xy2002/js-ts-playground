@@ -5,10 +5,11 @@
 import { createMockConsole } from "./console";
 import {
 	arrayToListNode,
+	BinaryTreeNode,
 	createVisualizationHelpers,
+	GeneralTreeNode,
 	ListNode,
 	listNodeToArray,
-	TreeNode,
 	type VisualizationEntry,
 } from "./data-structures";
 import { createModuleSystem, normalizePath } from "./module-system";
@@ -89,7 +90,12 @@ workerSelf.onmessage = async (e: MessageEvent) => {
 		// Normalize allFiles keys
 		const allFiles: Record<
 			string,
-			{ content: string; language: string; path: string }
+			{
+				content: string;
+				language: string;
+				path: string;
+				treeMode?: "general" | "binary";
+			}
 		> = {};
 		if (rawAllFiles) {
 			for (const [filePath, fileInfo] of Object.entries(rawAllFiles)) {
@@ -100,10 +106,24 @@ workerSelf.onmessage = async (e: MessageEvent) => {
 					content: string;
 					language: string;
 					path: string;
+					treeMode?: "general" | "binary";
 				};
 			}
 		}
 		const isMultiFile = Object.keys(allFiles).length > 0 && entryFilePath;
+
+		// Determine tree mode from entry file
+		const entryTreeMode: "general" | "binary" =
+			(entryFilePath && allFiles[entryFilePath]?.treeMode) ||
+			(entryFilePath &&
+				allFiles[
+					entryFilePath.startsWith("/")
+						? entryFilePath.substring(1)
+						: entryFilePath
+				]?.treeMode) ||
+			"general";
+		const TreeNode =
+			entryTreeMode === "binary" ? BinaryTreeNode : GeneralTreeNode;
 
 		// Per-execution mutable state
 		const logs: string[] = [];

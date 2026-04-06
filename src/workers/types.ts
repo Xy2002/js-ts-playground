@@ -93,7 +93,12 @@ export interface ExecutionRequest {
 	executionId: string;
 	allFiles?: Record<
 		string,
-		{ content: string; language: string; path: string }
+		{
+			content: string;
+			language: string;
+			path: string;
+			treeMode?: "general" | "binary";
+		}
 	>;
 	entryFilePath?: string;
 }

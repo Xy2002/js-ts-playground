@@ -5,8 +5,11 @@ import type { ExecutionContext, PostMessageFn } from "./types";
 import { transpileTypeScript } from "./swc";
 import { instrumentRecursiveFunctions } from "./recursive-trace";
 import type { safeStringify } from "./serialization";
-import type { ListNode } from "./data-structures";
-import type { TreeNode } from "./data-structures";
+import type {
+	ListNode,
+	GeneralTreeNode,
+	BinaryTreeNode,
+} from "./data-structures";
 import type { MockConsole } from "./console";
 
 // ---- Path helpers ----
@@ -151,7 +154,7 @@ export interface ModuleSystemDeps {
 	safeStringify: typeof safeStringify;
 	safeGlobals: Record<string, unknown>;
 	ListNode: typeof ListNode;
-	TreeNode: typeof TreeNode;
+	TreeNode: typeof GeneralTreeNode | typeof BinaryTreeNode;
 	arrayToListNode: (arr: number[]) => ListNode | null;
 	listNodeToArray: (head: ListNode | null) => number[];
 	postMessage: PostMessageFn;
