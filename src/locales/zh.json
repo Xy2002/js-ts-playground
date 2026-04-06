@@ -179,6 +179,8 @@
 		"dataStructures": "数据结构",
 		"listFunctions": "链表函数",
 		"treeFunctions": "树函数",
+		"treeFunctionsGeneral": "树函数 (N叉)",
+		"treeFunctionsBinary": "树函数 (二叉)",
 		"heapFunctions": "堆函数",
 		"testing": "测试框架",
 		"listNode": {
@@ -195,7 +197,11 @@
 			"description": "将链表转换为数组"
 		},
 		"renderTree": {
-			"description": "在输出面板可视化树结构"
+			"description": "在输出面板可视化树结构",
+			"generalDescription": "在输出面板可视化 N 叉树结构",
+			"binaryDescription": "在输出面板可视化二叉树结构",
+			"generalExample": "// 渲染 N 叉树\nconst root = new TreeNode('root');\nroot.addChild(new TreeNode('child'));\nrenderTree(root, \"N-ary Tree\");",
+			"binaryExample": "// 渲染二叉树\nconst root = new TreeNode(1);\nroot.left = new TreeNode(2);\nroot.right = new TreeNode(3);\nrenderTree(root, \"Binary Tree\");"
 		},
 		"renderHeap": {
 			"description": "在输出面板可视化堆结构"

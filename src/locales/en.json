@@ -122,6 +122,8 @@
 		"dataStructures": "Data Structures",
 		"listFunctions": "List Functions",
 		"treeFunctions": "Tree Functions",
+		"treeFunctionsGeneral": "Tree Functions (N-ary)",
+		"treeFunctionsBinary": "Tree Functions (Binary)",
 		"heapFunctions": "Heap Functions",
 		"testing": "Testing Framework",
 		"listNode": {
@@ -138,7 +140,11 @@
 			"description": "Convert a linked list to an array"
 		},
 		"renderTree": {
-			"description": "Visualize tree structure in the output panel"
+			"description": "Visualize tree structure in the output panel",
+			"generalDescription": "Visualize N-ary tree structure in the output panel",
+			"binaryDescription": "Visualize binary tree structure in the output panel",
+			"generalExample": "// Render an N-ary tree\nconst root = new TreeNode('root');\nroot.addChild(new TreeNode('child'));\nrenderTree(root, \"N-ary Tree\");",
+			"binaryExample": "// Render a binary tree\nconst root = new TreeNode(1);\nroot.left = new TreeNode(2);\nroot.right = new TreeNode(3);\nrenderTree(root, \"Binary Tree\");"
 		},
 		"renderHeap": {
 			"description": "Visualize heap structure in the output panel"

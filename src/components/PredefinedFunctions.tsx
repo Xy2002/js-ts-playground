@@ -81,19 +81,24 @@ root.right = new TreeNode(3);`,
 		},
 		{
 			icon: FileCode,
-			title: t("predefined.treeFunctions"),
+			title:
+				currentTreeMode === "general"
+					? t("predefined.treeFunctionsGeneral")
+					: t("predefined.treeFunctionsBinary"),
 			color: "text-purple-500",
 			functions: [
 				{
 					name: "renderTree",
-					description: t("predefined.renderTree.description"),
+					description:
+						currentTreeMode === "general"
+							? t("predefined.renderTree.generalDescription")
+							: t("predefined.renderTree.binaryDescription"),
 					signature:
 						"renderTree(root: any, description?: string, highlightedNodes?: any[]): void",
-					example: `// Render generic tree/object
-renderTree(root, "Binary Tree");
-
-// Highlight specific values or nodes
-renderTree(root, "Highlighted", [node1, node2]);`,
+					example:
+						currentTreeMode === "general"
+							? t("predefined.renderTree.generalExample")
+							: t("predefined.renderTree.binaryExample"),
 				},
 			],
 		},
