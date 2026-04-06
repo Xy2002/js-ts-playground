@@ -42,6 +42,50 @@ interface CodeEditorProps {
 	onEditorMounted?: (editor: monaco.editor.IStandaloneCodeEditor) => void;
 	highlightRange?: HighlightRange | null;
 	inlineEvalResults?: InlineEvalResult[];
+	treeMode?: "general" | "binary";
+}
+
+async function loadTypeDefinitions(
+	monacoInstance: typeof import("monaco-editor"),
+	mode: "general" | "binary",
+	existingDisposable?: { dispose(): void } | null,
+): Promise<{ dispose(): void } | null> {
+	try {
+		const [baseRes, modeRes] = await Promise.all([
+			fetch("/monaco-types-base.d.ts"),
+			fetch(`/monaco-types-${mode}.d.ts`),
+		]);
+		const [baseSource, modeSource] = await Promise.all([
+			baseRes.text(),
+			modeRes.text(),
+		]);
+		const sourceCode = `${baseSource}\n${modeSource}`;
+
+		if (existingDisposable) {
+			existingDisposable.dispose();
+		}
+
+		const tsDisposable =
+			monacoInstance.languages.typescript.typescriptDefaults.addExtraLib(
+				sourceCode,
+				"interface.d.ts",
+			);
+		const jsDisposable =
+			monacoInstance.languages.typescript.javascriptDefaults.addExtraLib(
+				sourceCode,
+				"interface.d.ts",
+			);
+
+		return {
+			dispose() {
+				tsDisposable.dispose();
+				jsDisposable.dispose();
+			},
+		};
+	} catch (error) {
+		console.warn("Failed to load type definitions:", error);
+		return null;
+	}
 }
 
 export default function CodeEditor({
@@ -56,6 +100,7 @@ export default function CodeEditor({
 	onEditorMounted,
 	highlightRange,
 	inlineEvalResults,
+	treeMode = "general",
 }: CodeEditorProps) {
 	const { t } = useTranslation();
 	const { llmSettings, toggleLlmEnabled, files, fileContents } =
@@ -66,6 +111,7 @@ export default function CodeEditor({
 	const decorationCollectionRef =
 		useRef<monaco.editor.IEditorDecorationsCollection | null>(null);
 	const inlineEvalOverlayRef = useRef<HTMLDivElement | null>(null);
+	const extraLibDisposableRef = useRef<{ dispose(): void } | null>(null);
 	const [isEditorReady, setIsEditorReady] = useState(false);
 
 	// Reset refs when component remounts after unmount
@@ -75,6 +121,10 @@ export default function CodeEditor({
 			if (inlineEvalOverlayRef.current) {
 				inlineEvalOverlayRef.current.remove();
 				inlineEvalOverlayRef.current = null;
+			}
+			if (extraLibDisposableRef.current) {
+				extraLibDisposableRef.current.dispose();
+				extraLibDisposableRef.current = null;
 			}
 			editorRef.current = null;
 			monacoRef.current = null;
@@ -513,22 +563,10 @@ export default function CodeEditor({
 			accessibilitySupport: "auto",
 		});
 
-		// Load custom type definitions from external file
-		fetch("/monaco-types.d.ts")
-			.then((response) => response.text())
-			.then((sourceCode) => {
-				monaco.languages.typescript.typescriptDefaults.addExtraLib(
-					sourceCode,
-					"interface.d.ts",
-				);
-				monaco.languages.typescript.javascriptDefaults.addExtraLib(
-					sourceCode,
-					"interface.d.ts",
-				);
-			})
-			.catch((error) => {
-				console.warn("Failed to load custom type definitions:", error);
-			});
+		// Load initial type definitions based on tree mode
+		loadTypeDefinitions(monaco, treeMode).then((disposable) => {
+			extraLibDisposableRef.current = disposable;
+		});
 
 		// 添加常用快捷键
 		editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => {
@@ -614,6 +652,20 @@ export default function CodeEditor({
 			monacoModelService.syncModels(files, fileContents);
 		}
 	}, [files, fileContents, isEditorReady]);
+
+	// Refresh type definitions when treeMode changes
+	useEffect(() => {
+		const monacoInstance = monacoRef.current;
+		if (!monacoInstance) return;
+
+		loadTypeDefinitions(
+			monacoInstance,
+			treeMode,
+			extraLibDisposableRef.current,
+		).then((disposable) => {
+			extraLibDisposableRef.current = disposable;
+		});
+	}, [treeMode]);
 
 	return (
 		<div className="h-full w-full rounded-lg overflow-hidden border border-border/50 bg-background">
