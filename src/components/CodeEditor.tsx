@@ -179,6 +179,11 @@ export default function CodeEditor({
 		editor.revealLineInCenter(line);
 	}, [highlightRange, isEditorReady]);
 
+	// Reset overlay ref when filePath changes (Monaco rebuilds DOM on path change)
+	useEffect(() => {
+		inlineEvalOverlayRef.current = null;
+	}, [filePath]);
+
 	// Inline expression evaluation overlay
 	const renderInlineEvalOverlay = useCallback(() => {
 		const editor = editorRef.current;
@@ -217,7 +222,10 @@ export default function CodeEditor({
 			monacoInstance.editor.EditorOption.lineHeight,
 		);
 
+		const lineCount = model.getLineCount();
+
 		for (const result of inlineEvalResults) {
+			if (result.line < 1 || result.line > lineCount) continue;
 			const lineLength = model.getLineLength(result.line);
 
 			// Get pixel position of end of line content
@@ -258,7 +266,7 @@ export default function CodeEditor({
 		return () => {
 			for (const d of disposables) d.dispose();
 		};
-	}, [isEditorReady, renderInlineEvalOverlay]);
+	}, [isEditorReady, renderInlineEvalOverlay, filePath]);
 
 	// Dynamic registration logic based on settings
 	useEffect(() => {

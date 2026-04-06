@@ -39,6 +39,7 @@ const SKIP_PREFIXES = [
 	"else{",
 	"else if",
 	"@",
+	"console.",
 ];
 
 function classifyLine(trimmed: string): LineClass {
@@ -219,30 +220,51 @@ function normalizeMultilineStrings(code: string): string {
 	return result.join("");
 }
 
-export async function evaluateInline(
-	code: string,
-	language: "javascript" | "typescript",
-): Promise<InlineEvalResult[]> {
-	// Step 1: Transpile if TypeScript
-	let jsCode = code;
-	if (language === "typescript") {
-		try {
-			jsCode = await transpileTypeScript(code);
-		} catch {
-			// If transpilation fails, skip evaluation
-			return [];
-		}
-	}
+/**
+ * Strip TypeScript-specific syntax from a single line, preserving line count.
+ * Each line maps 1:1 — no lines added or removed.
+ * Used as fallback when SWC transpilation changes line count.
+ */
+function stripTypesFromLine(line: string): string {
+	const trimmed = line.trim();
 
-	// Step 2: Normalize multi-line strings so split("\n") doesn't break them.
-	// Replace literal newlines inside string literals with \n escape sequences.
-	const normalized = normalizeMultilineStrings(jsCode);
+	// Standalone type-only lines → neutralize to empty
+	if (/^type\s+/.test(trimmed)) return "";
+	if (/^interface\s+/.test(trimmed)) return "";
+	if (/^enum\s+/.test(trimmed)) return "";
+	if (/^implements\s+/.test(trimmed)) return "";
+	if (/^abstract\s+/.test(trimmed)) return "";
+	// export type / interface / enum
+	if (/^export\s+type\s+/.test(trimmed)) return "";
+	if (/^export\s+interface\s+/.test(trimmed)) return "";
+	if (/^export\s+enum\s+/.test(trimmed)) return "";
+	// import type { ... }
+	if (/^import\s+type\s+/.test(trimmed)) return "";
 
-	// Step 3: Classify lines (with multi-line state tracking)
-	const lines = normalized.split("\n");
+	return (
+		line
+			// Remove generic type parameters: function foo<T>( → function foo(
+			.replace(/<[^>]*>/g, "")
+			// Remove ? in optional params: val?: → val:
+			.replace(/(\w)\?(\s*:)/g, "$1$2")
+			// Remove type annotations: let x: number = 5 → let x = 5
+			// Also handles function params: x: number, → x,
+			.replace(/:\s*[\w<>,[\]|&\s]+(?=\s*[=;),])/g, "")
+			// Remove function return types: ): number { → ) {
+			.replace(/\):\s*[\w<>,[\]|&\s]+\s*\{/g, ") {")
+			// Remove as-assertions: x as number → x
+			.replace(/\s+as\s+[\w<>,[\]|&\s]+/g, "")
+			// Remove non-null assertions: x! → x (but not !==)
+			.replace(/(\w+)!(?!=)/g, "$1")
+			// Remove access modifiers
+			.replace(/\b(public|private|protected|readonly|abstract)\s+/g, "")
+	);
+}
+
+function classifyLines(lines: string[]): LineClass[] {
 	const classifications: LineClass[] = [];
 	let inBlockComment = false;
-	let openQuote: string | null = null; // tracks "'", '"', or '`' for unclosed string/template
+	let openQuote: string | null = null;
 
 	for (let i = 0; i < lines.length; i++) {
 		const line = lines[i];
@@ -256,10 +278,9 @@ export async function evaluateInline(
 		}
 
 		if (openQuote) {
-			// Scan for the closing quote, respecting escapes
 			for (let c = 0; c < line.length; c++) {
 				if (line[c] === "\\" && c + 1 < line.length) {
-					c++; // skip escaped char
+					c++;
 					continue;
 				}
 				if (line[c] === openQuote) {
@@ -273,18 +294,16 @@ export async function evaluateInline(
 
 		const trimmed = line.trim();
 
-		// Block comment start (but not end on same line)
 		if (trimmed.startsWith("/*") && !trimmed.includes("*/")) {
 			inBlockComment = true;
 			classifications.push("skip");
 			continue;
 		}
 
-		// Scan the line for unbalanced quotes to detect multi-line strings
 		const quoteBalance = { "'": 0, '"': 0, "`": 0 };
 		for (let c = 0; c < line.length; c++) {
 			if (line[c] === "\\" && c + 1 < line.length) {
-				c++; // skip escaped char
+				c++;
 				continue;
 			}
 			if (line[c] === "'" || line[c] === '"' || line[c] === "`") {
@@ -292,7 +311,6 @@ export async function evaluateInline(
 			}
 		}
 
-		// Odd count means the string/template is opened but not closed
 		let openedQuote = false;
 		for (const q of ["'", '"', "`"] as const) {
 			if (quoteBalance[q] % 2 !== 0) {
@@ -305,22 +323,60 @@ export async function evaluateInline(
 		classifications.push(openedQuote ? "skip" : classifyLine(trimmed));
 	}
 
-	// Step 3: Build transformed code
+	return classifications;
+}
+
+export async function evaluateInline(
+	code: string,
+	language: "javascript" | "typescript",
+): Promise<InlineEvalResult[]> {
+	// Step 1: Normalize multi-line strings on ORIGINAL code (line numbers must match editor)
+	const normalized = normalizeMultilineStrings(code);
+	const originalLines = normalized.split("\n");
+
+	// Step 2: Classify lines on ORIGINAL code so line numbers match the editor
+	const classifications = classifyLines(originalLines);
+
+	// Step 3: For TypeScript, get evaluable JS lines
+	let evalLines: string[];
+	if (language === "typescript") {
+		try {
+			const jsCode = await transpileTypeScript(code);
+			const jsNormalized = normalizeMultilineStrings(jsCode);
+			const jsLines = jsNormalized.split("\n");
+
+			if (jsLines.length === originalLines.length) {
+				// SWC preserved line count — use its output (most correct)
+				evalLines = jsLines;
+			} else {
+				// SWC changed line count — fall back to regex stripping
+				evalLines = originalLines.map(stripTypesFromLine);
+			}
+		} catch {
+			// SWC failed — fall back to regex stripping
+			evalLines = originalLines.map(stripTypesFromLine);
+		}
+	} else {
+		evalLines = originalLines;
+	}
+
+	// Step 4: Build transformed code using evalLines (for execution)
+	//          but keyed by original line numbers
 	let transformed = "var __ir = {};\n";
 
-	for (let i = 0; i < lines.length; i++) {
-		const lineNum = i + 1; // 1-based
+	for (let i = 0; i < evalLines.length; i++) {
+		const lineNum = i + 1; // 1-based, matches original editor lines
 		const cls = classifications[i];
-		const original = lines[i];
+		const evalLine = evalLines[i];
 
 		if (cls === "skip") {
-			transformed += `${original}\n`;
+			transformed += `${evalLine}\n`;
 			continue;
 		}
 
 		if (cls === "assignment") {
-			transformed += `${original}\n`;
-			const varNames = extractVarNames(original);
+			transformed += `${evalLine}\n`;
+			const varNames = extractVarNames(evalLine);
 			for (const v of varNames) {
 				transformed += `try{__ir[${lineNum}]=(${v}!==undefined&&${v}!==null&&typeof ${v}==="object"?__safeStringify(${v}):String(${v}))}catch(__e){__ir[${lineNum}]="\\u26a0 "+__e.message}\n`;
 			}
@@ -331,14 +387,13 @@ export async function evaluateInline(
 		}
 
 		// expression: wrap in IIFE to capture result without double-evaluation
-		// Strip trailing comments and semicolons so they don't break the (expr) wrapper
-		const expr = stripTrailingComment(original).replace(/;\s*$/, "");
+		const expr = stripTrailingComment(evalLine).replace(/;\s*$/, "");
 		transformed += `__ir[${lineNum}]=(function(){try{var __r=(${expr});return __r===undefined?"undefined":__safeStringify(__r)}catch(__e){return"\\u26a0 "+__e.message}})()\n`;
 	}
 
 	transformed += "return __ir;\n";
 
-	// Step 4: Execute in sandbox
+	// Step 5: Execute in sandbox
 	const globalsObj: Record<string, unknown> = {
 		console: {
 			log: () => {},
@@ -416,7 +471,7 @@ export async function evaluateInline(
 
 		// Step 5: Convert to InlineEvalResult[]
 		const evalResults: InlineEvalResult[] = [];
-		for (let i = 0; i < lines.length; i++) {
+		for (let i = 0; i < originalLines.length; i++) {
 			const lineNum = i + 1;
 			const val = results[lineNum];
 			if (val !== undefined) {
