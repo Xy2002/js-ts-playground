@@ -22,7 +22,6 @@
 		"clearAll": "清除所有",
 		"clearAllTooltip": "长按3秒清除所有状态 (包括代码、设置和文件)",
 		"clearOutputTooltip": "清除输出",
-		"resetTooltip": "长按3秒重置",
 		"settingsTooltip": "设置",
 		"reset": "重置"
 	},

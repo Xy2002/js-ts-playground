@@ -4,7 +4,6 @@ import {
 	FileDiff,
 	Github,
 	Play,
-	RefreshCw,
 	RotateCcw,
 	Settings,
 	Square,
@@ -79,7 +78,6 @@ export default function Home() {
 		setExecuting,
 		setExecutionResult,
 		clearOutput,
-		resetToDefault,
 		clearAllState,
 		activeFileId,
 		files,
@@ -98,12 +96,6 @@ export default function Home() {
 		fileContents,
 	} = usePlaygroundStore();
 	const { t, i18n } = useTranslation();
-
-	// 长按重置功能的状态
-	const [isLongPressing, setIsLongPressing] = useState(false);
-	const [longPressProgress, setLongPressProgress] = useState(0);
-	const longPressTimerRef = useRef<NodeJS.Timeout | null>(null);
-	const progressTimerRef = useRef<NodeJS.Timeout | null>(null);
 
 	// 长按清除所有状态功能的状态
 	const [isLongPressingClear, setIsLongPressingClear] = useState(false);
@@ -545,43 +537,6 @@ export default function Home() {
 		}
 	};
 
-	// 长按重置功能
-	const handleLongPressStart = () => {
-		setIsLongPressing(true);
-		setLongPressProgress(0);
-
-		// 进度条动画
-		let progress = 0;
-		progressTimerRef.current = setInterval(() => {
-			progress += 2; // 每50ms增加2%，3秒完成
-			setLongPressProgress(progress);
-			if (progress >= 100 && progressTimerRef.current) {
-				clearInterval(progressTimerRef.current);
-			}
-		}, 60); // 3000ms / 50 = 60ms间隔
-
-		// 3秒后执行重置
-		longPressTimerRef.current = setTimeout(() => {
-			resetToDefault();
-			handleLongPressEnd();
-		}, 3000);
-	};
-
-	const handleLongPressEnd = () => {
-		setIsLongPressing(false);
-		setLongPressProgress(0);
-
-		if (longPressTimerRef.current) {
-			clearTimeout(longPressTimerRef.current);
-			longPressTimerRef.current = null;
-		}
-
-		if (progressTimerRef.current) {
-			clearInterval(progressTimerRef.current);
-			progressTimerRef.current = null;
-		}
-	};
-
 	// 长按清除所有状态功能
 	const handleLongPressClearStart = () => {
 		setIsLongPressingClear(true);
@@ -622,12 +577,6 @@ export default function Home() {
 	// 组件卸载时清理定时器
 	useEffect(() => {
 		return () => {
-			if (longPressTimerRef.current) {
-				clearTimeout(longPressTimerRef.current);
-			}
-			if (progressTimerRef.current) {
-				clearInterval(progressTimerRef.current);
-			}
 			if (longPressClearTimerRef.current) {
 				clearTimeout(longPressClearTimerRef.current);
 			}
@@ -728,32 +677,6 @@ export default function Home() {
 								<div className="relative z-10 flex items-center">
 									<Trash2
 										className={`w-3.5 h-3.5 ${isLongPressingClear ? "animate-pulse" : ""}`}
-									/>
-								</div>
-							</Button>
-						</div>
-
-						{/* Reset Button */}
-						<div className="relative">
-							<Button
-								variant="ghost"
-								size="sm"
-								onMouseDown={handleLongPressStart}
-								onMouseUp={handleLongPressEnd}
-								onMouseLeave={handleLongPressEnd}
-								onTouchStart={handleLongPressStart}
-								onTouchEnd={handleLongPressEnd}
-								className="relative overflow-hidden text-muted-foreground hover:text-warning"
-								title={t("header.resetTooltip")}
-							>
-								{isLongPressing && (
-									<div className="absolute inset-0 flex items-center px-2">
-										<Progress value={longPressProgress} className="h-0.5" />
-									</div>
-								)}
-								<div className="relative z-10 flex items-center">
-									<RefreshCw
-										className={`w-3.5 h-3.5 ${isLongPressing ? "animate-spin" : ""}`}
 									/>
 								</div>
 							</Button>
