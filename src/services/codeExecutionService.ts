@@ -185,7 +185,12 @@ export class CodeExecutionService {
 		language: "javascript" | "typescript",
 		allFiles?: Record<
 			string,
-			{ content: string; language: string; path: string }
+			{
+				content: string;
+				language: string;
+				path: string;
+				treeMode?: "general" | "binary";
+			}
 		>,
 		entryFilePath?: string,
 	): Promise<ExecutionResult> {
@@ -378,7 +383,12 @@ export const executeCode = (
 	language: "javascript" | "typescript",
 	allFiles?: Record<
 		string,
-		{ content: string; language: string; path: string }
+		{
+			content: string;
+			language: string;
+			path: string;
+			treeMode?: "general" | "binary";
+		}
 	>,
 	entryFilePath?: string,
 ): Promise<ExecutionResult> => {
