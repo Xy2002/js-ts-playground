@@ -25,7 +25,6 @@ interface Assertion<T = unknown> {
 	toBeLessThanOrEqual(number: number): void;
 	toBeInstanceOf(ctor: abstract new (...args: unknown[]) => unknown): void;
 	toThrow(message?: string | RegExp): void;
-	// Add more matchers as needed
 }
 
 interface ExpectStatic {
@@ -36,27 +35,9 @@ interface ExpectStatic {
 }
 
 declare const expect: ExpectStatic;
-declare const vi: unknown; // Basic mock support placeholder
+declare const vi: unknown;
 declare function describe(name: string, fn: () => void): void;
 declare function test(name: string, fn: () => void): void;
 declare function it(name: string, fn: () => void): void;
 
 declare function renderHeap(heap: unknown[], description: string): void;
-
-// Tree data structure
-declare class TreeNode<T = unknown> {
-	value: T;
-	children: TreeNode<T>[];
-	constructor(value: T, children?: TreeNode<T>[]);
-	addChild(child: TreeNode<T> | T): void;
-	removeChild(child: TreeNode<T>): void;
-	find(predicate: (value: T) => boolean): TreeNode<T> | null;
-	traverse(callback: (node: TreeNode<T>) => void): void;
-	toString(): string;
-}
-
-declare function renderTree(
-	root: TreeNode<unknown> | unknown,
-	description?: string,
-	highlightedNodes?: unknown[],
-): void;
