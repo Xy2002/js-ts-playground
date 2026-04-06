@@ -42,6 +42,13 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { PageTransition } from "@/components/ui/motion";
 import { Progress } from "@/components/ui/progress";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
 import { toast } from "@/components/ui/sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -78,6 +85,7 @@ export default function Home() {
 		files,
 		openTabs,
 		updateFileContent,
+		setFileTreeMode,
 		setAnalyzingComplexity,
 		setComplexityResult,
 		toggleComplexityVisualization,
@@ -280,7 +288,12 @@ export default function Home() {
 			const { fileContents } = usePlaygroundStore.getState();
 			const allFilesInfo: Record<
 				string,
-				{ content: string; language: string; path: string }
+				{
+					content: string;
+					language: string;
+					path: string;
+					treeMode?: "general" | "binary";
+				}
 			> = {};
 
 			// Build file info map
@@ -296,6 +309,7 @@ export default function Home() {
 					content,
 					language: fileLanguage,
 					path: file.path,
+					treeMode: file.treeMode,
 				};
 			}
 
@@ -650,6 +664,32 @@ export default function Home() {
 								? t("language.ts")
 								: t("language.js")}
 						</Badge>
+						{openTabs.length > 0 && activeFileId && (
+							<Select
+								value={files[activeFileId]?.treeMode || "general"}
+								onValueChange={(value) => {
+									if (activeFileId) {
+										setFileTreeMode(
+											activeFileId,
+											value as "general" | "binary",
+										);
+									}
+								}}
+							>
+								<SelectTrigger className="h-6 w-auto border-0 p-0 gap-1 text-[10px] font-mono font-medium text-muted-foreground hover:text-foreground focus:ring-0 focus:ring-offset-0">
+									<TreesIcon className="w-3 h-3" />
+									<SelectValue />
+								</SelectTrigger>
+								<SelectContent>
+									<SelectItem value="general">
+										{t("treeMode.generalLabel")}
+									</SelectItem>
+									<SelectItem value="binary">
+										{t("treeMode.binaryLabel")}
+									</SelectItem>
+								</SelectContent>
+							</Select>
+						)}
 					</div>
 
 					{/* Action Buttons */}
@@ -842,6 +882,11 @@ export default function Home() {
 														}}
 														highlightRange={highlightRange}
 														inlineEvalResults={inlineEvalResults}
+														treeMode={
+															activeFileId
+																? files[activeFileId]?.treeMode || "general"
+																: "general"
+														}
 													/>
 												) : (
 													<div className="h-full flex items-center justify-center bg-muted/30">

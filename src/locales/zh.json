@@ -29,6 +29,12 @@
 		"js": "JS",
 		"ts": "TS"
 	},
+	"treeMode": {
+		"general": "通用",
+		"binary": "二叉",
+		"generalLabel": "通用树",
+		"binaryLabel": "二叉树"
+	},
 	"fileExplorer": {
 		"title": "文件浏览器",
 		"searchPlaceholder": "搜索文件...",

@@ -29,6 +29,12 @@
 		"js": "JS",
 		"ts": "TS"
 	},
+	"treeMode": {
+		"general": "General",
+		"binary": "Binary",
+		"generalLabel": "General Tree",
+		"binaryLabel": "Binary Tree"
+	},
 	"fileExplorer": {
 		"title": "File Explorer",
 		"searchPlaceholder": "Search files...",
