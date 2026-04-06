@@ -10,27 +10,29 @@ export class ListNode {
 	}
 }
 
-export class TreeNode {
+export class GeneralTreeNode {
 	value: unknown;
-	children: TreeNode[];
+	children: GeneralTreeNode[];
 
-	constructor(value: unknown, children: TreeNode[] = []) {
+	constructor(value: unknown, children: GeneralTreeNode[] = []) {
 		this.value = value;
 		this.children = children;
 	}
 
-	addChild(child: TreeNode | unknown) {
-		this.children.push(child instanceof TreeNode ? child : new TreeNode(child));
+	addChild(child: GeneralTreeNode | unknown) {
+		this.children.push(
+			child instanceof GeneralTreeNode ? child : new GeneralTreeNode(child),
+		);
 	}
 
-	removeChild(child: TreeNode) {
+	removeChild(child: GeneralTreeNode) {
 		const index = this.children.indexOf(child);
 		if (index > -1) {
 			this.children.splice(index, 1);
 		}
 	}
 
-	find(predicate: (value: unknown) => boolean): TreeNode | null {
+	find(predicate: (value: unknown) => boolean): GeneralTreeNode | null {
 		if (predicate(this.value)) return this;
 		for (const child of this.children) {
 			const found = child.find(predicate);
@@ -39,7 +41,7 @@ export class TreeNode {
 		return null;
 	}
 
-	traverse(callback: (node: TreeNode) => void) {
+	traverse(callback: (node: GeneralTreeNode) => void) {
 		callback(this);
 		for (const child of this.children) {
 			child.traverse(callback);
@@ -54,11 +56,30 @@ export class TreeNode {
 		return result.join("");
 	}
 
-	toJSON(): { value: unknown; children: ReturnType<TreeNode["toJSON"]>[] } {
+	toJSON(): {
+		value: unknown;
+		children: ReturnType<GeneralTreeNode["toJSON"]>[];
+	} {
 		return {
 			value: this.value,
 			children: this.children.map((c) => c.toJSON()),
 		};
+	}
+}
+
+export class BinaryTreeNode {
+	val: number;
+	left: BinaryTreeNode | null;
+	right: BinaryTreeNode | null;
+
+	constructor(
+		val?: number,
+		left?: BinaryTreeNode | null,
+		right?: BinaryTreeNode | null,
+	) {
+		this.val = val ?? 0;
+		this.left = left ?? null;
+		this.right = right ?? null;
 	}
 }
 
