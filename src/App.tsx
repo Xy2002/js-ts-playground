@@ -9,6 +9,8 @@ import { useVersionCheck } from "@/hooks/useVersionCheck";
 import Home from "@/pages/Home";
 import Settings from "@/pages/Settings";
 import { usePlaygroundStore } from "@/store/usePlaygroundStore";
+import { TokenDialog } from "@/components/TokenDialog";
+import { initSync, onStoreChange } from "@/services/syncService";
 
 function AppContent() {
 	// CRITICAL: Load storage data BEFORE any other hooks that might call saveToStorage
@@ -21,6 +23,8 @@ function AppContent() {
 		loadFromStorage();
 		// Small delay to ensure state is updated before other hooks run
 		setTimeout(() => setIsStorageLoaded(true), 0);
+		initSync().catch(console.error);
+		usePlaygroundStore.subscribe(onStoreChange);
 	}, []);
 
 	// Load app version from version.json
@@ -79,6 +83,7 @@ function AppContent() {
 				</Routes>
 			)}
 			<Toaster />
+			<TokenDialog />
 		</>
 	);
 }
