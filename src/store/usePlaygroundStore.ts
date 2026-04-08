@@ -802,9 +802,12 @@ export const usePlaygroundStore = create<PlaygroundState>((set, get) => ({
 			}
 
 			// 如果没有数据，创建默认工作空间
+			// 但如果已有 sync token，跳过创建 — sync pull 会拉取远程数据
+			const hasSyncToken = localStorage.getItem("playground_sync_token");
 			if (
 				Object.keys(files).length === 0 &&
-				Object.keys(folders).length === 0
+				Object.keys(folders).length === 0 &&
+				!hasSyncToken
 			) {
 				console.log(
 					"[initializeMultiFileSystem] No existing data found, creating default workspace",
