@@ -2,6 +2,9 @@ FROM node:20-slim
 
 WORKDIR /app
 
+# Install git (needed by lefthook postinstall)
+RUN apt-get update && apt-get install -y git && rm -rf /var/lib/apt/lists/*
+
 # Install pnpm
 RUN corepack enable && corepack prepare pnpm@latest --activate
 
