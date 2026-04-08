@@ -94,6 +94,13 @@ export async function pull(store: StoreState): Promise<void> {
 		syncToken,
 	);
 
+	// Clear local files/folders before pulling remote data to avoid duplicates
+	usePlaygroundStore.setState({
+		files: {},
+		folders: {},
+		fileContents: {},
+	});
+
 	// Decrypt and merge files
 	const fileUpdates: Record<string, number> = {};
 	for (const file of data.files) {
@@ -300,11 +307,23 @@ export async function recover(token: string): Promise<void> {
 		// Derive encryption key
 		cryptoKey = await deriveKey(token, data.salt);
 
-		// Pull remote data
+		// Pull remote data (replaces local data)
 		await pull(usePlaygroundStore.getState());
 
-		// Push local data
-		await push(usePlaygroundStore.getState());
+		// Save pulled data to localStorage
+		const currentState = usePlaygroundStore.getState();
+		localStorage.setItem(
+			"playground_files",
+			JSON.stringify(currentState.files),
+		);
+		localStorage.setItem(
+			"playground_folders",
+			JSON.stringify(currentState.folders),
+		);
+		localStorage.setItem(
+			"playground_file_contents",
+			JSON.stringify(currentState.fileContents),
+		);
 	} catch (err) {
 		store.setSyncStatus("error");
 		throw err;
@@ -339,16 +358,30 @@ export async function initSync(): Promise<void> {
 		store.setSyncSalt(savedSalt);
 		cryptoKey = await deriveKey(savedToken, savedSalt);
 
-		// Pull remote data
+		// Pull remote data (replaces local files/folders to avoid duplicates)
 		try {
 			await pull(store);
+			// Save pulled data to localStorage
+			const currentState = usePlaygroundStore.getState();
+			localStorage.setItem(
+				"playground_files",
+				JSON.stringify(currentState.files),
+			);
+			localStorage.setItem(
+				"playground_folders",
+				JSON.stringify(currentState.folders),
+			);
+			localStorage.setItem(
+				"playground_file_contents",
+				JSON.stringify(currentState.fileContents),
+			);
 		} catch (err) {
 			console.error("Initial pull failed:", err);
 		}
 
-		// Push local data
+		// Push local data (settings, etc.)
 		try {
-			await push(store);
+			await push(usePlaygroundStore.getState());
 		} catch (err) {
 			console.error("Initial push failed:", err);
 		}
