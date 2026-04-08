@@ -2,18 +2,16 @@ FROM node:20-slim
 
 WORKDIR /app
 
-# Install git (needed by lefthook postinstall)
-RUN apt-get update && apt-get install -y git && rm -rf /var/lib/apt/lists/*
-
 # Install pnpm
 RUN corepack enable && corepack prepare pnpm@latest --activate
 
 # Copy workspace config and dependency manifests
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY server/package.json server/
+COPY scripts/postinstall.js scripts/
 
-# Install dependencies
-RUN pnpm install --frozen-lockfile
+# Install dependencies (skip postinstall scripts, we only need the SWC copy)
+RUN pnpm install --frozen-lockfile --ignore-scripts && node scripts/postinstall.js
 
 # Copy source code
 COPY . .
