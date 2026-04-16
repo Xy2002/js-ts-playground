@@ -28,6 +28,7 @@ import { DiffEditorPanel } from "@/components/DiffEditorPanel";
 import FileExplorer from "@/components/FileExplorer";
 import { FloatingPanel } from "@/components/FloatingPanel";
 import LanguageSwitch from "@/components/LanguageSwitch";
+import PanelLayoutManager from "@/components/PanelLayoutManager";
 import OutputDisplay from "@/components/OutputDisplay";
 import PredefinedFunctions from "@/components/PredefinedFunctions";
 import ProblemsPanel from "@/components/ProblemsPanel";
@@ -51,7 +52,6 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { toast } from "@/components/ui/sonner";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
 	executeCode,
 	executeInlineEval,
@@ -107,6 +107,13 @@ export default function Home() {
 		setDebugPause,
 		setBreakpoints,
 		clearDebugState,
+		panelLayout,
+		updateTabOrder,
+		floatTab,
+		dockTab,
+		updateFloatingPanel,
+		bringFloatingPanelToFront,
+		resetPanelLayout,
 	} = usePlaygroundStore();
 	const { t, i18n } = useTranslation();
 
@@ -968,166 +975,152 @@ export default function Home() {
 
 								{/* Output Panel */}
 								<Panel defaultSize="40%" minSize="20%" maxSize="90%">
-									<div className="h-full flex flex-col">
-										<div className="flex-1 min-h-0">
-											<Tabs
-												defaultValue="output"
-												className="h-full flex flex-col"
-											>
-												<div className="px-4 py-1.5 border-b border-border">
-													<TabsList className="w-full justify-start bg-transparent h-auto p-0 gap-0">
-														<TabsTrigger value="output" className="gap-2">
-															{t("output.title")}
-														</TabsTrigger>
-														{executionResult?.testResults?.hasTests && (
-															<TabsTrigger value="tests" className="gap-2">
-																Tests
-																<Badge
-																	variant="secondary"
-																	className="text-xs font-mono bg-muted/50"
-																>
-																	{executionResult.testResults.passed}/
-																	{executionResult.testResults.totalTests}
-																</Badge>
-															</TabsTrigger>
-														)}
-														<TabsTrigger value="problems" className="gap-2">
-															Problems
-															{markers.length > 0 && (
-																<Badge
-																	variant="destructive"
-																	className="text-xs font-mono"
-																>
-																	{markers.length}
-																</Badge>
-															)}
-														</TabsTrigger>
-														<TabsTrigger value="predefined" className="gap-2">
-															{t("predefined.tab")}
-														</TabsTrigger>
-														{executionResult?.trace &&
-															executionResult.trace.steps.length > 0 && (
-																<TabsTrigger value="trace" className="gap-2">
-																	<Activity className="h-3.5 w-3.5" />
-																	Trace
-																	<Badge
-																		variant="secondary"
-																		className="text-xs font-mono bg-muted/50"
-																	>
-																		{executionResult.trace.totalCalls}
-																	</Badge>
-																</TabsTrigger>
-															)}
-														{isDebugging && (
-															<TabsTrigger value="debugger" className="gap-2">
-																<Bug className="h-3.5 w-3.5" />
-																Debugger
-															</TabsTrigger>
-														)}
-													</TabsList>
-												</div>
-												<div className="flex-1 min-h-0">
-													<TabsContent
-														value="output"
-														className="h-full m-0 p-0"
-													>
-														{showComplexityVisualization && complexityResult ? (
-															<ComplexityVisualization
-																result={complexityResult}
-																onClose={toggleComplexityVisualization}
-															/>
-														) : (
-															<OutputDisplay
-																result={executionResult}
-																isExecuting={isExecuting}
-																onClear={handleClearOutput}
-																onStop={handleStopExecution}
-																onAnalyzeComplexity={handleAnalyzeComplexity}
-																isAnalyzingComplexity={isAnalyzingComplexity}
-															/>
-														)}
-													</TabsContent>
-													{executionResult?.testResults?.hasTests && (
-														<TabsContent
-															value="tests"
-															className="h-full m-0 p-0"
-														>
-															<TestVisualization
-																results={executionResult.testResults}
-															/>
-														</TabsContent>
-													)}
-													<TabsContent
-														value="problems"
-														className="h-full m-0 p-0"
-													>
-														<ProblemsPanel
-															markers={markers}
-															isVisible={true}
-															onToggle={() => {}}
-															onJumpToMarker={handleJumpToMarker}
-															alwaysExpanded={true}
+									<PanelLayoutManager
+										tabs={[
+											{
+												id: "output",
+												label: t("output.title"),
+												visible: true,
+												content:
+													showComplexityVisualization && complexityResult ? (
+														<ComplexityVisualization
+															result={complexityResult}
+															onClose={toggleComplexityVisualization}
 														/>
-													</TabsContent>
-													<TabsContent
-														value="predefined"
-														className="h-full m-0 p-0"
+													) : (
+														<OutputDisplay
+															result={executionResult}
+															isExecuting={isExecuting}
+															onClear={handleClearOutput}
+															onStop={handleStopExecution}
+															onAnalyzeComplexity={handleAnalyzeComplexity}
+															isAnalyzingComplexity={isAnalyzingComplexity}
+														/>
+													),
+											},
+											{
+												id: "tests",
+												label: "Tests",
+												visible: !!executionResult?.testResults?.hasTests,
+												badge: executionResult?.testResults?.hasTests ? (
+													<Badge
+														variant="secondary"
+														className="text-xs font-mono bg-muted/50"
 													>
-														<PredefinedFunctions />
-													</TabsContent>
-													{executionResult?.trace &&
-														executionResult.trace.steps.length > 0 && (
-															<TabsContent
-																value="trace"
-																className="h-full m-0 p-0"
-															>
-																<RecursiveTraceVisualization
-																	trace={executionResult.trace}
-																	currentStepIndex={traceStepIndex}
-																	onStepChange={setTraceStepIndex}
-																	isPlaying={traceIsPlaying}
-																	onPlayToggle={() =>
-																		setTraceIsPlaying(!traceIsPlaying)
-																	}
-																	playSpeed={tracePlaySpeed}
-																	onSpeedChange={setTracePlaySpeed}
-																/>
-															</TabsContent>
-														)}
-													{isDebugging && (
-														<TabsContent
-															value="debugger"
-															className="h-full m-0 p-0"
+														{executionResult.testResults.passed}/
+														{executionResult.testResults.totalTests}
+													</Badge>
+												) : undefined,
+												content: executionResult?.testResults?.hasTests ? (
+													<TestVisualization
+														results={executionResult.testResults}
+													/>
+												) : null,
+											},
+											{
+												id: "problems",
+												label: "Problems",
+												visible: true,
+												badge:
+													markers.length > 0 ? (
+														<Badge
+															variant="destructive"
+															className="text-xs font-mono"
 														>
-															<DebuggerPanel
-																debugState={
-																	debugPaused
-																		? "paused"
-																		: isDebugging
-																			? "running"
-																			: "idle"
-																}
-																currentPause={
-																	debugCurrentLine
-																		? {
-																				line: debugCurrentLine,
-																				variables: debugVariables || {},
-																				callStack: debugCallStack || [],
-																			}
-																		: null
-																}
-																onContinue={handleDebugContinue}
-																onStepOver={handleDebugStepOver}
-																onStepInto={handleDebugStepInto}
-																onStepOut={handleDebugStepOut}
-																onStop={handleDebugStop}
-															/>
-														</TabsContent>
-													)}
-												</div>
-											</Tabs>
-										</div>
-									</div>
+															{markers.length}
+														</Badge>
+													) : undefined,
+												content: (
+													<ProblemsPanel
+														markers={markers}
+														isVisible={true}
+														onToggle={() => {}}
+														onJumpToMarker={handleJumpToMarker}
+														alwaysExpanded={true}
+													/>
+												),
+											},
+											{
+												id: "predefined",
+												label: t("predefined.tab"),
+												visible: true,
+												content: <PredefinedFunctions />,
+											},
+											{
+												id: "trace",
+												label: "Trace",
+												visible: !!(
+													executionResult?.trace &&
+													executionResult.trace.steps.length > 0
+												),
+												icon: <Activity className="h-3.5 w-3.5" />,
+												badge: executionResult?.trace?.steps?.length ? (
+													<Badge
+														variant="secondary"
+														className="text-xs font-mono bg-muted/50"
+													>
+														{executionResult.trace.totalCalls}
+													</Badge>
+												) : undefined,
+												content:
+													executionResult?.trace &&
+													executionResult.trace.steps.length > 0 ? (
+														<RecursiveTraceVisualization
+															trace={executionResult.trace}
+															currentStepIndex={traceStepIndex}
+															onStepChange={setTraceStepIndex}
+															isPlaying={traceIsPlaying}
+															onPlayToggle={() =>
+																setTraceIsPlaying(!traceIsPlaying)
+															}
+															playSpeed={tracePlaySpeed}
+															onSpeedChange={setTracePlaySpeed}
+														/>
+													) : null,
+											},
+											{
+												id: "debugger",
+												label: "Debugger",
+												visible: isDebugging,
+												icon: <Bug className="h-3.5 w-3.5" />,
+												content: (
+													<DebuggerPanel
+														debugState={
+															debugPaused
+																? "paused"
+																: isDebugging
+																	? "running"
+																	: "idle"
+														}
+														currentPause={
+															debugCurrentLine
+																? {
+																		line: debugCurrentLine,
+																		variables: debugVariables || {},
+																		callStack: debugCallStack || [],
+																	}
+																: null
+														}
+														onContinue={handleDebugContinue}
+														onStepOver={handleDebugStepOver}
+														onStepInto={handleDebugStepInto}
+														onStepOut={handleDebugStepOut}
+														onStop={handleDebugStop}
+													/>
+												),
+											},
+										]}
+										tabOrder={panelLayout.tabOrder}
+										floatingPanels={panelLayout.floatingPanels}
+										activeTab={activeOutputTab}
+										onActiveTabChange={setActiveOutputTab}
+										onUpdateTabOrder={updateTabOrder}
+										onFloatTab={floatTab}
+										onDockTab={dockTab}
+										onUpdateFloatingPanel={updateFloatingPanel}
+										onBringFloatingPanelToFront={bringFloatingPanelToFront}
+										onResetPanelLayout={resetPanelLayout}
+									/>
 								</Panel>
 							</Group>
 						</Panel>
