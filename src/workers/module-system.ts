@@ -138,7 +138,7 @@ export function wrapInModuleFunction(code: string): string {
 	);
 
 	// Wrap in module function
-	return `(function(exports, __require, __currentFilePath, __traceContext, __safeStringify, __traceArgs, __traceCall) {
+	return `(function(exports, __require, __currentFilePath, __traceContext, __safeStringify, __traceArgs, __traceCall, __traceLine) {
 ${transformedCode}
 return exports;
 })`;
@@ -225,6 +225,7 @@ export function createModuleSystem(deps: ModuleSystemDeps) {
 		traceCtx: any,
 		traceArgsFn: any,
 		traceCallFn: any,
+		traceLineFn: any,
 		expectFn: any,
 		viObj: any,
 		describeFn: any,
@@ -270,6 +271,7 @@ export function createModuleSystem(deps: ModuleSystemDeps) {
 			"__safeStringify",
 			"__traceArgs",
 			"__traceCall",
+			"__traceLine",
 			`return ${moduleFunction}`,
 		);
 
@@ -311,6 +313,7 @@ export function createModuleSystem(deps: ModuleSystemDeps) {
 			stringify,
 			traceArgsFn,
 			traceCallFn,
+			traceLineFn,
 		);
 
 		return actualModuleFunction(
@@ -321,6 +324,7 @@ export function createModuleSystem(deps: ModuleSystemDeps) {
 			stringify,
 			traceArgsFn,
 			traceCallFn,
+			traceLineFn,
 		);
 	}
 
@@ -332,6 +336,7 @@ export function createModuleSystem(deps: ModuleSystemDeps) {
 		traceCtx: any,
 		traceArgsFn: any,
 		traceCallFn: any,
+		traceLineFn: any,
 		expectFn: any,
 		viObj: any,
 		describeFn: any,
@@ -358,6 +363,7 @@ export function createModuleSystem(deps: ModuleSystemDeps) {
 				traceCtx,
 				traceArgsFn,
 				traceCallFn,
+				traceLineFn,
 				expectFn,
 				viObj,
 				describeFn,
@@ -375,6 +381,7 @@ export function createModuleSystem(deps: ModuleSystemDeps) {
 				traceCtx,
 				traceArgsFn,
 				traceCallFn,
+				traceLineFn,
 				expectFn,
 				viObj,
 				describeFn,

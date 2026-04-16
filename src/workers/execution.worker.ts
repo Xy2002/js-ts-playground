@@ -12,6 +12,16 @@ import {
 	listNodeToArray,
 	type VisualizationEntry,
 } from "./data-structures";
+import { instrumentForDebug } from "./debug-instrument";
+import {
+	handleDebugResume,
+	handleSetBreakpoints,
+	handleDebugStop,
+	initDebugRuntime,
+	__debugEnter,
+	__debugExit,
+	__debugProbe,
+} from "./debug-runtime";
 import { createModuleSystem, normalizePath } from "./module-system";
 import {
 	createTraceContext,
@@ -51,12 +61,30 @@ workerSelf.addEventListener("message", (e: MessageEvent) => {
 			console.warn("SWC重新初始化失败:", error.message),
 		);
 	}
+
+	// Debug resume/stop commands (sent during paused execution)
+	if (e.data && e.data.type === "debug_resume") {
+		handleDebugResume(e.data.mode);
+	} else if (e.data && e.data.type === "debug_stop") {
+		handleDebugStop();
+	} else if (e.data && e.data.type === "debug_set_breakpoints") {
+		handleSetBreakpoints(e.data.breakpoints || []);
+	}
 });
 
 // ---- Main execution handler ----
 
 workerSelf.onmessage = async (e: MessageEvent) => {
 	const data = e.data;
+
+	// Skip debug messages — handled by the addEventListener above
+	if (
+		data.type === "debug_resume" ||
+		data.type === "debug_stop" ||
+		data.type === "debug_set_breakpoints"
+	) {
+		return;
+	}
 
 	// Route by message type
 	if (data.type === "inline-eval") {
@@ -84,7 +112,12 @@ workerSelf.onmessage = async (e: MessageEvent) => {
 		executionId,
 		allFiles: rawAllFiles,
 		entryFilePath,
-	} = data as ExecutionRequest;
+		debugMode,
+		breakpoints: debugBreakpoints,
+	} = data as ExecutionRequest & {
+		debugMode?: boolean;
+		breakpoints?: number[];
+	};
 
 	try {
 		// Normalize allFiles keys
@@ -162,7 +195,7 @@ workerSelf.onmessage = async (e: MessageEvent) => {
 		});
 
 		// --- Trace context ---
-		const { traceContext, traceArgs, traceCall, buildTraceResult } =
+		const { traceContext, traceArgs, traceCall, traceLine, buildTraceResult } =
 			createTraceContext({ safeStringify });
 		traceContext.state.startTime = startTime;
 
@@ -182,7 +215,7 @@ workerSelf.onmessage = async (e: MessageEvent) => {
 
 		// ---- Determine execution path ----
 
-		let executeCodeFunc: () => void;
+		let executeCodeFunc: () => void | Promise<void>;
 
 		if (isMultiFile) {
 			// ====== Multi-file mode ======
@@ -219,6 +252,7 @@ workerSelf.onmessage = async (e: MessageEvent) => {
 				traceContext,
 				traceArgs,
 				traceCall,
+				traceLine,
 				testFramework.expect,
 				testFramework.vi,
 				testFramework.describe,
@@ -241,109 +275,196 @@ workerSelf.onmessage = async (e: MessageEvent) => {
 				executableCode = await transpileTypeScript(code);
 			}
 
-			// Instrument recursive functions
-			try {
-				const { code: instrumented, hasRecursion: found } =
-					instrumentRecursiveFunctions(executableCode, originalCode);
-				if (found) hasRecursion = true;
-				executableCode = instrumented;
-			} catch (_instrError) {
-				// Use original code if instrumentation fails
+			if (debugMode) {
+				initDebugRuntime(postMessageFn, debugBreakpoints);
+				try {
+					const { code: instrumented } = instrumentForDebug(
+						executableCode,
+						originalCode,
+					);
+					executableCode = instrumented;
+				} catch (instrError) {}
+
+				executableCode = `try { ${executableCode} } catch (error) { throw error; }`;
+
+				// Build execution globals (debug version)
+				const globalsObj: Record<string, unknown> = {
+					console: mockConsole,
+					renderHeap,
+					renderTree,
+					__debugProbe,
+					__debugEnter,
+					__debugExit,
+					Math,
+					Date,
+					JSON,
+					Array,
+					Object,
+					String,
+					Number,
+					Boolean,
+					RegExp,
+					Error,
+					TypeError,
+					ReferenceError,
+					SyntaxError,
+					ListNode,
+					TreeNode,
+					arrayToListNode,
+					listNodeToArray,
+					expect: testFramework.expect,
+					vi: testFramework.vi,
+					describe: testFramework.describe,
+					test: testFramework.test,
+					it: testFramework.it,
+					setTimeout: safeGlobals.setTimeout,
+					setInterval: safeGlobals.setInterval,
+					clearTimeout,
+					clearInterval,
+				};
+
+				const restricted: Record<string, undefined> = {
+					fetch: undefined,
+					XMLHttpRequest: undefined,
+					WebSocket: undefined,
+					Worker: undefined,
+					SharedWorker: undefined,
+					localStorage: undefined,
+					sessionStorage: undefined,
+					location: undefined,
+					document: undefined,
+					window: undefined,
+					global: undefined,
+					globalThis: undefined,
+					self: undefined,
+					importScripts: undefined,
+					eval: undefined,
+					Function: undefined,
+					chai: undefined,
+				};
+
+				const merged = { ...globalsObj, ...restricted };
+
+				// Use AsyncFunction constructor so await is valid in the function body
+				const AsyncFunction = Object.getPrototypeOf(
+					async function () {},
+				).constructor;
+				const func = new AsyncFunction(...Object.keys(merged), executableCode);
+
+				const values = Object.values(merged);
+				executeCodeFunc = () => func(...values);
+			} else {
+				// ====== Normal mode (with recursive trace) ======
+				try {
+					const { code: instrumented, hasRecursion: found } =
+						instrumentRecursiveFunctions(executableCode, originalCode);
+					if (found) hasRecursion = true;
+					executableCode = instrumented;
+				} catch (_instrError) {
+					// Use original code if instrumentation fails
+				}
+
+				executableCode = `try { ${executableCode} } catch (error) { throw error; }`;
+
+				const globalsObj: Record<string, unknown> = {
+					console: mockConsole,
+					renderHeap,
+					renderTree,
+					__traceContext: traceContext,
+					__safeStringify: safeStringify,
+					__traceArgs: traceArgs,
+					__traceCall: traceCall,
+					__traceLine: traceLine,
+					Math,
+					Date,
+					JSON,
+					Array,
+					Object,
+					String,
+					Number,
+					Boolean,
+					RegExp,
+					Error,
+					TypeError,
+					ReferenceError,
+					SyntaxError,
+					ListNode,
+					TreeNode,
+					arrayToListNode,
+					listNodeToArray,
+					expect: testFramework.expect,
+					vi: testFramework.vi,
+					describe: testFramework.describe,
+					test: testFramework.test,
+					it: testFramework.it,
+					setTimeout: safeGlobals.setTimeout,
+					setInterval: safeGlobals.setInterval,
+					clearTimeout,
+					clearInterval,
+				};
+
+				const restricted: Record<string, undefined> = {
+					fetch: undefined,
+					XMLHttpRequest: undefined,
+					WebSocket: undefined,
+					Worker: undefined,
+					SharedWorker: undefined,
+					localStorage: undefined,
+					sessionStorage: undefined,
+					location: undefined,
+					document: undefined,
+					window: undefined,
+					global: undefined,
+					globalThis: undefined,
+					self: undefined,
+					importScripts: undefined,
+					eval: undefined,
+					Function: undefined,
+					chai: undefined,
+				};
+
+				const merged = { ...globalsObj, ...restricted };
+
+				const func = new Function(...Object.keys(merged), executableCode) as (
+					...args: unknown[]
+				) => void;
+
+				const values = Object.values(merged);
+				executeCodeFunc = () => func(...values);
 			}
-
-			executableCode = `try { ${executableCode} } catch (error) { throw error; }`;
-
-			// Build execution globals
-			const globalsObj: Record<string, unknown> = {
-				console: mockConsole,
-				renderHeap,
-				renderTree,
-				__traceContext: traceContext,
-				__safeStringify: safeStringify,
-				__traceArgs: traceArgs,
-				__traceCall: traceCall,
-				Math,
-				Date,
-				JSON,
-				Array,
-				Object,
-				String,
-				Number,
-				Boolean,
-				RegExp,
-				Error,
-				TypeError,
-				ReferenceError,
-				SyntaxError,
-				ListNode,
-				TreeNode,
-				arrayToListNode,
-				listNodeToArray,
-				expect: testFramework.expect,
-				vi: testFramework.vi,
-				describe: testFramework.describe,
-				test: testFramework.test,
-				it: testFramework.it,
-				setTimeout: safeGlobals.setTimeout,
-				setInterval: safeGlobals.setInterval,
-				clearTimeout,
-				clearInterval,
-			};
-
-			// Restricted globals
-			const restricted: Record<string, undefined> = {
-				fetch: undefined,
-				XMLHttpRequest: undefined,
-				WebSocket: undefined,
-				Worker: undefined,
-				SharedWorker: undefined,
-				localStorage: undefined,
-				sessionStorage: undefined,
-				location: undefined,
-				document: undefined,
-				window: undefined,
-				global: undefined,
-				globalThis: undefined,
-				self: undefined,
-				importScripts: undefined,
-				eval: undefined,
-				Function: undefined,
-				chai: undefined,
-			};
-
-			const merged = { ...globalsObj, ...restricted };
-
-			// eslint-disable-next-line @typescript-eslint/no-implied-eval
-			const func = new Function(...Object.keys(merged), executableCode) as (
-				...args: unknown[]
-			) => void;
-
-			const values = Object.values(merged);
-			executeCodeFunc = () => func(...values);
 		}
 
 		// ---- Execution timeout ----
 
-		executionTimeout = setTimeout(() => {
-			if (!executionCompleted) {
-				postMessageFn({
-					success: false,
-					logs: [...logs],
-					errors: [...errors, "⏱️ 代码执行超时 (3秒限制) - 已显示超时前的输出"],
-					executionTime: 3000,
-					executionId,
-					visualizations,
-					trace: buildTraceResult(hasRecursion),
-					testResults: buildTestResults(testFramework.testResults.suites, 3000),
-				});
-				executionCompleted = true;
-			}
-		}, 3000);
+		executionTimeout = setTimeout(
+			() => {
+				if (!executionCompleted) {
+					postMessageFn({
+						success: false,
+						logs: [...logs],
+						errors: [
+							...errors,
+							"⏱️ 代码执行超时 (3秒限制) - 已显示超时前的输出",
+						],
+						executionTime: 3000,
+						executionId,
+						visualizations,
+						trace: buildTraceResult(hasRecursion),
+						testResults: buildTestResults(
+							testFramework.testResults.suites,
+							3000,
+						),
+					});
+					executionCompleted = true;
+				}
+			},
+			debugMode ? 300000 : 3000,
+		);
 
 		// ---- Execute ----
 
 		try {
-			executeCodeFunc();
+			await executeCodeFunc();
 			executionCompleted = true;
 			clearTimeout(executionTimeout);
 

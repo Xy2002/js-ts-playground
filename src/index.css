@@ -251,12 +251,14 @@
 
 /* Trace line highlighting */
 .trace-highlight-line {
-	background-color: rgba(250, 204, 21, 0.12);
+	background-color: rgba(59, 130, 246, 0.18);
+	border-left: 2px solid rgba(59, 130, 246, 0.6);
+	border-right: 2px solid rgba(59, 130, 246, 0.6);
 }
 
 .trace-highlight-line-decoration {
-	width: 6px !important;
-	height: 6px !important;
+	width: 6px;
+	height: 6px;
 	border-radius: 50%;
 	background: radial-gradient(circle, #fbbf24 0%, #f59e0b 100%);
 	box-shadow: 0 0 6px 1px rgba(251, 191, 36, 0.5);
@@ -274,8 +276,8 @@
 }
 
 .trace-highlight-range-decoration {
-	width: 6px !important;
-	height: 6px !important;
+	width: 6px;
+	height: 6px;
 	border-radius: 50%;
 	background: radial-gradient(circle, #fbbf24 0%, #f59e0b 100%);
 	box-shadow: 0 0 6px 1px rgba(251, 191, 36, 0.5);
@@ -283,6 +285,45 @@
 	top: 50%;
 	transform: translateY(-50%);
 	margin-left: 8px;
+}
+
+/* Debugger breakpoint and current-line decorations */
+.debug-breakpoint {
+	cursor: pointer;
+}
+.debug-breakpoint::after {
+	content: "";
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	width: 12px;
+	height: 12px;
+	border-radius: 50%;
+	background: radial-gradient(circle, #ef4444 0%, #dc2626 100%);
+	box-shadow: 0 0 4px 1px rgba(239, 68, 68, 0.5);
+	transform: translate(-50%, -50%);
+}
+
+.debug-current-line {
+	background-color: rgba(234, 179, 8, 0.15);
+	border-top: 1px solid rgba(234, 179, 8, 0.4);
+	border-bottom: 1px solid rgba(234, 179, 8, 0.4);
+}
+
+.debug-current-line-glyph {
+	cursor: pointer;
+}
+.debug-current-line-glyph::after {
+	content: "";
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	width: 0;
+	height: 0;
+	border-left: 6px solid transparent;
+	border-right: 6px solid transparent;
+	border-top: 8px solid #eab308;
+	transform: translate(-50%, -70%);
 }
 
 /* Inline expression evaluation overlay */

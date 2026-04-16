@@ -92,6 +92,126 @@ function detectLocalVariables(code: string, func: RecursiveFuncInfo): string[] {
 	return vars;
 }
 
+/**
+ * Determine if a trimmed line of code is an executable statement that should
+ * generate a trace step. Conservative — it is better to miss some lines than
+ * to produce false positives.
+ */
+function isExecutableLine(trimmed: string): boolean {
+	if (trimmed.length === 0) return false;
+	if (/^[{}]*$/.test(trimmed)) return false;
+	if (trimmed.startsWith("//")) return false;
+	if (trimmed.startsWith("/*") || trimmed.startsWith("*")) return false;
+	// Variable declarations, return, control flow keywords
+	if (
+		/^\s*(let|const|var|return|if|else|for|while|do|switch|case|default|break|continue|throw|try|catch|finally)\b/.test(
+			trimmed,
+		)
+	)
+		return true;
+	// Assignments (x = ..., x += ..., x[0] = ...)
+	if (/\w+\s*(\[.*\])?\s*([+\-*/%]?=)/.test(trimmed)) return true;
+	// Function/method calls
+	if (/^\s*[\w.]+\s*\(/.test(trimmed)) return true;
+	// Increment/decrement
+	if (/\w+(\+\+|--)/.test(trimmed)) return true;
+	// Ternary expressions used as statements
+	if (/\?.*:/.test(trimmed)) return true;
+	return false;
+}
+
+/**
+ * Phase 1.5: Insert __traceLine probes before each executable statement inside
+ * recursive function bodies. Processes from bottom-to-top to avoid position
+ * shifts from insertions.
+ */
+function insertLineProbes(
+	code: string,
+	funcs: RecursiveFuncInfo[],
+	originalCodeForPositions: string | null,
+): string {
+	const posCode = originalCodeForPositions || code;
+	const useOriginalPositions = !!originalCodeForPositions;
+	let result = code;
+
+	// When using original TS source for positions, re-detect function start
+	// lines in the original source so that line numbers map to the editor.
+	const origStartLines: Record<string, number> = {};
+	if (useOriginalPositions) {
+		const origFuncRegex = /function\s+(\w+)\s*\([^)]*\)\s*\{/g;
+		let m: RegExpExecArray | null;
+		// biome-ignore lint/suspicious/noAssignInExpressions: regex exec loop
+		while ((m = origFuncRegex.exec(posCode)) !== null) {
+			origStartLines[m[1]] = posCode.substring(0, m.index).split("\n").length;
+		}
+	}
+
+	// Process functions from last to first to avoid position shifts
+	for (let fi = funcs.length - 1; fi >= 0; fi--) {
+		const func = funcs[fi];
+		const varNames = detectLocalVariables(posCode, func);
+
+		// Find function body range in the current result
+		// After Phase 1, the function was renamed but the body position may have
+		// shifted due to alias insertions. Re-locate by searching for the renamed function.
+		const renamedFunc = `function __orig_${func.name}`;
+		const funcIdx = result.indexOf(renamedFunc);
+		if (funcIdx === -1) continue;
+
+		// Find opening brace of function body
+		let braceStart = result.indexOf("{", funcIdx);
+		if (braceStart === -1) continue;
+
+		// Find matching closing brace
+		let braceCount = 1;
+		let bodyEnd = braceStart + 1;
+		for (let i = braceStart + 1; i < result.length; i++) {
+			if (result[i] === "{") braceCount++;
+			else if (result[i] === "}") {
+				braceCount--;
+				if (braceCount === 0) {
+					bodyEnd = i;
+					break;
+				}
+			}
+		}
+
+		// Extract body lines
+		const body = result.substring(braceStart + 1, bodyEnd);
+		const bodyLines = body.split("\n");
+
+		// Use original source start line when available (TS files)
+		const startLine = useOriginalPositions
+			? (origStartLines[func.name] ?? func.startLine)
+			: func.startLine;
+
+		// Process bottom-to-top
+		for (let li = bodyLines.length - 1; li >= 0; li--) {
+			const trimmed = bodyLines[li].trim();
+			if (!isExecutableLine(trimmed)) continue;
+
+			// Original source line: function declaration line + body line offset
+			const origLine = startLine + li;
+
+			// Generate variable capture IIFE
+			const tryCatchStmts = varNames
+				.map((v) => `try{__vo.${v}=${v}}catch(__e){}`)
+				.join("");
+			const probeCode = `__traceLine(${origLine},"${func.name}",(function(){var __vo={};${tryCatchStmts}return __vo})());\n`;
+
+			bodyLines[li] = probeCode + bodyLines[li];
+		}
+
+		// Reconstruct body and update result
+		result =
+			result.substring(0, braceStart + 1) +
+			bodyLines.join("\n") +
+			result.substring(bodyEnd);
+	}
+
+	return result;
+}
+
 interface PrecomputedCall {
 	line: number;
 	startCol: number;
@@ -190,6 +310,9 @@ export function instrumentRecursiveFunctions(
 			aliasCode +
 			result.substring(func.funcDeclStart);
 	}
+
+	// Phase 1.5: Insert __traceLine probes before executable statements
+	result = insertLineProbes(result, recursiveFuncs, posCode);
 
 	// Phase 2: Replace all call sites with __traceCall wrappers (from back to
 	// front within each function to avoid position shifts).
@@ -387,6 +510,36 @@ export function createTraceContext(deps: TraceContextDeps) {
 		return traceResult;
 	}
 
+	function traceLine(
+		line: number,
+		funcName: string,
+		vars: Record<string, unknown>,
+	): void {
+		if (traceContext.steps.length >= traceContext.maxSteps) return;
+
+		const variables: Record<string, string> = {};
+		for (const [name, value] of Object.entries(vars)) {
+			try {
+				variables[name] = safeStringify(value);
+			} catch (_e) {
+				variables[name] = "[Error serializing]";
+			}
+		}
+
+		traceContext.steps.push({
+			stepIndex: traceContext.steps.length,
+			functionName: funcName,
+			action: "line",
+			args: [],
+			line,
+			startCol: 1,
+			endCol: 9999,
+			depth: traceContext.state.depth,
+			timestamp: performance.now() - traceContext.state.startTime,
+			variables,
+		});
+	}
+
 	function buildTraceResult(hasRecursion: boolean): RecursiveTrace | undefined {
 		if (!hasRecursion || traceContext.steps.length === 0) return undefined;
 
@@ -407,5 +560,5 @@ export function createTraceContext(deps: TraceContextDeps) {
 		};
 	}
 
-	return { traceContext, traceArgs, traceCall, buildTraceResult };
+	return { traceContext, traceArgs, traceCall, traceLine, buildTraceResult };
 }

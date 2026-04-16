@@ -28,6 +28,7 @@ interface HighlightRange {
 	line: number;
 	startCol: number;
 	endCol: number;
+	action?: "enter" | "exit" | "line";
 }
 
 interface CodeEditorProps {
@@ -43,6 +44,9 @@ interface CodeEditorProps {
 	highlightRange?: HighlightRange | null;
 	inlineEvalResults?: InlineEvalResult[];
 	treeMode?: "general" | "binary";
+	breakpoints?: number[];
+	onBreakpointsChange?: (breakpoints: number[]) => void;
+	debugCurrentLine?: number | null;
 }
 
 async function loadTypeDefinitions(
@@ -101,6 +105,9 @@ export default function CodeEditor({
 	highlightRange,
 	inlineEvalResults,
 	treeMode = "general",
+	breakpoints = [],
+	onBreakpointsChange,
+	debugCurrentLine = null,
 }: CodeEditorProps) {
 	const { t } = useTranslation();
 	const { llmSettings, toggleLlmEnabled, files, fileContents } =
@@ -110,6 +117,10 @@ export default function CodeEditor({
 	const completionRegistrationRef = useRef<CompletionRegistration | null>(null);
 	const decorationCollectionRef =
 		useRef<monaco.editor.IEditorDecorationsCollection | null>(null);
+	const debugDecorationsRef =
+		useRef<monaco.editor.IEditorDecorationsCollection | null>(null);
+	const breakpointsRef = useRef(breakpoints);
+	breakpointsRef.current = breakpoints;
 	const inlineEvalOverlayRef = useRef<HTMLDivElement | null>(null);
 	const extraLibDisposableRef = useRef<{ dispose(): void } | null>(null);
 	const [isEditorReady, setIsEditorReady] = useState(false);
@@ -118,6 +129,7 @@ export default function CodeEditor({
 	useEffect(() => {
 		return () => {
 			decorationCollectionRef.current?.clear();
+			debugDecorationsRef.current?.clear();
 			if (inlineEvalOverlayRef.current) {
 				inlineEvalOverlayRef.current.remove();
 				inlineEvalOverlayRef.current = null;
@@ -169,6 +181,9 @@ export default function CodeEditor({
 			}
 			if (decorationCollectionRef.current) {
 				decorationCollectionRef.current.clear();
+			}
+			if (debugDecorationsRef.current) {
+				debugDecorationsRef.current.clear();
 			}
 			if (inlineEvalOverlayRef.current) {
 				inlineEvalOverlayRef.current.remove();
@@ -228,6 +243,60 @@ export default function CodeEditor({
 
 		editor.revealLineInCenter(line);
 	}, [highlightRange, isEditorReady]);
+
+	// Debug decorations: breakpoint dots and current-line highlight
+	useEffect(() => {
+		const editor = editorRef.current;
+		const monacoInstance = monacoRef.current;
+		if (!editor || !monacoInstance || !isEditorReady) return;
+
+		if (!debugDecorationsRef.current) {
+			debugDecorationsRef.current = editor.createDecorationsCollection([]);
+		}
+
+		const decorations: monaco.editor.IModelDeltaDecoration[] = [];
+
+		// Breakpoint dots in glyph margin
+		for (const line of breakpoints) {
+			decorations.push({
+				range: new monacoInstance.Range(line, 1, line, 1),
+				options: {
+					isWholeLine: true,
+					glyphMarginClassName: "debug-breakpoint",
+					glyphMarginHoverMessage: { value: "Breakpoint" },
+					stickiness:
+						monacoInstance.editor.TrackedRangeStickiness
+							.NeverGrowsWhenTypingAtEdges,
+				},
+			});
+		}
+
+		// Current debug line highlight
+		if (debugCurrentLine) {
+			decorations.push({
+				range: new monacoInstance.Range(
+					debugCurrentLine,
+					1,
+					debugCurrentLine,
+					1,
+				),
+				options: {
+					isWholeLine: true,
+					className: "debug-current-line",
+					glyphMarginClassName: "debug-current-line-glyph",
+					stickiness:
+						monacoInstance.editor.TrackedRangeStickiness
+							.NeverGrowsWhenTypingAtEdges,
+				},
+			});
+		}
+
+		debugDecorationsRef.current.set(decorations);
+
+		if (debugCurrentLine) {
+			editor.revealLineInCenter(debugCurrentLine);
+		}
+	}, [breakpoints, debugCurrentLine, isEditorReady]);
 
 	// Reset overlay ref when filePath changes (Monaco rebuilds DOM on path change)
 	useEffect(() => {
@@ -527,7 +596,7 @@ export default function CodeEditor({
 			folding: !isMobile,
 			lineDecorationsWidth: isMobile ? 5 : 10,
 			lineNumbersMinChars: isMobile ? 2 : 3,
-			glyphMargin: false,
+			glyphMargin: true,
 			contextmenu: !isMobile,
 			mouseWheelZoom: !isMobile,
 			smoothScrolling: true,
@@ -566,6 +635,27 @@ export default function CodeEditor({
 		// Load initial type definitions based on tree mode
 		loadTypeDefinitions(monaco, treeMode).then((disposable) => {
 			extraLibDisposableRef.current = disposable;
+		});
+
+		// Gutter click handler for breakpoints
+		editor.onMouseDown((e) => {
+			if (
+				e.target.type === monaco.editor.MouseTargetType.GUTTER_GLYPH_MARGIN ||
+				e.target.type === monaco.editor.MouseTargetType.GUTTER_LINE_NUMBERS
+			) {
+				const line = e.target.position?.lineNumber;
+				if (line && onBreakpointsChange) {
+					const current = [...breakpointsRef.current];
+					const idx = current.indexOf(line);
+					if (idx >= 0) {
+						current.splice(idx, 1);
+					} else {
+						current.push(line);
+						current.sort((a, b) => a - b);
+					}
+					onBreakpointsChange(current);
+				}
+			}
 		});
 
 		// 添加常用快捷键

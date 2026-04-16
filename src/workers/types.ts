@@ -38,7 +38,7 @@ export interface TestExecutionResults {
 export interface TraceStep {
 	stepIndex: number;
 	functionName: string;
-	action: "enter" | "exit";
+	action: "enter" | "exit" | "line";
 	args: string[];
 	returnValue?: string;
 	depth: number;
@@ -47,6 +47,7 @@ export interface TraceStep {
 	endCol: number;
 	timestamp: number;
 	variables?: Record<string, string>;
+	sourceText?: string;
 }
 
 export interface RecursiveTrace {

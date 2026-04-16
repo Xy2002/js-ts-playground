@@ -93,6 +93,29 @@ interface PlaygroundState extends MultiFileState {
 	setTraceIsPlaying: (playing: boolean) => void;
 	setTracePlaySpeed: (speed: number) => void;
 
+	// Debug state
+	isDebugging: boolean;
+	debugPaused: boolean;
+	debugCurrentLine: number | null;
+	debugVariables: Record<string, string> | null;
+	debugCallStack: Array<{ name: string; line: number }> | null;
+	breakpoints: number[];
+
+	// Debug actions
+	setDebugState: (state: {
+		isDebugging: boolean;
+		debugPaused: boolean;
+	}) => void;
+	setDebugPause: (
+		pause: {
+			line: number;
+			variables: Record<string, string>;
+			callStack: Array<{ name: string; line: number }>;
+		} | null,
+	) => void;
+	setBreakpoints: (breakpoints: number[]) => void;
+	clearDebugState: () => void;
+
 	// 持久化
 	loadFromStorage: () => void;
 	saveToStorage: () => void;
@@ -322,7 +345,6 @@ try {
 };
 
 export const usePlaygroundStore = create<PlaygroundState>((set, get) => ({
-	// 初始状态 (保持向后兼容)
 	code: defaultCode.javascript,
 	codeHistory: {
 		javascript: defaultCode.javascript,
@@ -343,6 +365,14 @@ export const usePlaygroundStore = create<PlaygroundState>((set, get) => ({
 	traceStepIndex: 0,
 	traceIsPlaying: false,
 	tracePlaySpeed: 500,
+
+	// Debug state
+	isDebugging: false,
+	debugPaused: false,
+	debugCurrentLine: null,
+	debugVariables: null,
+	debugCallStack: null,
+	breakpoints: [],
 
 	// Sync state
 	syncToken: null,
@@ -464,6 +494,41 @@ export const usePlaygroundStore = create<PlaygroundState>((set, get) => ({
 
 	setTracePlaySpeed: (speed: number) => {
 		set({ tracePlaySpeed: speed });
+	},
+
+	// Debug actions
+	setDebugState: ({ isDebugging, debugPaused }) => {
+		set({ isDebugging, debugPaused });
+	},
+	setDebugPause: (pause) => {
+		if (pause) {
+			set({
+				debugPaused: true,
+				isDebugging: true,
+				debugCurrentLine: pause.line,
+				debugVariables: pause.variables,
+				debugCallStack: pause.callStack,
+			});
+		} else {
+			set({
+				debugPaused: false,
+				debugCurrentLine: null,
+				debugVariables: null,
+				debugCallStack: null,
+			});
+		}
+	},
+	setBreakpoints: (breakpoints: number[]) => {
+		set({ breakpoints });
+	},
+	clearDebugState: () => {
+		set({
+			isDebugging: false,
+			debugPaused: false,
+			debugCurrentLine: null,
+			debugVariables: null,
+			debugCallStack: null,
+		});
 	},
 
 	// Sync actions

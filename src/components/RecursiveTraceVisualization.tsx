@@ -2,12 +2,14 @@ import {
 	Activity,
 	ChevronLeft,
 	ChevronRight,
+	Eye,
+	EyeOff,
 	FastForward,
 	Pause,
 	Play,
 	SkipBack,
 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -28,6 +30,7 @@ interface RecursiveTraceVisualizationProps {
 	onPlayToggle: () => void;
 	playSpeed: number;
 	onSpeedChange: (speed: number) => void;
+	onHighlightChange?: (step: TraceStep | undefined) => void;
 }
 
 interface CallStackEntry {
@@ -44,12 +47,29 @@ export default function RecursiveTraceVisualization({
 	onPlayToggle,
 	playSpeed,
 	onSpeedChange,
+	onHighlightChange,
 }: RecursiveTraceVisualizationProps) {
 	const { t } = useTranslation();
 	const scrollRef = useRef<HTMLDivElement>(null);
+	const [showLineSteps, setShowLineSteps] = useState(true);
 
-	const steps = trace.steps;
-	const currentStep: TraceStep | undefined = steps[currentStepIndex];
+	// Filter steps based on toggle
+	const steps = useMemo(() => {
+		if (showLineSteps) return trace.steps;
+		return trace.steps.filter((s) => s.action !== "line");
+	}, [trace.steps, showLineSteps]);
+	// Adjust step index for filtered view
+	const filteredIndices = useMemo(() => {
+		if (showLineSteps) return steps.map((_, i) => i);
+		const indices: number[] = [];
+		trace.steps.forEach((s, i) => {
+			if (s.action !== "line") indices.push(i);
+		});
+		return indices;
+	}, [trace.steps, showLineSteps]);
+
+	const actualStepIndex = filteredIndices[currentStepIndex] ?? currentStepIndex;
+	const currentStep: TraceStep | undefined = trace.steps[actualStepIndex];
 
 	// Auto-play
 	useEffect(() => {
@@ -68,6 +88,11 @@ export default function RecursiveTraceVisualization({
 			onPlayToggle();
 		}
 	}, [currentStepIndex, isPlaying, onPlayToggle, steps.length]);
+
+	// Sync highlight to parent
+	useEffect(() => {
+		onHighlightChange?.(currentStep);
+	}, [actualStepIndex, currentStep, onHighlightChange]);
 
 	// Rebuild call stack from trace history
 	const callStack = useMemo((): CallStackEntry[] => {
@@ -163,6 +188,31 @@ export default function RecursiveTraceVisualization({
 					{t("trace.truncated", { max: 10000 })}
 				</div>
 			)}
+
+			{/* Filter toggle */}
+			<div className="flex items-center gap-2">
+				<Button
+					variant={showLineSteps ? "default" : "outline"}
+					size="sm"
+					className="h-6 text-xs gap-1"
+					onClick={() => {
+						setShowLineSteps(!showLineSteps);
+						onStepChange(0);
+					}}
+				>
+					{showLineSteps ? (
+						<Eye className="h-3 w-3" />
+					) : (
+						<EyeOff className="h-3 w-3" />
+					)}
+					Line Steps
+				</Button>
+				{!showLineSteps && (
+					<span className="text-xs text-muted-foreground">
+						Showing {steps.length}/{trace.steps.length} steps
+					</span>
+				)}
+			</div>
 
 			{/* Step scrubber */}
 			<div className="flex items-center gap-3">
@@ -303,9 +353,7 @@ export default function RecursiveTraceVisualization({
 								{currentStep && (
 									<div className="p-3 space-y-2 text-xs">
 										<div>
-											<span className="text-muted-foreground">
-												{t("trace.title")}:
-											</span>{" "}
+											<span className="text-muted-foreground">Function:</span>{" "}
 											<span className="font-mono font-medium">
 												{currentStep.functionName}
 											</span>
@@ -316,23 +364,29 @@ export default function RecursiveTraceVisualization({
 												variant={
 													currentStep.action === "enter"
 														? "default"
-														: "secondary"
+														: currentStep.action === "line"
+															? "outline"
+															: "secondary"
 												}
-												className="text-[10px] px-1.5 py-0"
+												className={`text-[10px] px-1.5 py-0 ${currentStep.action === "line" ? "border-blue-400 text-blue-600 dark:text-blue-400" : ""}`}
 											>
 												{currentStep.action === "enter"
 													? t("trace.enter")
-													: t("trace.exit")}
+													: currentStep.action === "line"
+														? "Line"
+														: t("trace.exit")}
 											</Badge>
 										</div>
-										<div>
-											<span className="text-muted-foreground">
-												{t("trace.arguments")}:
-											</span>
-											<div className="font-mono mt-0.5 bg-muted/50 rounded px-2 py-1 break-all">
-												{getArgsDisplay(currentStep)}
+										{currentStep.action !== "line" && (
+											<div>
+												<span className="text-muted-foreground">
+													{t("trace.arguments")}:
+												</span>
+												<div className="font-mono mt-0.5 bg-muted/50 rounded px-2 py-1 break-all">
+													{getArgsDisplay(currentStep)}
+												</div>
 											</div>
-										</div>
+										)}
 										{currentStep.action === "exit" &&
 											currentStep.returnValue !== undefined && (
 												<div>

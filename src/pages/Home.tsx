@@ -1,5 +1,6 @@
 import {
 	Activity,
+	Bug,
 	Code2,
 	FileDiff,
 	Github,
@@ -30,6 +31,7 @@ import LanguageSwitch from "@/components/LanguageSwitch";
 import OutputDisplay from "@/components/OutputDisplay";
 import PredefinedFunctions from "@/components/PredefinedFunctions";
 import ProblemsPanel from "@/components/ProblemsPanel";
+import DebuggerPanel from "@/components/DebuggerPanel";
 import RecursiveTraceVisualization from "@/components/RecursiveTraceVisualization";
 import { ScratchpadPanel } from "@/components/ScratchpadPanel";
 import { SettingsDialog } from "@/components/SettingsDialog";
@@ -61,6 +63,7 @@ import {
 	type SWCLoadProgress,
 } from "@/services/codeExecutionService";
 import { analyzeComplexity } from "@/services/complexityAnalysisService";
+import { debuggerService } from "@/services/debuggerService";
 import { usePlaygroundStore } from "@/store/usePlaygroundStore";
 
 export default function Home() {
@@ -94,6 +97,16 @@ export default function Home() {
 		setTraceIsPlaying,
 		setTracePlaySpeed,
 		fileContents,
+		isDebugging,
+		debugPaused,
+		debugCurrentLine,
+		debugVariables,
+		debugCallStack,
+		breakpoints,
+		setDebugState,
+		setDebugPause,
+		setBreakpoints,
+		clearDebugState,
 	} = usePlaygroundStore();
 	const { t, i18n } = useTranslation();
 
@@ -107,6 +120,7 @@ export default function Home() {
 	const [isFileExplorerOpen, setIsFileExplorerOpen] = useState(true);
 	const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 	const [isBinaryTreePanelOpen, setIsBinaryTreePanelOpen] = useState(false);
+	const [activeOutputTab, setActiveOutputTab] = useState("output");
 	const [isDiffEditorPanelOpen, setIsDiffEditorPanelOpen] = useState(false);
 	const [isScratchpadOpen, setIsScratchpadOpen] = useState(false);
 
@@ -205,6 +219,101 @@ export default function Home() {
 			});
 		}
 	}, [traceStepIndex, executionResult?.trace]);
+
+	// ---- Debugger handlers ----
+	const handleStartDebug = useCallback(() => {
+		// Read latest state directly to avoid stale closure over activeFileId
+		const {
+			activeFileId: aFileId,
+			files: curFiles,
+			fileContents: curFC,
+			code: globalCode,
+			language: globalLang,
+		} = usePlaygroundStore.getState();
+		let currentCode: string;
+		if (aFileId && curFiles[aFileId]) {
+			currentCode = curFC[aFileId] || curFiles[aFileId].content || "";
+		} else {
+			currentCode = globalCode;
+		}
+		let currentLang: string;
+		if (aFileId && curFiles[aFileId]) {
+			const ext = curFiles[aFileId].name.split(".").pop()?.toLowerCase();
+			currentLang = ext === "ts" || ext === "tsx" ? "typescript" : "javascript";
+		} else {
+			currentLang = globalLang;
+		}
+		if (!currentCode.trim()) return;
+
+		clearDebugState();
+		clearOutput();
+		setDebugState({ isDebugging: true, debugPaused: false });
+		setActiveOutputTab("debugger");
+
+		debuggerService.onPause = (pauseState) => {
+			setDebugPause({
+				line: pauseState.line,
+				variables: pauseState.variables,
+				callStack: pauseState.callStack,
+			});
+		};
+
+		debuggerService.onComplete = (result) => {
+			setExecutionResult(result);
+			clearDebugState();
+		};
+
+		debuggerService.onError = (error) => {
+			setExecutionResult({
+				success: false,
+				logs: [],
+				errors: [error],
+				executionTime: 0,
+				visualizations: [],
+			});
+			clearDebugState();
+		};
+
+		debuggerService.onStateChange = (state) => {
+			if (state === "idle") {
+				clearDebugState();
+			} else if (state === "running") {
+				setDebugState({ isDebugging: true, debugPaused: false });
+				setDebugPause(null);
+			}
+		};
+
+		// Debug uses single-file mode (multi-file debug not yet supported)
+		debuggerService.startDebug(
+			currentCode,
+			currentLang as "javascript" | "typescript",
+			breakpoints,
+		);
+	}, [
+		breakpoints,
+		clearDebugState,
+		clearOutput,
+		setDebugState,
+		setDebugPause,
+		setExecutionResult,
+	]);
+
+	const handleDebugContinue = useCallback(() => debuggerService.continue(), []);
+	const handleDebugStepOver = useCallback(() => debuggerService.stepOver(), []);
+	const handleDebugStepInto = useCallback(() => debuggerService.stepInto(), []);
+	const handleDebugStepOut = useCallback(() => debuggerService.stepOut(), []);
+	const handleDebugStop = useCallback(() => debuggerService.stop(), []);
+
+	// Cleanup debugger on unmount
+	useEffect(() => {
+		return () => {
+			debuggerService.stop();
+			debuggerService.onPause = null;
+			debuggerService.onComplete = null;
+			debuggerService.onError = null;
+			debuggerService.onStateChange = null;
+		};
+	}, []);
 
 	// Inline expression evaluation on code change (debounced)
 	useEffect(() => {
@@ -708,6 +817,28 @@ export default function Home() {
 							</Button>
 						)}
 
+						{isDebugging ? (
+							<Button
+								size="sm"
+								variant="destructive"
+								onClick={handleDebugStop}
+								title="Stop Debug"
+							>
+								<Square className="w-3.5 h-3.5" />
+								<span className="hidden sm:inline ml-1 text-xs">Stop</span>
+							</Button>
+						) : (
+							<Button
+								size="sm"
+								onClick={handleStartDebug}
+								title="Debug"
+								disabled={isExecuting}
+							>
+								<Bug className="w-3.5 h-3.5" />
+								<span className="hidden sm:inline ml-1 text-xs">Debug</span>
+							</Button>
+						)}
+
 						<div className="w-px h-4 bg-border/50 mx-1" />
 
 						<Button
@@ -814,6 +945,9 @@ export default function Home() {
 																? files[activeFileId]?.treeMode || "general"
 																: "general"
 														}
+														breakpoints={breakpoints}
+														onBreakpointsChange={setBreakpoints}
+														debugCurrentLine={debugCurrentLine}
 													/>
 												) : (
 													<div className="h-full flex items-center justify-center bg-muted/30">
@@ -884,6 +1018,12 @@ export default function Home() {
 																	</Badge>
 																</TabsTrigger>
 															)}
+														{isDebugging && (
+															<TabsTrigger value="debugger" className="gap-2">
+																<Bug className="h-3.5 w-3.5" />
+																Debugger
+															</TabsTrigger>
+														)}
 													</TabsList>
 												</div>
 												<div className="flex-1 min-h-0">
@@ -954,6 +1094,36 @@ export default function Home() {
 																/>
 															</TabsContent>
 														)}
+													{isDebugging && (
+														<TabsContent
+															value="debugger"
+															className="h-full m-0 p-0"
+														>
+															<DebuggerPanel
+																debugState={
+																	debugPaused
+																		? "paused"
+																		: isDebugging
+																			? "running"
+																			: "idle"
+																}
+																currentPause={
+																	debugCurrentLine
+																		? {
+																				line: debugCurrentLine,
+																				variables: debugVariables || {},
+																				callStack: debugCallStack || [],
+																			}
+																		: null
+																}
+																onContinue={handleDebugContinue}
+																onStepOver={handleDebugStepOver}
+																onStepInto={handleDebugStepInto}
+																onStepOut={handleDebugStepOut}
+																onStop={handleDebugStop}
+															/>
+														</TabsContent>
+													)}
 												</div>
 											</Tabs>
 										</div>
