@@ -1,8 +1,9 @@
 import {
 	DndContext,
 	type DragEndEvent,
-	type DragOverEvent,
+	type DragMoveEvent,
 	type DragStartEvent,
+	DragOverlay,
 	PointerSensor,
 	closestCenter,
 	useSensor,
@@ -14,7 +15,15 @@ import {
 	horizontalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { type ReactNode, useCallback, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+import {
+	Fragment,
+	type ReactNode,
+	useCallback,
+	useMemo,
+	useRef,
+	useState,
+} from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { FloatingPanelState } from "@/store/usePlaygroundStore";
 import { FloatingPanel } from "./FloatingPanel";
@@ -91,7 +100,15 @@ export default function PanelLayoutManager({
 	onBringFloatingPanelToFront,
 	onResetPanelLayout,
 }: PanelLayoutManagerProps) {
-	const [_draggedTabId, setDraggedTabId] = useState<string | null>(null);
+	const [draggedTabId, setDraggedTabId] = useState<string | null>(null);
+
+	// Floating panel drag state: tracks which panel is being dragged + cursor pos
+	const [floatingDrag, setFloatingDrag] = useState<{
+		tabId: string;
+		cursorX: number;
+		cursorY: number;
+	} | null>(null);
+
 	const dragStartPos = useRef<{ x: number; y: number } | null>(null);
 	const tabBarRef = useRef<HTMLDivElement>(null);
 
@@ -125,14 +142,14 @@ export default function PanelLayoutManager({
 		}),
 	);
 
-	// ---- Drag handlers ----
+	// ---- Tab drag handlers ----
 
 	const handleDragStart = useCallback((event: DragStartEvent) => {
 		setDraggedTabId(event.active.id as string);
 		dragStartPos.current = { x: 0, y: 0 };
 	}, []);
 
-	const handleDragOver = useCallback((event: DragOverEvent) => {
+	const handleDragMove = useCallback((event: DragMoveEvent) => {
 		if (!dragStartPos.current) return;
 		const delta = event.delta;
 		dragStartPos.current = { x: delta.x, y: delta.y };
@@ -194,32 +211,63 @@ export default function PanelLayoutManager({
 		],
 	);
 
-	// ---- Floating panel drag-to-dock ----
+	// ---- Floating panel drag handlers ----
 
 	const handleTitleBarDrag = useCallback(
-		(_tabId: string, _x: number, _y: number) => {
-			// Could show visual indicator in future
+		(tabId: string, clientX: number, clientY: number) => {
+			setFloatingDrag((prev) =>
+				prev?.tabId === tabId
+					? { ...prev, cursorX: clientX, cursorY: clientY }
+					: { tabId, cursorX: clientX, cursorY: clientY },
+			);
 		},
 		[],
 	);
 
 	const handleFloatingDragStop = useCallback(
-		(tabId: string, x: number, y: number) => {
-			if (!tabBarRef.current) {
-				onUpdateFloatingPanel(tabId, { x, y });
+		(tabId: string, x: number, y: number, clientX: number, clientY: number) => {
+			const rect = tabBarRef.current?.getBoundingClientRect();
+
+			const computeInsertIdx = (): number | undefined => {
+				if (!tabBarRef.current) return undefined;
+				const tabElements = tabBarRef.current.querySelectorAll('[role="tab"]');
+				if (tabElements.length === 0) return 0;
+				for (let i = 0; i < tabElements.length; i++) {
+					const elRect = tabElements[i].getBoundingClientRect();
+					const midX = elRect.left + elRect.width / 2;
+					if (clientX < midX) return i;
+				}
+				return tabElements.length;
+			};
+
+			// Check: cursor near tab bar → dock with insertion index
+			if (rect) {
+				if (
+					clientX > rect.left - 20 &&
+					clientX < rect.right + 20 &&
+					clientY > rect.top - 40 &&
+					clientY < rect.bottom + 40
+				) {
+					const insertIdx = computeInsertIdx();
+					setFloatingDrag(null);
+					onDockTab(tabId, insertIdx);
+					return;
+				}
+			}
+
+			// Check: cursor at bottom edge → dock at end
+			if (clientY > window.innerHeight - 80) {
+				setFloatingDrag(null);
+				onDockTab(tabId);
 				return;
 			}
-			const rect = tabBarRef.current.getBoundingClientRect();
-			if (
-				x + 100 > rect.left &&
-				x + 100 < rect.right &&
-				y > rect.top - 60 &&
-				y < rect.bottom + 20
-			) {
-				onDockTab(tabId);
-			} else {
-				onUpdateFloatingPanel(tabId, { x, y });
-			}
+
+			// Otherwise: reposition panel to cursor location
+			setFloatingDrag(null);
+			onUpdateFloatingPanel(tabId, {
+				x: clientX - 50,
+				y: Math.max(48, clientY - 15),
+			});
 		},
 		[onDockTab, onUpdateFloatingPanel],
 	);
@@ -241,12 +289,45 @@ export default function PanelLayoutManager({
 		[visibleTabsMap],
 	);
 
-	// ---- Auto-close floating panels for invisible tabs ----
+	// ---- Derived data ----
 
 	const validFloatingPanels = useMemo(
 		() => floatingPanels.filter((p) => visibleTabsMap.has(p.tabId)),
 		[floatingPanels, visibleTabsMap],
 	);
+
+	const draggedTab = draggedTabId ? visibleTabsMap.get(draggedTabId) : null;
+
+	// Check if floating drag chip is over the tab bar (for dock highlight)
+	const isOverTabBar = useMemo(() => {
+		if (!floatingDrag) return false;
+		const rect = tabBarRef.current?.getBoundingClientRect();
+		if (!rect) return false;
+		return (
+			floatingDrag.cursorX > rect.left - 20 &&
+			floatingDrag.cursorX < rect.right + 20 &&
+			floatingDrag.cursorY > rect.top - 40 &&
+			floatingDrag.cursorY < rect.bottom + 40
+		);
+	}, [floatingDrag]);
+
+	const isOverDockZone = useMemo(() => {
+		if (!floatingDrag) return false;
+		return floatingDrag.cursorY > window.innerHeight - 80;
+	}, [floatingDrag]);
+
+	// Compute insertion index when floating drag is over the tab bar
+	const floatingDockIndex = useMemo(() => {
+		if (!isOverTabBar || !floatingDrag || !tabBarRef.current) return null;
+		const tabElements = tabBarRef.current.querySelectorAll('[role="tab"]');
+		if (tabElements.length === 0) return 0;
+		for (let i = 0; i < tabElements.length; i++) {
+			const elRect = tabElements[i].getBoundingClientRect();
+			const midX = elRect.left + elRect.width / 2;
+			if (floatingDrag.cursorX < midX) return i;
+		}
+		return tabElements.length;
+	}, [isOverTabBar, floatingDrag]);
 
 	return (
 		<div className="h-full flex flex-col">
@@ -257,12 +338,15 @@ export default function PanelLayoutManager({
 					onValueChange={onActiveTabChange}
 					className="h-full flex flex-col"
 				>
-					<div className="px-4 py-1.5 border-b border-border" ref={tabBarRef}>
+					<div
+						className={`px-4 py-1.5 border-b border-border transition-colors ${isOverTabBar ? "bg-primary/10" : ""}`}
+						ref={tabBarRef}
+					>
 						<DndContext
 							sensors={sensors}
 							collisionDetection={closestCenter}
 							onDragStart={handleDragStart}
-							onDragOver={handleDragOver}
+							onDragMove={handleDragMove}
 							onDragEnd={handleDragEnd}
 						>
 							<SortableContext
@@ -270,11 +354,25 @@ export default function PanelLayoutManager({
 								strategy={horizontalListSortingStrategy}
 							>
 								<TabsList className="w-full justify-start bg-transparent h-auto p-0 gap-0">
-									{visibleTabIds.map((id) => {
+									{visibleTabIds.map((id, idx) => {
 										const tab = visibleTabsMap.get(id);
 										if (!tab) return null;
-										return <SortableTab key={id} tab={tab} />;
+										return (
+											<Fragment key={id}>
+												{floatingDrag &&
+													isOverTabBar &&
+													floatingDockIndex === idx && (
+														<div className="w-0.5 h-5 bg-primary rounded-full mx-0.5 animate-pulse" />
+													)}
+												<SortableTab tab={tab} />
+											</Fragment>
+										);
 									})}
+									{floatingDrag &&
+										isOverTabBar &&
+										floatingDockIndex === visibleTabIds.length && (
+											<div className="w-0.5 h-5 bg-primary rounded-full mx-0.5 animate-pulse" />
+										)}
 									{visibleTabIds.length === 0 && (
 										<button
 											type="button"
@@ -286,6 +384,18 @@ export default function PanelLayoutManager({
 									)}
 								</TabsList>
 							</SortableContext>
+
+							<DragOverlay dropAnimation={null}>
+								{draggedTab ? (
+									<div className="flex items-center gap-2 px-3 py-1.5 bg-background/90 border border-border rounded-md shadow-lg backdrop-blur-sm">
+										{draggedTab.icon}
+										<span className="text-xs font-medium whitespace-nowrap">
+											{draggedTab.label}
+										</span>
+										{draggedTab.badge}
+									</div>
+								) : null}
+							</DragOverlay>
 						</DndContext>
 					</div>
 
@@ -298,10 +408,11 @@ export default function PanelLayoutManager({
 					</div>
 				</Tabs>
 
-				{/* Floating panels layer */}
+				{/* Floating panels — hidden during their own drag */}
 				{validFloatingPanels.map((panel) => {
 					const tab = visibleTabsMap.get(panel.tabId);
 					if (!tab) return null;
+					const isBeingDragged = floatingDrag?.tabId === panel.tabId;
 					return (
 						<FloatingPanel
 							key={panel.tabId}
@@ -312,6 +423,7 @@ export default function PanelLayoutManager({
 							width={panel.width}
 							height={panel.height}
 							zIndex={panel.zIndex}
+							isDragging={isBeingDragged}
 							onClose={() => onDockTab(panel.tabId)}
 							onDragStop={handleFloatingDragStop}
 							onResizeStop={handleFloatingResizeStop}
@@ -323,6 +435,39 @@ export default function PanelLayoutManager({
 					);
 				})}
 			</div>
+
+			{/* Floating drag chip — small tag following cursor */}
+			{floatingDrag &&
+				createPortal(
+					<>
+						{/* The chip */}
+						<div
+							className="fixed z-[1001] flex items-center gap-1.5 px-2.5 py-1 bg-background border border-border rounded-md shadow-lg pointer-events-none"
+							style={{
+								left: floatingDrag.cursorX - 50,
+								top: floatingDrag.cursorY - 15,
+							}}
+						>
+							{(() => {
+								const tab = visibleTabsMap.get(floatingDrag.tabId);
+								return (
+									<>
+										<span className="text-muted-foreground">{tab?.icon}</span>
+										<span className="text-xs font-medium whitespace-nowrap">
+											{tab?.label}
+										</span>
+									</>
+								);
+							})()}
+						</div>
+
+						{/* Dock zone at bottom */}
+						{isOverDockZone && (
+							<div className="fixed inset-x-0 bottom-0 z-[999] flex items-center justify-center h-16 bg-primary/10 border-t-2 border-dashed border-primary/40 backdrop-blur-sm" />
+						)}
+					</>,
+					document.body,
+				)}
 		</div>
 	);
 }

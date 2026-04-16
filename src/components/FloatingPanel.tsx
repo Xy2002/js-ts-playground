@@ -1,7 +1,11 @@
+import { createPortal } from "react-dom";
 import { X } from "lucide-react";
-import { type ReactNode, useCallback } from "react";
+import { type ReactNode, useCallback, useEffect, useState } from "react";
 import { Rnd } from "react-rnd";
 import { Button } from "./ui/button";
+
+// Minimum Y to keep title bar below the nav header
+const MIN_Y = 48;
 
 interface FloatingPanelProps {
 	tabId?: string;
@@ -12,14 +16,25 @@ interface FloatingPanelProps {
 	width: number;
 	height: number;
 	zIndex?: number;
+	isDragging?: boolean;
 	onClose: () => void;
-	onDragStop?: (tabId: string, x: number, y: number) => void;
+	onDragStop?: (
+		tabId: string,
+		x: number,
+		y: number,
+		clientX: number,
+		clientY: number,
+	) => void;
 	onResizeStop?: (tabId: string, width: number, height: number) => void;
 	onFocus?: () => void;
-	onTitleBarDrag?: (tabId: string, x: number, y: number) => void;
-	// Legacy props for backward compatibility (Task 5 will remove these)
+	onTitleBarDrag?: (tabId: string, clientX: number, clientY: number) => void;
+	// Legacy props for backward compatibility
 	isOpen?: boolean;
 	defaultPosition?: { x: number; y: number };
+}
+
+function clampY(y: number) {
+	return Math.max(MIN_Y, y);
 }
 
 export function FloatingPanel({
@@ -30,7 +45,8 @@ export function FloatingPanel({
 	y: yProp,
 	width,
 	height,
-	zIndex = 50,
+	zIndex = 1000,
+	isDragging = false,
 	onClose,
 	onDragStop,
 	onResizeStop,
@@ -40,13 +56,46 @@ export function FloatingPanel({
 	isOpen = true,
 	defaultPosition,
 }: FloatingPanelProps) {
-	// Support legacy defaultPosition prop
-	const x = xProp ?? defaultPosition?.x ?? 100;
-	const y = yProp ?? defaultPosition?.y ?? 100;
+	const defaultX = xProp ?? defaultPosition?.x ?? 100;
+	const defaultY = clampY(yProp ?? defaultPosition?.y ?? 100);
+
+	// Controlled position state
+	const [pos, setPos] = useState({ x: defaultX, y: defaultY });
+
+	// Portal target (only exists on client)
+	const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(null);
+	useEffect(() => {
+		setPortalTarget(document.body);
+	}, []);
+
+	// Reset position when props change (new floating panel)
+	useEffect(() => {
+		setPos({ x: defaultX, y: clampY(defaultY) });
+	}, [defaultX, defaultY]);
+
+	const handleDrag = useCallback(
+		(e: unknown, d: { x: number; y: number }) => {
+			const clamped = { x: d.x, y: clampY(d.y) };
+			setPos(clamped);
+			// Pass cursor position for drag chip + dock detection
+			const mouseEvent = e as MouseEvent;
+			onTitleBarDrag?.(tabId, mouseEvent.clientX, mouseEvent.clientY);
+		},
+		[tabId, onTitleBarDrag],
+	);
 
 	const handleDragStop = useCallback(
-		(_e: unknown, d: { x: number; y: number }) => {
-			onDragStop?.(tabId, d.x, d.y);
+		(e: unknown, d: { x: number; y: number }) => {
+			const clamped = { x: d.x, y: clampY(d.y) };
+			setPos(clamped);
+			const mouseEvent = e as MouseEvent;
+			onDragStop?.(
+				tabId,
+				clamped.x,
+				clamped.y,
+				mouseEvent.clientX,
+				mouseEvent.clientY,
+			);
 		},
 		[tabId, onDragStop],
 	);
@@ -59,32 +108,30 @@ export function FloatingPanel({
 			_delta: unknown,
 			position: { x: number; y: number },
 		) => {
+			const clamped = { x: position.x, y: clampY(position.y) };
+			setPos(clamped);
 			onResizeStop?.(
 				tabId,
-				parseInt(ref.style.width, 10),
-				parseInt(ref.style.height, 10),
+				Number.parseInt(ref.style.width, 10),
+				Number.parseInt(ref.style.height, 10),
 			);
-			onDragStop?.(tabId, position.x, position.y);
 		},
-		[tabId, onResizeStop, onDragStop],
+		[tabId, onResizeStop],
 	);
 
-	const handleDrag = useCallback(
-		(_e: unknown, d: { x: number; y: number }) => {
-			onTitleBarDrag?.(tabId, d.x, d.y);
-		},
-		[tabId, onTitleBarDrag],
-	);
+	if (!isOpen || !portalTarget) return null;
 
-	if (!isOpen) return null;
-
-	return (
+	const panel = (
 		<Rnd
-			style={{ zIndex }}
-			default={{ x, y, width, height }}
+			style={{
+				zIndex,
+				opacity: isDragging ? 0 : 1,
+				pointerEvents: isDragging ? "none" : undefined,
+			}}
+			position={pos}
+			size={{ width, height }}
 			minWidth={300}
 			minHeight={200}
-			bounds="parent"
 			dragHandleClassName="floating-panel-titlebar"
 			onDragStop={handleDragStop}
 			onDrag={handleDrag}
@@ -119,4 +166,6 @@ export function FloatingPanel({
 			</div>
 		</Rnd>
 	);
+
+	return createPortal(panel, portalTarget);
 }
