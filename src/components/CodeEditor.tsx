@@ -234,7 +234,7 @@ export default function CodeEditor({
 					className: "trace-highlight-range",
 					linesDecorationsClassName: "trace-highlight-range-decoration",
 					overviewRuler: {
-						color: "rgba(245, 158, 11, 0.6)",
+						color: "hsl(38 92% 50% / 0.6)",
 						position: monacoInstance.editor.OverviewRulerLane.Full,
 					},
 				},
@@ -806,7 +806,7 @@ export default function CodeEditor({
 										!!llmSettings.apiKey &&
 										!!llmSettings.model &&
 										llmSettings.enabled ? (
-											<span className="text-green-600 dark:text-green-400 ml-1 font-medium">
+											<span className="text-viz-green ml-1 font-medium">
 												Active
 											</span>
 										) : (

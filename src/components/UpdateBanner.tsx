@@ -28,7 +28,7 @@ export function UpdateBanner({
 				<div className="max-w-7xl mx-auto">
 					<Alert
 						variant="info"
-						className="border-blue-500/50 bg-blue-50/90 backdrop-blur-sm dark:bg-blue-950/90 dark:border-blue-500 shadow-lg"
+						className="border-[hsl(var(--develop-blue)/0.5)] bg-[hsl(var(--develop-blue)/0.05)] backdrop-blur-sm dark:bg-[hsl(var(--develop-blue)/0.15)] dark:border-develop-blue shadow-lg"
 					>
 						<div className="flex items-center justify-between gap-4">
 							<div className="flex items-center gap-3 flex-1 min-w-0">
@@ -37,13 +37,13 @@ export function UpdateBanner({
 									transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
 									className="flex-shrink-0"
 								>
-									<Download className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+									<Download className="w-5 h-5 text-develop-blue" />
 								</motion.div>
 								<div className="flex-1 min-w-0">
-									<AlertTitle className="text-sm text-blue-900 dark:text-blue-100">
+									<AlertTitle className="text-sm text-develop-blue">
 										New version available
 									</AlertTitle>
-									<AlertDescription className="text-xs text-blue-800/80 dark:text-blue-200/80">
+									<AlertDescription className="text-xs text-develop-blue/80">
 										Version{" "}
 										<span className="font-semibold">{latestVersion}</span> is
 										ready
@@ -58,7 +58,7 @@ export function UpdateBanner({
 								<Button
 									size="sm"
 									onClick={onReload}
-									className="h-8 bg-blue-600 hover:bg-blue-700 text-white dark:bg-blue-500 dark:hover:bg-blue-600"
+									className="h-8 bg-develop-blue hover:bg-develop-blue/90 text-white"
 								>
 									Update Now
 								</Button>

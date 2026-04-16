@@ -143,7 +143,7 @@ export default function DataExportImport({
 					{/* Export Section */}
 					<div className="space-y-3">
 						<div className="flex items-center gap-2">
-							<Download className="w-5 h-5 text-blue-500" />
+							<Download className="w-5 h-5 text-develop-blue" />
 							<h3 className="text-lg font-semibold">
 								{t("settings.dataExport.export.title")}
 							</h3>
@@ -171,7 +171,7 @@ export default function DataExportImport({
 								className="h-auto flex-col gap-2 py-4"
 								onClick={() => handleExport(true)}
 							>
-								<FileJson className="w-6 h-6 text-orange-500" />
+								<FileJson className="w-6 h-6 text-viz-orange" />
 								<div className="text-left">
 									<div className="font-medium">
 										{t("settings.dataExport.export.withLlm")}
@@ -187,7 +187,7 @@ export default function DataExportImport({
 					{/* Import Section */}
 					<div className="space-y-3">
 						<div className="flex items-center gap-2">
-							<Upload className="w-5 h-5 text-green-500" />
+							<Upload className="w-5 h-5 text-viz-green" />
 							<h3 className="text-lg font-semibold">
 								{t("settings.dataExport.import.title")}
 							</h3>
@@ -354,9 +354,9 @@ export default function DataExportImport({
 
 								{/* Warning */}
 								{mergeStrategy === "overwrite" && (
-									<div className="flex items-start gap-2 p-3 bg-orange-500/10 border border-orange-500/20 rounded-lg">
-										<AlertCircle className="w-4 h-4 text-orange-500 mt-0.5 flex-shrink-0" />
-										<div className="text-sm text-orange-700 dark:text-orange-400">
+									<div className="flex items-start gap-2 p-3 bg-[hsl(var(--viz-orange)/0.1)] border border-[hsl(var(--viz-orange)/0.2)] rounded-lg">
+										<AlertCircle className="w-4 h-4 text-viz-orange mt-0.5 flex-shrink-0" />
+										<div className="text-sm text-viz-orange">
 											<strong>{t("settings.dataExport.import.warning")}</strong>
 										</div>
 									</div>

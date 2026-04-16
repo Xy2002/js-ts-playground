@@ -31,7 +31,7 @@ export default function PredefinedFunctions() {
 		{
 			icon: Braces,
 			title: t("predefined.dataStructures"),
-			color: "text-blue-500",
+			color: "text-develop-blue",
 			functions: [
 				{
 					name: "ListNode",
@@ -63,7 +63,7 @@ root.right = new TreeNode(3);`,
 		{
 			icon: Code,
 			title: t("predefined.listFunctions"),
-			color: "text-green-500",
+			color: "text-viz-green",
 			functions: [
 				{
 					name: "arrayToListNode",
@@ -85,7 +85,7 @@ root.right = new TreeNode(3);`,
 				currentTreeMode === "general"
 					? t("predefined.treeFunctionsGeneral")
 					: t("predefined.treeFunctionsBinary"),
-			color: "text-purple-500",
+			color: "text-viz-purple",
 			functions: [
 				{
 					name: "renderTree",
@@ -105,7 +105,7 @@ root.right = new TreeNode(3);`,
 		{
 			icon: Workflow,
 			title: t("predefined.heapFunctions"),
-			color: "text-orange-500",
+			color: "text-viz-orange",
 			functions: [
 				{
 					name: "renderHeap",
@@ -118,7 +118,7 @@ root.right = new TreeNode(3);`,
 		{
 			icon: BookOpen,
 			title: t("predefined.testing"),
-			color: "text-pink-500",
+			color: "text-viz-pink",
 			functions: [
 				{
 					name: "describe",

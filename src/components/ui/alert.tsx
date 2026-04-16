@@ -11,7 +11,7 @@ const alertVariants = cva(
 				destructive:
 					"border-destructive/50 text-destructive dark:border-destructive",
 				warning: "border-warning/50 text-warning dark:border-warning",
-				info: "border-blue-500/50 bg-blue-50 dark:bg-blue-950 dark:border-blue-500",
+				info: "border-develop-blue/50 bg-develop-blue/5 dark:bg-develop-blue/10 dark:border-develop-blue",
 			},
 		},
 		defaultVariants: {

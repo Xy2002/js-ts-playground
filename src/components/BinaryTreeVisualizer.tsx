@@ -1,6 +1,7 @@
 import { TreesIcon } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { getVisualizationPalette } from "@/utils/canvasTheme";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 
@@ -100,6 +101,8 @@ export function BinaryTreeVisualizer() {
 		const ctx = canvas.getContext("2d");
 		if (!ctx) return;
 
+		const palette = getVisualizationPalette();
+
 		// Set canvas size
 		const containerWidth = container.clientWidth;
 		const containerHeight = container.clientHeight;
@@ -116,7 +119,7 @@ export function BinaryTreeVisualizer() {
 
 		if (treeData.length === 0) {
 			// Draw placeholder
-			ctx.fillStyle = "#64748b"; // Slate-500
+			ctx.fillStyle = palette.placeholder;
 			ctx.font = "14px sans-serif";
 			ctx.textAlign = "center";
 			ctx.fillText(
@@ -166,7 +169,7 @@ export function BinaryTreeVisualizer() {
 
 		// Draw connections
 		const drawConnections = (node: TreeNode) => {
-			ctx.strokeStyle = "#94a3b8"; // Slate-400
+			ctx.strokeStyle = palette.connection;
 			ctx.lineWidth = 2;
 
 			if (node.left) {
@@ -194,14 +197,14 @@ export function BinaryTreeVisualizer() {
 			// Draw circle
 			ctx.beginPath();
 			ctx.arc(node.x, node.y, nodeRadius, 0, 2 * Math.PI);
-			ctx.fillStyle = "#3b82f6"; // Blue-500
+			ctx.fillStyle = palette.nodeDefault;
 			ctx.fill();
-			ctx.strokeStyle = "#1d4ed8"; // Blue-700
+			ctx.strokeStyle = palette.nodeDefaultBorder;
 			ctx.lineWidth = 2;
 			ctx.stroke();
 
-			// Draw value (white text on blue background)
-			ctx.fillStyle = "#ffffff";
+			// Draw value
+			ctx.fillStyle = palette.nodeText;
 			ctx.font = "bold 12px sans-serif";
 			ctx.textAlign = "center";
 			ctx.textBaseline = "middle";

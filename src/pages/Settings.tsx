@@ -166,7 +166,7 @@ export default function Settings() {
 									<Cloud className="w-4 h-4 text-muted-foreground" />
 									<span>{t("settings.cloudSync.title")}</span>
 									{syncToken && (
-										<span className="ml-auto text-[10px] font-medium px-2 py-0.5 rounded-sm bg-green-500/10 text-green-600 dark:text-green-400">
+										<span className="ml-auto text-[10px] font-medium px-2 py-0.5 rounded-sm bg-[hsl(var(--viz-green)/0.1)] text-viz-green">
 											{t("settings.cloudSync.connected")}
 										</span>
 									)}
@@ -238,7 +238,7 @@ export default function Settings() {
 													title={t("settings.cloudSync.copyToken")}
 												>
 													{copied ? (
-														<Check className="w-3.5 h-3.5 text-green-500" />
+														<Check className="w-3.5 h-3.5 text-viz-green" />
 													) : (
 														<Copy className="w-3.5 h-3.5" />
 													)}
@@ -277,7 +277,7 @@ export default function Settings() {
 												className="text-xs font-mono h-8"
 											/>
 											{connectError && (
-												<p className="text-[10px] text-red-500">
+												<p className="text-[10px] text-destructive">
 													{connectError}
 												</p>
 											)}

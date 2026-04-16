@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { getVisualizationPalette } from "@/utils/canvasTheme";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import type {
 	ComplexityChartData,
@@ -78,6 +79,8 @@ export default function ComplexityVisualization({
 		const ctx = canvas.getContext("2d");
 		if (!ctx) return;
 
+		const palette = getVisualizationPalette();
+
 		// Set canvas size
 		const dpr = window.devicePixelRatio || 1;
 		const rect = canvas.getBoundingClientRect();
@@ -100,15 +103,15 @@ export default function ComplexityVisualization({
 				? data.detectedTimeComplexity
 				: data.detectedSpaceComplexity;
 
-		// Define colors for different complexity classes
+		// Define colors for different complexity classes using theme palette
 		const colors: { [key: string]: string } = {
-			"O(1)": "#22c55e",
-			"O(log n)": "#3b82f6",
-			"O(n)": "#f59e0b",
-			"O(n log n)": "#ef4444",
-			"O(n²)": "#dc2626",
-			"O(n³)": "#991b1b",
-			"O(2^n)": "#7f1d1d",
+			"O(1)": palette.complexity["O(1)"],
+			"O(log n)": palette.complexity["O(log n)"],
+			"O(n)": palette.complexity["O(n)"],
+			"O(n log n)": palette.complexity["O(n log n)"],
+			"O(n²)": palette.complexity["O(n^2)"],
+			"O(n³)": palette.complexity["O(n^3)"],
+			"O(2^n)": palette.complexity["O(2^n)"],
 		};
 
 		// Calculate max values for normalization
@@ -130,7 +133,7 @@ export default function ComplexityVisualization({
 		};
 
 		// Draw grid
-		ctx.strokeStyle = "#374151";
+		ctx.strokeStyle = palette.grid;
 		ctx.lineWidth = 0.5;
 
 		// Vertical grid lines
@@ -156,7 +159,7 @@ export default function ComplexityVisualization({
 			type === "time" ? data.timeComplexities : data.spaceComplexities;
 
 		Object.entries(complexities).forEach(([complexity, values]) => {
-			const color = colors[complexity] || "#6b7280";
+			const color = colors[complexity] || palette.textMuted;
 			const isDetected = complexity === detectedComplexity;
 
 			// Draw line
@@ -192,7 +195,7 @@ export default function ComplexityVisualization({
 		});
 
 		// Draw X-axis labels
-		ctx.fillStyle = "#9ca3af";
+		ctx.fillStyle = palette.axisLabel;
 		ctx.font = "12px monospace";
 		ctx.textAlign = "center";
 
@@ -210,7 +213,7 @@ export default function ComplexityVisualization({
 		}
 
 		// Draw axis labels
-		ctx.fillStyle = "#d1d5db";
+		ctx.fillStyle = palette.axisLine;
 		ctx.font = "bold 14px sans-serif";
 		ctx.textAlign = "center";
 		ctx.fillText("Input Size (n)", padding.left + chartWidth / 2, height - 15);
@@ -240,7 +243,7 @@ export default function ComplexityVisualization({
 
 			// Draw text
 			ctx.globalAlpha = 1;
-			ctx.fillStyle = isDetected ? "#ffffff" : "#9ca3af";
+			ctx.fillStyle = isDetected ? palette.nodeText : palette.axisLabel;
 			ctx.font = isDetected ? "bold 12px monospace" : "11px monospace";
 			ctx.textAlign = "left";
 			ctx.fillText(
@@ -257,7 +260,7 @@ export default function ComplexityVisualization({
 		<Card className="h-full flex flex-col rounded-none">
 			<CardHeader className="flex flex-row items-center justify-between p-3 space-y-0 flex-shrink-0">
 				<div className="flex items-center gap-2">
-					<TrendingUp className="w-4 h-4 text-blue-400" />
+					<TrendingUp className="w-4 h-4 text-viz-blue" />
 					<span className="text-sm font-medium">Complexity Analysis</span>
 				</div>
 				<Button variant="ghost" size="sm" onClick={onClose} className="p-1">
@@ -287,7 +290,7 @@ export default function ComplexityVisualization({
 						</div>
 
 						{/* Chart */}
-						<div className="border rounded-lg bg-gray-900/50 p-4">
+						<div className="border rounded-lg bg-primary/10 p-4">
 							<canvas
 								ref={canvasRef}
 								className="w-full"
@@ -325,7 +328,7 @@ export default function ComplexityVisualization({
 												<span
 													// biome-ignore lint/suspicious/noArrayIndexKey: detectedPatterns is a dynamic array where items don't have unique IDs
 													key={index}
-													className="px-2 py-1 bg-blue-500/10 border border-blue-500/20 text-blue-400 rounded text-xs"
+													className="px-2 py-1 bg-[hsl(var(--viz-blue)/0.1)] border-[hsl(var(--viz-blue)/0.2)] text-viz-blue rounded text-xs"
 												>
 													{pattern}
 												</span>

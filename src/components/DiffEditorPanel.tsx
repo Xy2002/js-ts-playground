@@ -81,7 +81,7 @@ export function DiffEditorPanel() {
 				<div className="flex-1 flex gap-0 min-h-0">
 					{/* Original */}
 					<div className="flex-1 flex flex-col border-r">
-						<div className="text-xs text-center py-1.5 bg-red-500/10 text-red-600 dark:text-red-400 font-medium border-b">
+						<div className="text-xs text-center py-1.5 bg-[hsl(var(--destructive)/0.1)] text-destructive font-medium border-b">
 							{t("diffEditor.original")}
 						</div>
 						<Textarea
@@ -94,7 +94,7 @@ export function DiffEditorPanel() {
 
 					{/* Modified */}
 					<div className="flex-1 flex flex-col">
-						<div className="text-xs text-center py-1.5 bg-green-500/10 text-green-600 dark:text-green-400 font-medium border-b">
+						<div className="text-xs text-center py-1.5 bg-[hsl(var(--viz-green)/0.1)] text-viz-green font-medium border-b">
 							{t("diffEditor.modified")}
 						</div>
 						<Textarea
@@ -137,10 +137,10 @@ export function DiffEditorPanel() {
 
 			{/* Labels */}
 			<div className="flex border-b">
-				<div className="flex-1 text-xs text-center py-1 bg-red-500/10 text-red-600 dark:text-red-400 font-medium">
+				<div className="flex-1 text-xs text-center py-1 bg-[hsl(var(--destructive)/0.1)] text-destructive font-medium">
 					{t("diffEditor.original")}
 				</div>
-				<div className="flex-1 text-xs text-center py-1 bg-green-500/10 text-green-600 dark:text-green-400 font-medium">
+				<div className="flex-1 text-xs text-center py-1 bg-[hsl(var(--viz-green)/0.1)] text-viz-green font-medium">
 					{t("diffEditor.modified")}
 				</div>
 			</div>

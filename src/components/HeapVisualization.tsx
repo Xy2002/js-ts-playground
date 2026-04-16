@@ -1,6 +1,7 @@
 import { ChevronLeft, ChevronRight, Minus } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import type { VisualizationData } from "@/services/codeExecutionService";
+import { getVisualizationPalette } from "@/utils/canvasTheme";
 import { Button } from "./ui/button";
 import { Card, CardContent, CardHeader } from "./ui/card";
 
@@ -120,6 +121,8 @@ export default function HeapVisualization({
 		const ctx = canvas.getContext("2d");
 		if (!ctx) return;
 
+		const palette = getVisualizationPalette();
+
 		// 获取数据
 		let data = currentViz.data;
 		// 如果数据是对象，尝试提取heap数组
@@ -132,7 +135,7 @@ export default function HeapVisualization({
 
 		if (!Array.isArray(data) || data.length === 0) {
 			// 如果不是数组，显示提示
-			ctx.fillStyle = "#64748b";
+			ctx.fillStyle = palette.placeholder;
 			ctx.font = "14px monospace";
 			ctx.textAlign = "center";
 			ctx.fillText(
@@ -174,7 +177,7 @@ export default function HeapVisualization({
 		const nodes = calculateLayout(root, canvas.width, canvas.height);
 
 		// 绘制连接线
-		ctx.strokeStyle = "#94a3b8";
+		ctx.strokeStyle = palette.connection;
 		ctx.lineWidth = 2;
 
 		const drawConnections = (node: TreeNode) => {
@@ -205,27 +208,27 @@ export default function HeapVisualization({
 			// 绘制圆形背景
 			ctx.beginPath();
 			ctx.arc(node.x, node.y, 20, 0, 2 * Math.PI);
-			ctx.fillStyle = "#3b82f6";
+			ctx.fillStyle = palette.nodeDefault;
 
 			// Use different styles for changed nodes
 			if (isChanged) {
-				ctx.strokeStyle = "#ef4444"; // Red for changed nodes
+				ctx.strokeStyle = palette.nodeChanged;
 				ctx.lineWidth = 4;
 			} else {
-				ctx.strokeStyle = "#1d4ed8"; // Default blue
+				ctx.strokeStyle = palette.nodeDefaultBorder;
 				ctx.lineWidth = 2;
 			}
 			ctx.fill();
 			ctx.stroke();
 
 			// 绘制索引（小字）
-			ctx.fillStyle = "#cbd5e1";
+			ctx.fillStyle = palette.nodeTextSecondary;
 			ctx.font = "10px sans-serif";
 			ctx.textAlign = "center";
 			ctx.fillText(node.index.toString(), node.x, node.y - 25);
 
 			// 绘制值
-			ctx.fillStyle = "#ffffff";
+			ctx.fillStyle = palette.nodeText;
 			ctx.font = "bold 14px sans-serif";
 			ctx.textAlign = "center";
 			ctx.textBaseline = "middle";
@@ -266,7 +269,7 @@ export default function HeapVisualization({
 		<Card className="h-full flex flex-col rounded-none border-t">
 			<CardHeader className="flex flex-row items-center justify-between p-2 sm:p-3 space-y-0 flex-shrink-0">
 				<div className="flex items-center gap-2">
-					<Minus className="w-3 h-3 sm:w-4 sm:h-4 text-blue-500" />
+					<Minus className="w-3 h-3 sm:w-4 sm:h-4 text-develop-blue" />
 					<span className="text-xs sm:text-sm font-medium">
 						{currentViz.label || `Heap #${currentIndex + 1}`}
 					</span>

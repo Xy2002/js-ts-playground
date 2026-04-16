@@ -130,11 +130,7 @@ export default function DebuggerPanel({
 				</Button>
 				<div className="ml-2 text-muted-foreground">
 					{isIdle && "Not debugging"}
-					{isRunning && (
-						<span className="text-yellow-600 dark:text-yellow-400">
-							Running...
-						</span>
-					)}
+					{isRunning && <span className="text-warning">Running...</span>}
 					{isPaused && currentPause && (
 						<span>
 							Paused at{" "}
@@ -206,7 +202,7 @@ export default function DebuggerPanel({
 													key={`${frame.name}-${frame.line}-${idx}`}
 													className={`flex items-center gap-2 px-1.5 py-0.5 rounded text-xs font-mono ${
 														isTop
-															? "bg-yellow-500/10 text-yellow-700 dark:text-yellow-300"
+															? "bg-[hsl(var(--warning)/0.1)] text-warning"
 															: "text-muted-foreground"
 													}`}
 												>

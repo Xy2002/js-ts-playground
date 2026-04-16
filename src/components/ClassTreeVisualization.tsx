@@ -1,6 +1,7 @@
 import { ChevronLeft, ChevronRight, Network } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { VisualizationData } from "@/services/codeExecutionService";
+import { getVisualizationPalette } from "@/utils/canvasTheme";
 import { Button } from "./ui/button";
 import { Card, CardContent, CardHeader } from "./ui/card";
 
@@ -121,12 +122,14 @@ export default function ClassTreeVisualization({
 		const ctx = canvas.getContext("2d");
 		if (!ctx) return;
 
+		const palette = getVisualizationPalette();
+
 		// 获取数据
 		const data = currentViz.data;
 
 		// 检查是否是TreeNode结构
 		if (!data || typeof data !== "object") {
-			ctx.fillStyle = "#64748b";
+			ctx.fillStyle = palette.placeholder;
 			ctx.font = "14px monospace";
 			ctx.textAlign = "center";
 			ctx.fillText("Invalid tree data", canvas.width / 2, canvas.height / 2);
@@ -209,7 +212,7 @@ export default function ClassTreeVisualization({
 		collectNodes(root);
 
 		// 绘制连接线
-		ctx.strokeStyle = "#94a3b8";
+		ctx.strokeStyle = palette.connection;
 		ctx.lineWidth = 2;
 
 		const drawConnections = (node: VisualTreeNode) => {
@@ -239,11 +242,11 @@ export default function ClassTreeVisualization({
 
 			// 根节点使用不同的颜色
 			if (node.isHighlighted) {
-				ctx.fillStyle = "#fbbf24"; // Amber-400
-				ctx.strokeStyle = "#b45309"; // Amber-700
+				ctx.fillStyle = palette.nodeHighlight;
+				ctx.strokeStyle = palette.nodeHighlightBorder;
 			} else {
-				ctx.fillStyle = "#3b82f6"; // 蓝色 - 普通节点
-				ctx.strokeStyle = "#1d4ed8";
+				ctx.fillStyle = palette.nodeDefault;
+				ctx.strokeStyle = palette.nodeDefaultBorder;
 			}
 
 			if (!node.isHighlighted) {
@@ -257,7 +260,7 @@ export default function ClassTreeVisualization({
 			ctx.stroke();
 
 			// 绘制值
-			ctx.fillStyle = "#ffffff";
+			ctx.fillStyle = palette.nodeText;
 			ctx.font = "bold 12px sans-serif";
 			ctx.textAlign = "center";
 			ctx.textBaseline = "middle";
@@ -295,7 +298,7 @@ export default function ClassTreeVisualization({
 		<Card className="h-full flex flex-col rounded-none border-t">
 			<CardHeader className="flex flex-row items-center justify-between p-2 sm:p-3 space-y-0 flex-shrink-0">
 				<div className="flex items-center gap-2">
-					<Network className="w-3 h-3 sm:w-4 sm:h-4 text-purple-500" />
+					<Network className="w-3 h-3 sm:w-4 sm:h-4 text-viz-purple" />
 					<span className="text-xs sm:text-sm font-medium">
 						{currentViz.label || `Tree #${currentIndex + 1}`}
 					</span>

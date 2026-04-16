@@ -61,6 +61,22 @@ export default {
 					4: "hsl(var(--chart-4))",
 					5: "hsl(var(--chart-5))",
 				},
+				/* Workflow accent colors */
+				"develop-blue": "hsl(var(--develop-blue))",
+				"preview-pink": "hsl(var(--preview-pink))",
+				"ship-red": "hsl(var(--ship-red))",
+				"focus-ring": "hsl(var(--focus-ring))",
+				/* Visualization palette */
+				viz: {
+					blue: "hsl(var(--viz-blue))",
+					green: "hsl(var(--viz-green))",
+					amber: "hsl(var(--viz-amber))",
+					red: "hsl(var(--viz-red))",
+					purple: "hsl(var(--viz-purple))",
+					cyan: "hsl(var(--viz-cyan))",
+					orange: "hsl(var(--viz-orange))",
+					pink: "hsl(var(--viz-pink))",
+				},
 			},
 		},
 	},

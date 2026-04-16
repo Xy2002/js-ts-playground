@@ -1,9 +1,9 @@
 /**
- * Vercel-inspired Design System
- * Black & white aesthetics with refined typography and subtle motion
+ * Vercel Geist Design System
+ * Gallery-like emptiness, shadow-as-border, compressed Geist typography
  */
 
-/* Geist-inspired font stack - modern, geometric, highly readable */
+/* Geist font stack — modern, geometric, highly readable */
 @import url("https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500;600&family=Geist+Sans:wght@300;400;500;600;700&display=swap");
 
 @tailwind base;
@@ -21,14 +21,14 @@
 	text-rendering: optimizeLegibility;
 	-webkit-font-smoothing: antialiased;
 	-moz-osx-font-smoothing: grayscale;
-	-webkit-font-variant-ligatures: common-ligatures;
+	font-feature-settings: "liga" 1;
 	font-variant-ligatures: common-ligatures;
 }
 
-/* Vercel Geist Design Tokens */
+/* Geist Design Tokens */
 @layer base {
 	:root {
-		/* Vercel gray scale */
+		/* Geist gray scale — #171717 primary, not pure black */
 		--background: 0 0% 100%;
 		--foreground: 0 0% 9%;
 		--card: 0 0% 100%;
@@ -36,34 +36,34 @@
 		--popover: 0 0% 100%;
 		--popover-foreground: 0 0% 9%;
 
-		/* Primary - pure black */
-		--primary: 0 0% 0%;
+		/* Primary — Vercel Black #171717 */
+		--primary: 0 0% 9%;
 		--primary-foreground: 0 0% 100%;
 
-		/* Secondary - surface tones */
+		/* Secondary — surface tones */
 		--secondary: 0 0% 96.1%;
 		--secondary-foreground: 0 0% 9%;
 
-		/* Muted - subtle backgrounds */
+		/* Muted — subtle backgrounds */
 		--muted: 0 0% 96.1%;
 		--muted-foreground: 0 0% 45.1%;
 
-		/* Accent - hover/active */
+		/* Accent — hover/active */
 		--accent: 0 0% 96.1%;
 		--accent-foreground: 0 0% 9%;
 
-		/* Destructive */
-		--destructive: 0 84% 60%;
+		/* Destructive — Ship Red #ff5b4f */
+		--destructive: 0 100% 65%;
 		--destructive-foreground: 0 0% 100%;
 
 		/* Warning */
 		--warning: 38 92% 50%;
 		--warning-foreground: 0 0% 100%;
 
-		/* Borders - subtle but visible */
-		--border: 0 0% 87%;
-		--input: 0 0% 87%;
-		--ring: 0 0% 0%;
+		/* Borders — shadow-as-border technique */
+		--border: 0 0% 92%;
+		--input: 0 0% 92%;
+		--ring: 212 100% 48%;
 
 		/* Chart colors */
 		--chart-1: 0 0% 40%;
@@ -72,11 +72,29 @@
 		--chart-4: 0 0% 50%;
 		--chart-5: 0 0% 70%;
 
-		/* Vercel accent blue */
-		--vercel-blue: 213 100% 50%;
+		/* Workflow accent colors */
+		--develop-blue: 212 93% 49%;
+		--preview-pink: 325 83% 49%;
+		--ship-red: 0 100% 65%;
 
-		/* Border radius - sharp, 4px */
-		--radius: 0.25rem;
+		/* Focus ring — Vercel blue */
+		--focus-ring: 212 100% 48%;
+
+		/* Visualization palette */
+		--viz-blue: 212 93% 49%;
+		--viz-green: 142 71% 45%;
+		--viz-amber: 38 92% 50%;
+		--viz-red: 0 84% 60%;
+		--viz-purple: 263 70% 50%;
+		--viz-cyan: 187 92% 43%;
+		--viz-orange: 25 95% 53%;
+		--viz-pink: 330 81% 60%;
+
+		/* Legacy alias */
+		--vercel-blue: 212 93% 49%;
+
+		/* Border radius — 6px base (Geist buttons) */
+		--radius: 0.375rem;
 
 		/* Animation timing */
 		--ease-out: cubic-bezier(0.16, 1, 0.3, 1);
@@ -103,7 +121,7 @@
 		--accent: 0 0% 14.9%;
 		--accent-foreground: 0 0% 98%;
 
-		--destructive: 0 62% 50%;
+		--destructive: 0 100% 65%;
 		--destructive-foreground: 0 0% 100%;
 
 		--warning: 38 92% 50%;
@@ -111,13 +129,23 @@
 
 		--border: 0 0% 18%;
 		--input: 0 0% 18%;
-		--ring: 0 0% 83.1%;
+		--ring: 212 100% 48%;
 
 		--chart-1: 0 0% 70%;
 		--chart-2: 0 0% 50%;
 		--chart-3: 0 0% 80%;
 		--chart-4: 0 0% 60%;
 		--chart-5: 0 0% 40%;
+
+		/* Visualization palette (brightened for dark bg) */
+		--viz-blue: 213 94% 68%;
+		--viz-green: 142 71% 55%;
+		--viz-amber: 38 92% 60%;
+		--viz-red: 0 84% 67%;
+		--viz-purple: 263 70% 65%;
+		--viz-cyan: 187 92% 55%;
+		--viz-orange: 25 95% 63%;
+		--viz-pink: 330 81% 68%;
 	}
 }
 
@@ -130,7 +158,7 @@
 		@apply bg-background text-foreground;
 	}
 
-	/* Typography enhancements */
+	/* Typography — Geist compressed tracking */
 	h1,
 	h2,
 	h3,
@@ -138,23 +166,23 @@
 	h5,
 	h6 {
 		font-weight: 600;
-		letter-spacing: -0.02em;
+		letter-spacing: -0.04em;
 	}
 
-	/* Selection styling */
+	/* Selection styling — Vercel blue tint */
 	::selection {
-		background-color: hsl(var(--primary) / 0.2);
+		background-color: hsl(var(--focus-ring) / 0.15);
 		color: hsl(var(--foreground));
 	}
 
 	::-moz-selection {
-		background-color: hsl(var(--primary) / 0.2);
+		background-color: hsl(var(--focus-ring) / 0.15);
 		color: hsl(var(--foreground));
 	}
 
-	/* Focus visible - refined ring */
+	/* Focus visible — Vercel blue focus ring */
 	*:focus-visible {
-		outline: 2px solid hsl(var(--ring));
+		outline: 2px solid hsl(var(--focus-ring));
 		outline-offset: 2px;
 	}
 
@@ -185,16 +213,16 @@
 	}
 }
 
-/* Vercel-style component utilities */
+/* Geist component utilities */
 @layer components {
-	/* Glass morphism - lightweight */
+	/* Glass morphism — lightweight */
 	.glass {
 		background: hsl(var(--background) / 0.85);
 		backdrop-filter: blur(16px);
 		-webkit-backdrop-filter: blur(16px);
 	}
 
-	/* Subtle border glow on hover - minimal */
+	/* Shadow-as-border hover glow */
 	.border-glow {
 		transition:
 			border-color 0.15s var(--ease-out),
@@ -205,7 +233,7 @@
 		border-color: hsl(var(--border));
 	}
 
-	/* Refined card hover - very subtle */
+	/* Card hover — multi-layer shadow stack */
 	.card-hover {
 		transition:
 			transform 0.15s var(--ease-out),
@@ -213,7 +241,9 @@
 	}
 
 	.card-hover:hover {
-		box-shadow: 0 1px 3px hsl(var(--foreground) / 0.04);
+		box-shadow:
+			rgba(0, 0, 0, 0.08) 0px 0px 0px 1px,
+			rgba(0, 0, 0, 0.04) 0px 2px 2px;
 	}
 
 	/* Subtle fade in animation */
@@ -249,19 +279,23 @@
 	transition-duration: 150ms;
 }
 
-/* Trace line highlighting */
+/* Trace line highlighting — Develop Blue */
 .trace-highlight-line {
-	background-color: rgba(59, 130, 246, 0.18);
-	border-left: 2px solid rgba(59, 130, 246, 0.6);
-	border-right: 2px solid rgba(59, 130, 246, 0.6);
+	background-color: hsl(var(--develop-blue) / 0.12);
+	border-left: 2px solid hsl(var(--develop-blue) / 0.5);
+	border-right: 2px solid hsl(var(--develop-blue) / 0.5);
 }
 
 .trace-highlight-line-decoration {
 	width: 6px;
 	height: 6px;
 	border-radius: 50%;
-	background: radial-gradient(circle, #fbbf24 0%, #f59e0b 100%);
-	box-shadow: 0 0 6px 1px rgba(251, 191, 36, 0.5);
+	background: radial-gradient(
+		circle,
+		hsl(var(--warning)) 0%,
+		hsl(38 80% 40%) 100%
+	);
+	box-shadow: 0 0 6px 1px hsl(var(--warning) / 0.5);
 	position: absolute;
 	top: 50%;
 	transform: translateY(-50%);
@@ -270,17 +304,21 @@
 
 /* Trace inline range highlighting */
 .trace-highlight-range {
-	background-color: rgba(250, 204, 21, 0.18);
-	border-left: 2px solid rgba(245, 158, 11, 0.6);
-	border-right: 2px solid rgba(245, 158, 11, 0.6);
+	background-color: hsl(var(--warning) / 0.12);
+	border-left: 2px solid hsl(var(--warning) / 0.5);
+	border-right: 2px solid hsl(var(--warning) / 0.5);
 }
 
 .trace-highlight-range-decoration {
 	width: 6px;
 	height: 6px;
 	border-radius: 50%;
-	background: radial-gradient(circle, #fbbf24 0%, #f59e0b 100%);
-	box-shadow: 0 0 6px 1px rgba(251, 191, 36, 0.5);
+	background: radial-gradient(
+		circle,
+		hsl(var(--warning)) 0%,
+		hsl(38 80% 40%) 100%
+	);
+	box-shadow: 0 0 6px 1px hsl(var(--warning) / 0.5);
 	position: absolute;
 	top: 50%;
 	transform: translateY(-50%);
@@ -299,15 +337,19 @@
 	width: 12px;
 	height: 12px;
 	border-radius: 50%;
-	background: radial-gradient(circle, #ef4444 0%, #dc2626 100%);
-	box-shadow: 0 0 4px 1px rgba(239, 68, 68, 0.5);
+	background: radial-gradient(
+		circle,
+		hsl(var(--ship-red)) 0%,
+		hsl(0 84% 45%) 100%
+	);
+	box-shadow: 0 0 4px 1px hsl(var(--ship-red) / 0.5);
 	transform: translate(-50%, -50%);
 }
 
 .debug-current-line {
-	background-color: rgba(234, 179, 8, 0.15);
-	border-top: 1px solid rgba(234, 179, 8, 0.4);
-	border-bottom: 1px solid rgba(234, 179, 8, 0.4);
+	background-color: hsl(var(--warning) / 0.12);
+	border-top: 1px solid hsl(var(--warning) / 0.35);
+	border-bottom: 1px solid hsl(var(--warning) / 0.35);
 }
 
 .debug-current-line-glyph {
@@ -322,7 +364,7 @@
 	height: 0;
 	border-left: 6px solid transparent;
 	border-right: 6px solid transparent;
-	border-top: 8px solid #eab308;
+	border-top: 8px solid hsl(var(--warning));
 	transform: translate(-50%, -70%);
 }
 
@@ -331,20 +373,20 @@
 	color: rgba(255, 255, 255, 0.35);
 	font-style: italic;
 	font-size: 0.85em;
-	font-family: Monaco, "Courier New", monospace;
+	font-family: "Geist Mono", "Monaco", "Courier New", monospace;
 }
 .inline-eval-overlay-error {
-	color: rgba(239, 68, 68, 0.5);
+	color: hsl(var(--ship-red) / 0.5);
 	font-style: italic;
 	font-size: 0.85em;
-	font-family: Monaco, "Courier New", monospace;
+	font-family: "Geist Mono", "Monaco", "Courier New", monospace;
 }
 
 .vs .inline-eval-overlay-result {
 	color: rgba(0, 0, 0, 0.3);
 }
 .vs .inline-eval-overlay-error {
-	color: rgba(220, 38, 38, 0.45);
+	color: hsl(var(--ship-red) / 0.45);
 }
 
 /* Floating panel resize handles */

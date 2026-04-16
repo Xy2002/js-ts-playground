@@ -14,11 +14,11 @@ function ValueNode({ value, depth = 0 }: ValueNodeProps) {
 	if (value === undefined)
 		return <span className="text-gray-500">undefined</span>;
 	if (typeof value === "string")
-		return <span className="text-green-500">&quot;{value}&quot;</span>;
+		return <span className="text-viz-green">&quot;{value}&quot;</span>;
 	if (typeof value === "number")
-		return <span className="text-purple-400">{value}</span>;
+		return <span className="text-viz-purple">{value}</span>;
 	if (typeof value === "boolean")
-		return <span className="text-blue-400">{String(value)}</span>;
+		return <span className="text-develop-blue">{String(value)}</span>;
 
 	if (Array.isArray(value)) {
 		return <ArrayNode value={value} depth={depth} />;
@@ -60,7 +60,7 @@ function ArrayNode({ value, depth }: ArrayNodeProps) {
 				<div className="pl-4">
 					{value.map((item, i) => (
 						<div key={String(i)} className="flex items-start gap-1 py-0.5">
-							<span className="text-cyan-500 shrink-0">{i}</span>
+							<span className="text-viz-cyan shrink-0">{i}</span>
 							<span className="text-muted-foreground shrink-0">:</span>
 							<ValueNode value={item} depth={depth + 1} />
 						</div>
@@ -103,7 +103,7 @@ function ObjectNode({ value, depth }: ObjectNodeProps) {
 				<div className="pl-4">
 					{entries.map(([key, val]) => (
 						<div key={key} className="flex items-start gap-1 py-0.5">
-							<span className="text-cyan-500 shrink-0">{key}</span>
+							<span className="text-viz-cyan shrink-0">{key}</span>
 							<span className="text-muted-foreground shrink-0">:</span>
 							<ValueNode value={val} depth={depth + 1} />
 						</div>
@@ -135,7 +135,7 @@ function VariableRow({ name, rawValue, changed }: VariableRowProps) {
 	}
 
 	const rowClass = changed
-		? "border-l-2 border-amber-500 bg-amber-500/5 pl-2"
+		? "border-l-2 border-warning bg-[hsl(var(--warning)/0.05)] pl-2"
 		: "pl-3 border-l-2 border-transparent";
 
 	return (
@@ -151,10 +151,10 @@ function VariableRow({ name, rawValue, changed }: VariableRowProps) {
 					</button>
 				)}
 				{!isComplex && <span className="w-3 shrink-0" />}
-				<span className="text-cyan-500 shrink-0">{name}</span>
+				<span className="text-viz-cyan shrink-0">{name}</span>
 				<span className="text-muted-foreground shrink-0">=</span>
 				{!isComplex && (
-					<span className="text-purple-400 break-all">{rawValue}</span>
+					<span className="text-viz-purple break-all">{rawValue}</span>
 				)}
 				{isComplex && !expanded && (
 					<button

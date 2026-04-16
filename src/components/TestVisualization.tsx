@@ -86,19 +86,19 @@ export default function TestVisualization({ results }: TestVisualizationProps) {
 	}
 
 	const statusBgColor = {
-		passed: "bg-green-500/10",
+		passed: "bg-[hsl(var(--viz-green)/0.1)]",
 		failed: "bg-destructive/10",
 		skipped: "bg-muted/50",
 	};
 
 	const statusBorderColor = {
-		passed: "border-green-500/20",
+		passed: "border-[hsl(var(--viz-green)/0.2)]",
 		failed: "border-destructive/20",
 		skipped: "border-muted",
 	};
 
 	const statusIcon = {
-		passed: <CheckCircle2 className="w-4 h-4 text-green-500" />,
+		passed: <CheckCircle2 className="w-4 h-4 text-viz-green" />,
 		failed: <XCircle className="w-4 h-4 text-destructive" />,
 		skipped: <AlertCircle className="w-4 h-4 text-muted-foreground" />,
 	};
@@ -123,7 +123,7 @@ export default function TestVisualization({ results }: TestVisualizationProps) {
 						className={`text-xs font-mono ${
 							results.failed > 0
 								? "bg-destructive/10 text-destructive"
-								: "bg-green-500/10 text-green-500"
+								: "bg-[hsl(var(--viz-green)/0.1)] text-viz-green"
 						}`}
 					>
 						{results.passed}/{results.totalTests} passed
@@ -251,11 +251,9 @@ export default function TestVisualization({ results }: TestVisualizationProps) {
 								className={`mt-4 p-3 rounded-lg border ${
 									results.failed > 0
 										? "bg-destructive/10 border-destructive/20"
-										: "bg-green-500/10 border-green-500/20"
+										: "bg-[hsl(var(--viz-green)/0.1)] border-[hsl(var(--viz-green)/0.2)]"
 								} ${
-									results.failed > 0
-										? "text-destructive"
-										: "text-green-700 dark:text-green-400"
+									results.failed > 0 ? "text-destructive" : "text-viz-green"
 								}`}
 							>
 								<div className="flex items-center gap-2">

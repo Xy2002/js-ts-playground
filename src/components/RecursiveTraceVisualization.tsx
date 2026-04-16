@@ -167,7 +167,7 @@ export default function RecursiveTraceVisualization({
 			{/* Header */}
 			<div className="flex items-center justify-between">
 				<div className="flex items-center gap-2">
-					<Activity className="h-4 w-4 text-amber-500" />
+					<Activity className="h-4 w-4 text-warning" />
 					<span className="text-sm font-medium">{t("trace.title")}</span>
 					<Badge variant="secondary" className="text-xs font-mono">
 						{currentStepIndex + 1} / {steps.length}
@@ -184,7 +184,7 @@ export default function RecursiveTraceVisualization({
 			</div>
 
 			{trace.truncated && (
-				<div className="text-xs text-amber-600 bg-amber-50 dark:bg-amber-950/30 dark:text-amber-400 px-3 py-1.5 rounded-md">
+				<div className="text-xs text-warning bg-[hsl(var(--warning)/0.1)] px-3 py-1.5 rounded-md">
 					{t("trace.truncated", { max: 10000 })}
 				</div>
 			)}
@@ -318,14 +318,14 @@ export default function RecursiveTraceVisualization({
 										style={{ paddingLeft: `${entry.depth * 16 + 4}px` }}
 									>
 										{index === callStack.length - 1 ? (
-											<span className="text-amber-500">&#9654;</span>
+											<span className="text-warning">&#9654;</span>
 										) : (
 											<span className="text-muted-foreground/40">&#9654;</span>
 										)}
 										<span
 											className={
 												index === callStack.length - 1
-													? "text-amber-600 dark:text-amber-400"
+													? "text-warning"
 													: "text-muted-foreground"
 											}
 										>
@@ -368,7 +368,7 @@ export default function RecursiveTraceVisualization({
 															? "outline"
 															: "secondary"
 												}
-												className={`text-[10px] px-1.5 py-0 ${currentStep.action === "line" ? "border-blue-400 text-blue-600 dark:text-blue-400" : ""}`}
+												className={`text-[10px] px-1.5 py-0 ${currentStep.action === "line" ? "border-develop-blue text-develop-blue" : ""}`}
 											>
 												{currentStep.action === "enter"
 													? t("trace.enter")

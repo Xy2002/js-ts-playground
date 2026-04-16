@@ -102,7 +102,9 @@ export default function OutputDisplay({
 				<div className="flex items-center gap-2">
 					<div
 						className={`w-1.5 h-1.5 rounded-full ${
-							isExecuting ? "bg-warning animate-pulse" : "bg-green-500/60"
+							isExecuting
+								? "bg-warning animate-pulse"
+								: "bg-[hsl(var(--viz-green)/0.6)]"
 						}`}
 					/>
 					<span className="text-xs font-medium text-muted-foreground">
