@@ -346,3 +346,43 @@
 .vs .inline-eval-overlay-error {
 	color: rgba(220, 38, 38, 0.45);
 }
+
+/* Floating panel resize handles */
+.react-rnd > .react-rnd-resize-handle {
+	position: absolute;
+}
+.react-rnd > .react-rnd-resize-handle-se {
+	right: 0;
+	bottom: 0;
+	width: 16px;
+	height: 16px;
+	cursor: se-resize;
+}
+.react-rnd > .react-rnd-resize-handle-e {
+	right: 0;
+	top: 0;
+	bottom: 16px;
+	width: 4px;
+	cursor: e-resize;
+}
+.react-rnd > .react-rnd-resize-handle-s {
+	bottom: 0;
+	left: 0;
+	right: 16px;
+	height: 4px;
+	cursor: s-resize;
+}
+.react-rnd > .react-rnd-resize-handle-sw {
+	left: 0;
+	bottom: 0;
+	width: 16px;
+	height: 16px;
+	cursor: sw-resize;
+}
+.react-rnd > .react-rnd-resize-handle-w {
+	left: 0;
+	top: 0;
+	bottom: 16px;
+	width: 4px;
+	cursor: w-resize;
+}
